@@ -51,10 +51,93 @@ CATS = {
     "activity": "Daily activity and sleep", "other": "Other records",
 }
 HOTEL_EXTRA = ["trip", "diet", "card", "passport", "dob", "health", "spend"]  # the hotel can ask for these even if trip mode didn't
+# What each kind of business can offer, so people with access needs don't have to explain or share more.
+# id: (label on the stand, what it changes, how the bot says it)
 OFFERS = {
-    "stepfree": "step-free rooms listed on the website", "form": "a check-in form that works with screen readers",
-    "keypad": "card terminals with physical keys", "animal": "staff briefed on assistance animals",
+    "rail": {
+        "assist": ("Assistance bookable online", "No phone call to explain what help is needed.", "station assistance that can be booked online"),
+        "routes": ("Step-free routes and lift status in the app", "People check the route themselves.", "step-free routes and live lift status in the app"),
+        "text": ("Platform and gate changes by text", "No relying on announcements.", "platform and gate changes sent by text"),
+        "space": ("Seats with floor space, bookable like any seat", "No need to say why.", "seats with floor space that anyone can book"),
+    },
+    "hotel": {
+        "stepfree": ("Step-free rooms listed online", "Guests see which rooms work before booking.", "step-free rooms listed on the website"),
+        "form": ("Screen-reader check-in form", "No paper form read out at the desk.", "a check-in form that works with screen readers"),
+        "keypad": ("Card terminals with physical keys", "Nobody is asked to share a PIN.", "card terminals with physical keys"),
+        "animal": ("Staff briefed on assistance animals", "No “let me check with my manager”.", "staff briefed on assistance animals"),
+        "alarm": ("Visual and vibrating fire alarms in every room", "Deaf guests needn’t ask.", "visual and vibrating fire alarms in every room"),
+    },
+    "bistro": {
+        "menu": ("Accessible digital menu", "Works with screen readers, no reading aloud.", "a digital menu that works with screen readers"),
+        "allergens": ("Allergens listed on every dish", "Guests check for themselves.", "allergens listed on every dish"),
+        "keypad": ("Card terminals with physical keys", "Nobody is asked to share a PIN.", "card terminals with physical keys"),
+        "space": ("Step-free tables with space beside them", "For wheelchairs, pushchairs and dogs.", "step-free tables with space beside them"),
+    },
+    "venue": {
+        "stepfree": ("Step-free seats on the seat map", "People pick them like any seat.", "step-free seats marked on the seat map"),
+        "access": ("Captions and audio description at every show", "No need to request them.", "captions and audio description at every show"),
+        "companion": ("A companion seat for anyone who asks", "No proof needed.", "a companion seat for anyone who asks, no proof needed"),
+        "quiet": ("A quiet room and relaxed performances", "For anyone who needs a break.", "a quiet room and relaxed performances"),
+    },
+    "ins": {
+        "flat": ("One clear price without health data", "Nobody pays more for keeping records private.", "one clear price that doesn't need health data"),
+        "plain": ("Policy in plain language and audio", "Everyone can read what they buy.", "the policy in plain language and as audio"),
+        "human": ("A person reviews every refused claim", "No automatic refusals.", "a person who reviews every refused claim"),
+    },
+    "taxi": {
+        "cars": ("Wheelchair-accessible cars bookable in the app", "No phone call to explain.", "wheelchair-accessible cars bookable in the app"),
+        "animal": ("Drivers trained to take assistance animals", "No refusals at the kerb.", "drivers who take assistance animals"),
+        "text": ("Contact by text only", "For people who can't take calls.", "contact by text, no calls needed"),
+        "seats": ("Child seats on request", "Just tick a box.", "child seats on request"),
+    },
+    "pharmacy": {
+        "labels": ("Large-print and audio labels", "No reading small print.", "large-print and audio labels"),
+        "room": ("A private consultation room", "Nobody explains a condition at the counter.", "a private consultation room"),
+        "list": ("Checks against an allergy list the customer brings", "No full health record needed.", "checks against an allergy list the customer brings"),
+    },
+    "spa": {
+        "hoist": ("Pool hoist and step-free changing rooms", "No need to ask in advance.", "a pool hoist and step-free changing rooms"),
+        "products": ("Fragrance- and allergen-free products", "For anyone who needs them.", "fragrance- and allergen-free products"),
+        "quiet": ("Quiet hours", "Low music and fewer people.", "quiet hours"),
+    },
+    "grocery": {
+        "labels": ("Allergens and ingredients on every product", "Customers filter for themselves.", "allergens and ingredients listed on every product"),
+        "slots": ("Delivery slots with a text when the driver is close", "No waiting by the door.", "delivery slots with a text when the driver is close"),
+    },
+    "museum": {
+        "guide": ("Audio guide and tactile tours", "No need to book or explain.", "an audio guide and tactile tours"),
+        "stepfree": ("A step-free route through every room", "Marked on the map.", "a step-free route through every room"),
+        "companion": ("Free entry for a companion", "No proof needed.", "free entry for a companion, no proof needed"),
+        "family": ("Family tickets with no ages asked", "Children under 12 are covered.", "family tickets that don't ask for children's ages"),
+    },
+    "tour": {
+        "pace": ("Pace chosen on the day", "No fitness data needed.", "a pace chosen on the day"),
+        "route": ("A step-free route option", "Shown when booking.", "a step-free route option"),
+        "written": ("Written and captioned commentary", "For Deaf and hard-of-hearing guests.", "written and captioned commentary"),
+    },
+    "work": {
+        "captions": ("Live captions and interpreters", "Bookable with a tick, no reason needed.", "live captions and sign language interpreters"),
+        "food": ("Food options for every diet", "No forms about health.", "food for every diet without forms"),
+        "quiet": ("A quiet room", "Open all day.", "a quiet room that is open all day"),
+    },
+    "planner": {
+        "device": ("Plans made on the phone, nothing uploaded", "Chats and photos stay put.", "plans made on the phone, with nothing uploaded"),
+        "paste": ("Paste only the bookings", "No inbox access needed.", "the option to paste in only the bookings"),
+    },
+    "kidsclub": {
+        "plan": ("An allergy plan form the parents fill in", "No health records needed.", "an allergy plan form that parents fill in"),
+        "photos": ("A no-photos policy", "Nothing to agree to.", "a policy of taking no photos of children"),
+        "staff": ("Named staff with first-aid training", "Parents know who is in charge.", "named staff with first-aid training"),
+    },
 }
+GENERIC_OFFERS = {
+    "stepfree": ("Step-free access", "Listed on the website.", "step-free access"),
+    "text": ("Contact by text", "No calls needed.", "contact by text"),
+}
+
+
+def offers_for(b):
+    return OFFERS.get(b, GENERIC_OFFERS)
 TRUST = {
     "delete": "details are deleted when the visit is over", "nopartners": "details are never passed on, not even to a sister business",
     "contact": "a named person answers data questions", "audit": "the booking system is audited every year by an outside firm",
@@ -332,7 +415,8 @@ async def negotiate_place(n, place, hotel_name):
         return {"shared": [], "kept": []}
     def lab(k):
         s = F[k]["label"].split(": ")[-1]
-        return s if s[:2].isupper() else s[0].lower() + s[1:]
+        w = s.split(" ")[0]
+        return s if (s[:2].isupper() or any(c.isupper() for c in w[1:])) else s[0].lower() + s[1:]
     push({"t": "place", "nid": n["nid"], "place": place["id"], "pname": place["name"], "ptype": place["type"], "bot": bot_name(place), "keys": keys,
           "labels": {k: F[k]["label"] for k in keys}}, n["vid"])
 
@@ -342,8 +426,9 @@ async def negotiate_place(n, place, hotel_name):
     ctx += f" Say you keep customers' details {KEEP[C['keep']]}."
     fb += f" We keep customers' details {KEEP[C['keep']]}."
     if C["offers"]:
-        ctx += f" Also mention that {place['name']} offers " + jn(OFFERS[o] for o in C["offers"]) + "."
-        fb += f" We offer {jn(OFFERS[o] for o in C['offers'])}."
+        O = offers_for(place["id"])
+        ctx += f" Also mention that {place['name']} offers " + jn(O[o][2] for o in C["offers"] if o in O) + "."
+        fb += " We offer " + jn(O[o][2] for o in C["offers"] if o in O) + "."
     if C["trust"]:
         ctx += " Also promise that " + jn(TRUST[t] for t in C["trust"]) + "."
         fb += " " + cap(jn(TRUST[t] for t in C["trust"])) + "."
@@ -540,7 +625,7 @@ async def api_config(req: Request):
         return JSONResponse({"ok": False, "error": "Unknown business"}, status_code=400)
     h, C = b.get("settings") or {}, CONFIG[biz]
     C["asks"] = [c for c in h.get("asks", C["asks"]) if c in META[biz]["cats"]]
-    C["offers"] = [o for o in h.get("offers", C["offers"]) if o in OFFERS]
+    C["offers"] = [o for o in h.get("offers", C["offers"]) if o in offers_for(biz)]
     C["trust"] = [t for t in h.get("trust", C["trust"]) if t in TRUST]
     C["keep"] = h.get("keep") if h.get("keep") in KEEP else C["keep"]
     C["review"] = bool(h.get("review", C["review"]))
@@ -647,6 +732,7 @@ def setup():
         r = PUSH.get(b, {})
         m["push"] = (f"Offers {r['offer']}" if "offer" in r else f"Suggests: {r['alt']}" if "alt" in r else None)
         m["order"] = order.index(b) if b in order else 99
+        m["offers"] = [[k, v[0], v[1]] for k, v in offers_for(b).items()]
         CONFIG[b] = {"asks": list(m["cats"]), "offers": [], "trust": [], "keep": "stay", "review": False, "push": bool(r)}
     CONFIG["hotel"].update(asks=["trip", "need", "diet", "card", "passport", "dob"], offers=["stepfree"], trust=["delete"], review=True)
     CONFIG["ins"].update(keep="y1")

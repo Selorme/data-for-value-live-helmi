@@ -166,7 +166,7 @@ function preset(name,k,f){
 function show(id){['s-pick','s-trip','s-rules','s-chat','s-res'].forEach(s=>$(s).hidden=s!==id);scrollTo(0,0)}
 function F(k){return cur.fields[k]}
 function short(l){return l.split(': ').pop()}
-function low(l){const s=short(l);return s.slice(0,2)===s.slice(0,2).toUpperCase()?s:s[0].toLowerCase()+s.slice(1)}
+function low(l){const s=short(l),w=s.split(' ')[0];return (s.slice(0,2)===s.slice(0,2).toUpperCase()||/[A-Z]/.test(w.slice(1)))?s:s[0].toLowerCase()+s.slice(1)}
 async function boot(){
   D=await (await fetch('/static/trip.json',{cache:'no-store'})).json();
   const st=await (await fetch('/api/state',{cache:'no-store'})).json();AI=st.ai;M=st.models;

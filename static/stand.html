@@ -136,7 +136,6 @@ const KEY=new URLSearchParams(location.search).get('key')||'';
 let D,CFG={},META={},BIZ='hotel',AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
 const CATD={trip:'Travel and arrival times',need:'What the person needs: room, seat, route, service',diet:'Allergies and food',card:'Proof of disability',health:'Diagnoses, health records, device records',passport:'To check identity in advance',dob:'For offers, or checking ages',spend:'Bank transactions and spending',location:'Where the person has been',messages:'Private conversations, with other people in them',online:'What the person has searched for',photos:'Photos, often of other people too',activity:'Steps, sleep and fitness',other:'Grades and other records'};
 const SENS=['card','health','passport','dob','spend','location','messages','online','photos','activity'];
-const OFFERS=[['stepfree','Step-free rooms listed online','Guests see which rooms work before booking.'],['form','Screen-reader check-in form','No paper form read out at the desk.'],['keypad','Card terminals with physical keys','Nobody is asked to share a PIN.'],['animal','Staff briefed on assistance animals','No “let me check with my manager”.']];
 const TRUST=[['delete','We delete details when the visit is over',''],['nopartners','We never pass details on, not even to a sister business',''],['contact','A named person answers data questions',''],['audit','Yearly outside security audit','Only if you really have one.']];
 const KEEPS=[['stay','Until the visit is over','Deleted when the customer leaves.'],['d30','30 days','For questions afterwards.'],['y1','One year','For returning customers and offers.']];
 const PT={childcare:'Childcare',transport:'Transport',hotel:'Hotel',restaurant:'Restaurant',venue:'Venue',insurer:'Insurer',taxi:'Taxi',pharmacy:'Pharmacy',spa:'Spa','trip planner app':'Trip planner','grocery delivery':'Groceries',tour:'Tour',museum:'Museum','work event':'Work event'};
@@ -160,7 +159,7 @@ function renderCfg(){
   $('b-av').textContent=m.bot[0];$('b-names').textContent='Appears as '+m.names.join(', ');
   $('h-asks').textContent=`1. What ${m.bot} asks for`;
   $('asks').innerHTML=m.cats.map(c=>`<label class="opt"><input type="checkbox" data-a="${c}" ${H.asks.includes(c)?'checked':''}><span>${esc(CATS[c])} ${SENS.includes(c)?'<span class="sens">Sensitive</span>':''}<small>${esc(CATD[c]||'')}</small></span></label>`).join('');
-  $('offers').innerHTML=OFFERS.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-o="${v}" ${(H.offers||[]).includes(v)?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
+  $('offers').innerHTML=m.offers.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-o="${v}" ${(H.offers||[]).includes(v)?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
   $('trust').innerHTML=TRUST.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-t="${v}" ${(H.trust||[]).includes(v)?'checked':''}><span>${esc(l)}${d?`<small>${esc(d)}</small>`:''}</span></label>`).join('');
   $('keep').innerHTML=KEEPS.map(([v,l,d])=>`<label class="opt"><input type="radio" name="keep" value="${v}" ${H.keep===v?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
   $('review').checked=!!H.review;
@@ -177,7 +176,7 @@ function hint(){const H=CFG[BIZ],h=[];
   $('askhint').hidden=!h.length;$('askhint').textContent=h.join(' ')}
 document.addEventListener('change',e=>{const t=e.target,H=CFG[BIZ];if(!H)return;
   if(t.dataset.a){H.asks=META[BIZ].cats.filter(c=>document.querySelector(`[data-a="${c}"]`).checked)}
-  else if(t.dataset.o){H.offers=OFFERS.map(o=>o[0]).filter(id=>document.querySelector(`[data-o="${id}"]`).checked)}
+  else if(t.dataset.o){H.offers=META[BIZ].offers.map(o=>o[0]).filter(id=>document.querySelector(`[data-o="${id}"]`).checked)}
   else if(t.dataset.t){H.trust=TRUST.map(o=>o[0]).filter(id=>document.querySelector(`[data-t="${id}"]`).checked)}
   else if(t.name==='keep'){H.keep=t.value}else if(t.id==='review'){H.review=t.checked}else if(t.id==='push'){H.push=t.checked}else return;
   hint();clearTimeout(saveT);const b=BIZ;saveT=setTimeout(()=>save(b),300)});
