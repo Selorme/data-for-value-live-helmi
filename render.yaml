@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: helmi-live
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/ping
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: STAND_KEY
+        sync: false
+      - key: HELMI_MODEL
+        value: openai/gpt-oss-120b
+      - key: BOT_MODEL
+        value: qwen/qwen3.8-27b
+      - key: BACKUP_MODEL
+        value: openai/gpt-oss-20b

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merikaari Stand</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: projector screen in three columns. Left: how the hotel sets up its bot. Middle: the live negotiation. Right: scan to join, and what guests gave. */
+:root{
+  --bg:#EEF2F1; --card:#FFFFFF; --ink:#14201D; --muted:#56655F; --line:#D2DCD8;
+  --hotel:#3B5B52; --hotel-soft:#E4EDE9; --helmi:#2F6FB3; --helmi-soft:#E2ECF7;
+  --share:#1F7A4D; --kept:#A4432A; --na:#B9C4C0; --warn:#9A5A12; --warn-soft:#FBEEDC;
+  --display:'Space Grotesk','Segoe UI',system-ui,sans-serif; --body:'Inter','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0E1513; --card:#17211E; --ink:#E5ECE9; --muted:#9AAAA4; --line:#2A3833;
+  --hotel:#8FB8AA; --hotel-soft:#1D2C27; --helmi:#6FA6E0; --helmi-soft:#1D3047;
+  --share:#4FBF8A; --kept:#E08A70; --na:#4A5753; --warn:#E3A25C; --warn-soft:#38291A; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body);padding:18px max(18px,env(safe-area-inset-right)) 18px max(18px,env(safe-area-inset-left))}
+.app{height:100%;display:grid;grid-template-columns:380px minmax(0,1fr) 360px;gap:18px}
+@media (max-width:1100px){.app{grid-template-columns:1fr;height:auto}}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+p{margin:0}
+.k{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.col{display:flex;flex-direction:column;gap:14px;min-height:0;min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.scroll{overflow-y:auto}
+.brand{display:flex;gap:12px;align-items:center}
+.av{width:40px;height:40px;border-radius:50%;background:var(--hotel);color:#fff;display:grid;place-items:center;font:700 18px var(--display);flex:none}
+.av.h{background:var(--helmi)}
+.small{font-size:13px}.muted{color:var(--muted)}
+.set h3{font-size:15px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer}
+.opt input{width:18px;height:18px;margin:2px 0 0;accent-color:var(--hotel);flex:none}
+.opt span{display:flex;flex-direction:column}
+.opt small{color:var(--muted);font-size:12px}
+.sens{color:var(--kept);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.hint{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
+.chat-card{flex:1;min-height:0}
+.chat{display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.head h2{font-size:1.7rem}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:600 13px var(--body);border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.msg{display:flex;gap:10px;align-items:flex-end;max-width:78%}
+.msg .b{padding:12px 16px;border-radius:16px;font-size:20px;line-height:1.4}
+.msg .who{display:block;font:600 12px var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.msg.bot .b{background:var(--hotel-soft);border-bottom-left-radius:4px}
+.msg.helmi{align-self:flex-end;flex-direction:row-reverse}
+.msg.helmi .b{background:var(--helmi-soft);border-bottom-right-radius:4px}
+.src{font-size:12px;color:var(--muted);margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tag{font-size:13px;font-weight:600;padding:2px 9px;border-radius:999px;border:1.5px solid}
+.tag.s{color:var(--share);border-color:var(--share)} .tag.n{color:var(--kept);border-color:var(--kept)}
+.wait{align-self:center;border:2px dashed var(--helmi);color:var(--helmi);border-radius:14px;padding:10px 16px;font-size:18px;font-weight:600}
+.sys{align-self:center;color:var(--muted);font-size:15px;text-align:center}
+.idle{margin:auto;text-align:center;display:flex;flex-direction:column;gap:10px;max-width:46ch}
+.idle h2{font-size:2.2rem}
+.qr{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.qr #qr{background:#fff;padding:12px;border-radius:12px}
+.qr #qr img,.qr #qr canvas{display:block;width:220px;height:220px}
+.url{font:600 14px var(--body);word-break:break-all}
+.nums{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.nums div{background:var(--bg);border-radius:12px;padding:10px}
+.nums b{display:block;font:700 28px var(--display);font-variant-numeric:tabular-nums}
+.nums span{font-size:12px;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:7px}
+.bar{display:grid;grid-template-columns:118px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:13px}
+.track{height:12px;border-radius:6px;background:var(--na);overflow:hidden;display:flex}
+.track i{display:block;height:100%}
+.track .s{background:var(--share)} .track .n{background:var(--kept)}
+.pct{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.foot{font-size:13px;color:var(--muted)}
+.foot b{color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-offset:2px}
+.reset{font:600 12px var(--body);background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;cursor:pointer;align-self:flex-start}
+.status{font-size:12px;color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="col scroll" aria-label="Set up the hotel's bot">
+    <div class="card"><div class="brand"><div class="av" aria-hidden="true">M</div><div><h1 style="font-size:1.3rem">You run Hotel Merikaari</h1><p class="small muted">Set up the booking bot that talks to guests’ assistants</p></div></div>
+      <p class="status" id="cfgstat">Changes apply to the next guest.</p></div>
+    <div class="card set"><h3>1. What the bot asks every guest</h3><div id="asks"></div>
+      <p class="hint" id="askhint" hidden></p></div>
+    <div class="card set"><h3>2. Records or needs</h3>
+      <label class="opt"><input type="checkbox" id="sum"><span>Ask for the need, not the record<small>“Moves with a guide dog” instead of a diagnosis. Less health data in your system.</small></span></label></div>
+    <div class="card set"><h3>3. What you offer, so guests don’t have to explain</h3><div id="offers"></div>
+      <p class="small muted">The accessible route should never be the less private route.</p></div>
+    <div class="card set"><h3>4. What you promise</h3><div id="trust"></div>
+      <p class="small muted">Only promise what you can back up. Guests’ assistants read these.</p></div>
+    <div class="card set"><h3>5. How long you keep it</h3><div id="keep"></div>
+      <label class="opt"><input type="checkbox" id="review"><span>A person checks the room plan for access needs and allergies<small>About 2 staff minutes per guest. Catches mistakes before arrival.</small></span></label></div>
+  </section>
+
+  <section class="col" aria-label="Live negotiation">
+    <div class="card chat-card">
+      <div class="head"><div><p class="k" id="livek">Live</p><h2 id="title">Waiting for a guest</h2><p class="small muted" id="models"></p></div><div class="tabs" id="tabs"></div></div>
+      <div class="chat" id="chat" aria-live="polite">
+        <div class="idle" id="idle"><p class="k">Hotel Merikaari · booking bot</p><h2>Scan the code and send your Helmi</h2><p class="muted">Pick an invented guest, set what your Helmi may share, and watch it negotiate with this hotel’s bot here.</p></div>
+      </div>
+    </div>
+    <p class="foot"><b>The AI writes the words. The guest’s rules decide what moves.</b> Code checks every detail before it leaves Helmi, and anything marked “ask me” waits for the guest.</p>
+  </section>
+
+  <section class="col scroll" aria-label="Join and results">
+    <div class="card qr"><p class="k">Try it on your phone</p><div id="qr" aria-label="QR code to join"></div><p class="url" id="url"></p></div>
+    <div class="card"><p class="k">Today at the stand</p>
+      <div class="nums"><div><b id="n-done">0</b><span>bookings negotiated</span></div><div><b id="n-share">–</b><span>of requested details shared</span></div><div><b id="n-step">0</b><span>times a guest stepped in</span></div><div><b id="n-yes">–</b><span>said yes when asked</span></div></div></div>
+    <div class="card"><p class="k">What guests gave the hotel</p><div class="legend"><span><i style="background:var(--share)"></i>Shared</span><span><i style="background:var(--kept)"></i>Kept</span><span><i style="background:var(--na)"></i>Didn’t apply</span></div><div class="bars" id="bars"><p class="small muted">Fills in as guests negotiate.</p></div></div>
+    <div class="card"><p class="k">From our workshop</p><p class="small">Four tech-confident students shared <b>82%</b> of what an event asked for and <b>68%</b> for a hotel, but only <b>14%</b> for an insurer. Nobody let a business read their chats or email.</p><p class="small muted">Asking for less, with a clear reason, got more.</p></div>
+    <button class="reset" id="reset">Reset today’s numbers</button>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY=new URLSearchParams(location.search).get('key')||'';
+let D,H,AI=false,M={},NEG={},order=[],view=null,follow=true,saveT;
+const OFFERS=[['stepfree','Step-free rooms listed online','Guests see which rooms work before booking.'],['form','Screen-reader check-in form','No paper form read out at the desk.'],['keypad','Card terminals with physical keys','Nobody is asked to share a PIN.'],['animal','Staff briefed on assistance animals','No “let me check with my manager”.']];
+const TRUST=[['delete','We delete guest details at checkout',''],['nopartners','We never pass details on, not even to our bistro',''],['contact','A named person answers data questions',''],['audit','Yearly outside security audit','Only if you really have one.']];
+const KEEPS=[['stay','Until checkout','Deleted when the guest leaves.'],['d30','30 days','For questions after the stay.'],['y1','One year','For returning guests and offers.']];
+function Q(id){return D.questions.find(q=>q.id===id)}
+function G(id){return D.guests.find(g=>g.id===id)}
+async function boot(){
+  D=await (await fetch('/static/data.json')).json();
+  const st=await (await fetch('/api/state')).json();H=st.hotel;AI=st.ai;M=st.models;renderCfg();stats(st.stats);
+  const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
+  try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
+  connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
+}
+function renderCfg(){
+  $('asks').innerHTML=D.questions.map(q=>`<label class="opt"><input type="checkbox" data-a="${q.id}" ${H.asks.includes(q.id)?'checked':''}><span>${esc(q.l)} ${q.sens?'<span class="sens">Sensitive</span>':''}<small>${esc(q.why[0].toUpperCase()+q.why.slice(1))}</small></span></label>`).join('');
+  $('offers').innerHTML=OFFERS.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-o="${v}" ${(H.offers||[]).includes(v)?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
+  $('trust').innerHTML=TRUST.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-t="${v}" ${(H.trust||[]).includes(v)?'checked':''}><span>${esc(l)}${d?`<small>${esc(d)}</small>`:''}</span></label>`).join('');
+  $('keep').innerHTML=KEEPS.map(([v,l,d])=>`<label class="opt"><input type="radio" name="keep" value="${v}" ${H.keep===v?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
+  $('sum').checked=!!H.sum;$('review').checked=!!H.review;hint();
+}
+function hint(){
+  const h=[];if(H.asks.includes('health'))h.push('Health conditions: guests with access needs are pushed to disclose more than others. Ask for the access need instead.');
+  if(H.asks.includes('spend'))h.push('Spending history isn’t needed for a stay, and Helmi will usually refuse it.');
+  if(H.asks.includes('passport'))h.push('Passport before arrival: most Helmis will offer to show it at the desk.');
+  $('askhint').hidden=!h.length;$('askhint').textContent=h.join(' ');
+}
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.a){H.asks=D.questions.map(q=>q.id).filter(id=>document.querySelector(`[data-a="${id}"]`).checked)}
+  else if(t.dataset.o){H.offers=OFFERS.map(o=>o[0]).filter(id=>document.querySelector(`[data-o="${id}"]`).checked)}
+  else if(t.dataset.t){H.trust=TRUST.map(o=>o[0]).filter(id=>document.querySelector(`[data-t="${id}"]`).checked)}
+  else if(t.name==='keep'){H.keep=t.value}
+  else if(t.id==='sum'){H.sum=t.checked}else if(t.id==='review'){H.review=t.checked}else return;
+  hint();clearTimeout(saveT);saveT=setTimeout(save,300)});
+async function save(){
+  try{const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,hotel:H})});const j=await r.json();
+    $('cfgstat').textContent=j.ok?'Saved. Applies to the next guest.':(j.error||'Not saved');}catch(e){$('cfgstat').textContent='Not saved: no connection'}
+}
+function connect(){
+  const es=new EventSource('/events?role=stand');
+  es.onopen=()=>{$('livek').textContent=AI?'Live · two AI models':'Live · scripted messages'};
+  es.onerror=()=>{$('livek').textContent='Reconnecting…'};
+  es.addEventListener('config',e=>{const h=JSON.parse(e.data).hotel;if(JSON.stringify(h)!==JSON.stringify(H)){H=h;renderCfg()}});
+  es.addEventListener('stats',e=>stats(JSON.parse(e.data).stats));
+  ['start','msg','stepin','stepin_done','stepin_timeout','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
+}
+function ev(t,d){
+  if(t==='start'){NEG[d.nid]={...d,items:[],done:false};order.push(d.nid);if(follow||!view)view=d.nid}
+  const n=NEG[d.nid];if(!n)return;
+  if(t==='msg')n.items.push({k:'msg',...d});
+  if(t==='stepin')n.items.push({k:'wait',q:d.q,text:`Waiting for ${d.name} to decide on ${d.label.toLowerCase()}…`});
+  if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.q===d.q&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?'The guest said yes.':'The guest said no. Helmi keeps it.'}}
+  if(t==='done'){n.done=true;n.items.push({k:'sys',text:`Booking confirmed. Shared ${d.shared.length} of ${d.shared.length+d.kept.length} requested details.`});stats(d.stats)}
+  if(t==='error'){n.done=true;n.items.push({k:'sys',text:d.text})}
+  draw();
+}
+function draw(){
+  const act=order.filter(id=>!NEG[id].done),recent=order.slice(-4);const ids=[...new Set([...act,...recent])];
+  $('tabs').innerHTML=ids.length>1?ids.map(id=>`<button aria-pressed="${id===view}" data-n="${id}">${esc(G(NEG[id].guest).short)}${NEG[id].done?'':' ●'}</button>`).join(''):'';
+  const n=NEG[view];if(!n)return;
+  $('title').textContent=`${n.name} · ${n.who}`;
+  $('models').textContent=n.models?`Helmi: ${n.models.helmi} · Hotel bot: ${n.models.bot}`:'Scripted messages (no AI key set)';
+  $('chat').innerHTML=n.items.map(x=>{
+    if(x.k==='wait')return `<p class="wait">${esc(x.text)}</p>`;
+    if(x.k==='sys')return `<p class="sys">${esc(x.text)}</p>`;
+    const bot=x.who==='bot';
+    const tags=[...(x.shared||[]).map(q=>`<span class="tag s">Got: ${esc(Q(q).l)}</span>`),...(x.kept||[]).map(q=>`<span class="tag n">Kept: ${esc(Q(q).l)}</span>`)].join('');
+    return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?'M':'H'}</div><div class="b"><span class="who">${bot?'Your bot':esc(G(n.guest).short)+'’s Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src)}</p></div></div>`}).join('');
+  $('chat').scrollTop=$('chat').scrollHeight;
+}
+$('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;follow=!!NEG[view].done===false;draw()};
+function stats(s){if(!s)return;
+  $('n-done').textContent=s.done;$('n-step').textContent=s.stepins;
+  let sh=0,as=0;Object.values(s.items||{}).forEach(v=>{sh+=v.shared;as+=v.shared+v.kept});
+  $('n-share').textContent=as?Math.round(sh/as*100)+'%':'–';$('n-yes').textContent=s.stepins?Math.round(s.stepin_yes/s.stepins*100)+'%':'–';
+  const rows=Object.entries(s.items||{}).sort((a,b)=>b[1].asked-a[1].asked);
+  $('bars').innerHTML=rows.length?rows.map(([q,v])=>{const t=v.asked||1;const app=v.shared+v.kept;return `<div class="bar"><span>${esc(Q(q).l)}</span><div class="track" role="img" aria-label="${v.shared} shared, ${v.kept} kept, ${v.na} did not apply"><i class="s" style="width:${v.shared/t*100}%"></i><i class="n" style="width:${v.kept/t*100}%"></i></div><span class="pct">${app?Math.round(v.shared/app*100)+'%':'–'}</span></div>`}).join(''):'<p class="small muted">Fills in as guests negotiate.</p>';
+}
+$('reset').onclick=async()=>{await fetch('/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY})}).catch(()=>{});const st=await (await fetch('/api/state')).json();stats(st.stats)};
+boot();
+</script>
+</body>
+</html>
