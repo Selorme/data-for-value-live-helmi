@@ -57,6 +57,10 @@ p{margin:0}
 .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .tag{font-size:13px;font-weight:600;padding:2px 9px;border-radius:999px;border:1.5px solid}
 .tag.s{color:var(--share);border-color:var(--share)} .tag.n{color:var(--kept);border-color:var(--kept)}
+.sep{align-self:stretch;display:flex;gap:12px;align-items:baseline;border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+.sep b{font:700 22px var(--display)}
+.sep span{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.wait.offer{border-color:var(--warn);color:var(--warn)}
 .wait{align-self:center;border:2px dashed var(--helmi);color:var(--helmi);border-radius:14px;padding:10px 16px;font-size:18px;font-weight:600}
 .sys{align-self:center;color:var(--muted);font-size:15px;text-align:center}
 .idle{margin:auto;text-align:center;display:flex;flex-direction:column;gap:10px;max-width:46ch}
@@ -88,36 +92,34 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
 <body>
 <div class="app">
   <section class="col scroll" aria-label="Set up the hotel's bot">
-    <div class="card"><div class="brand"><div class="av" aria-hidden="true">M</div><div><h1 style="font-size:1.3rem">You run Hotel Merikaari</h1><p class="small muted">Set up the booking bot that talks to guests’ assistants</p></div></div>
-      <p class="status" id="cfgstat">Changes apply to the next guest.</p></div>
-    <div class="card set"><h3>1. What the bot asks every guest</h3><div id="asks"></div>
-      <p class="hint" id="askhint" hidden></p></div>
-    <div class="card set"><h3>2. Records or needs</h3>
-      <label class="opt"><input type="checkbox" id="sum"><span>Ask for the need, not the record<small>“Moves with a guide dog” instead of a diagnosis. Less health data in your system.</small></span></label></div>
-    <div class="card set"><h3>3. What you offer, so guests don’t have to explain</h3><div id="offers"></div>
+    <div class="card"><div class="brand"><div class="av" aria-hidden="true">H</div><div><h1 style="font-size:1.3rem">You run the hotel</h1><p class="small muted">Every guest’s trip includes a hotel. Set up the bot that talks to their assistants.</p></div></div>
+      <p class="status" id="cfgstat">Changes apply to the next trip.</p></div>
+    <div class="card set"><h3>1. What the bot asks every guest</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
+    <div class="card set"><h3>2. What you offer, so guests don’t have to explain</h3><div id="offers"></div>
       <p class="small muted">The accessible route should never be the less private route.</p></div>
-    <div class="card set"><h3>4. What you promise</h3><div id="trust"></div>
+    <div class="card set"><h3>3. What you promise</h3><div id="trust"></div>
       <p class="small muted">Only promise what you can back up. Guests’ assistants read these.</p></div>
-    <div class="card set"><h3>5. How long you keep it</h3><div id="keep"></div>
-      <label class="opt"><input type="checkbox" id="review"><span>A person checks the room plan for access needs and allergies<small>About 2 staff minutes per guest. Catches mistakes before arrival.</small></span></label></div>
+    <div class="card set"><h3>4. How long you keep it</h3><div id="keep"></div>
+      <label class="opt"><input type="checkbox" id="review"><span>A person checks the room plan<small>About 2 staff minutes per guest. Catches mistakes before arrival.</small></span></label></div>
   </section>
 
   <section class="col" aria-label="Live negotiation">
     <div class="card chat-card">
-      <div class="head"><div><p class="k" id="livek">Live</p><h2 id="title">Waiting for a guest</h2><p class="small muted" id="models"></p></div><div class="tabs" id="tabs"></div></div>
+      <div class="head"><div><p class="k" id="livek">Live</p><h2 id="title">Waiting for a traveller</h2><p class="small muted" id="models"></p></div><div class="tabs" id="tabs"></div></div>
       <div class="chat" id="chat" aria-live="polite">
-        <div class="idle" id="idle"><p class="k">Hotel Merikaari · booking bot</p><h2>Scan the code and send your Helmi</h2><p class="muted">Pick an invented guest, set what your Helmi may share, and watch it negotiate with this hotel’s bot here.</p></div>
+        <div class="idle"><p class="k">Helmi live · a whole trip</p><h2>Scan the code and send your Helmi on a trip</h2><p class="muted">Pick an invented traveller, set what your Helmi may share, and watch it negotiate with the airline or train, the hotel, the restaurant, the venue and the insurer.</p></div>
       </div>
     </div>
-    <p class="foot"><b>The AI writes the words. The guest’s rules decide what moves.</b> Code checks every detail before it leaves Helmi, and anything marked “ask me” waits for the guest.</p>
+    <p class="foot"><b>The AI writes the words. The traveller’s rules decide what moves.</b> Code checks every detail before it leaves Helmi, anything marked “ask me” waits for the traveller, and each business must ask separately, even one owned by the hotel.</p>
   </section>
 
   <section class="col scroll" aria-label="Join and results">
     <div class="card qr"><p class="k">Try it on your phone</p><div id="qr" aria-label="QR code to join"></div><p class="url" id="url"></p></div>
     <div class="card"><p class="k">Today at the stand</p>
-      <div class="nums"><div><b id="n-done">0</b><span>bookings negotiated</span></div><div><b id="n-share">–</b><span>of requested details shared</span></div><div><b id="n-step">0</b><span>times a guest stepped in</span></div><div><b id="n-yes">–</b><span>said yes when asked</span></div></div></div>
-    <div class="card"><p class="k">What guests gave the hotel</p><div class="legend"><span><i style="background:var(--share)"></i>Shared</span><span><i style="background:var(--kept)"></i>Kept</span><span><i style="background:var(--na)"></i>Didn’t apply</span></div><div class="bars" id="bars"><p class="small muted">Fills in as guests negotiate.</p></div></div>
-    <div class="card"><p class="k">From our workshop</p><p class="small">Four tech-confident students shared <b>82%</b> of what an event asked for and <b>68%</b> for a hotel, but only <b>14%</b> for an insurer. Nobody let a business read their chats or email.</p><p class="small muted">Asking for less, with a clear reason, got more.</p></div>
+      <div class="nums"><div><b id="n-done">0</b><span>trips negotiated</span></div><div><b id="n-share">–</b><span>of requested details shared</span></div><div><b id="n-step">0</b><span>times a traveller stepped in</span></div><div><b id="n-offer">–</b><span>offers that changed a mind</span></div></div></div>
+    <div class="card"><p class="k">Shared, by place</p><div class="legend"><span><i style="background:var(--share)"></i>Shared</span><span><i style="background:var(--kept)"></i>Kept</span></div><div class="bars" id="bars-p"><p class="small muted">Fills in as travellers negotiate.</p></div></div>
+    <div class="card"><p class="k">Shared, by kind of detail</p><div class="bars" id="bars-c"><p class="small muted">Fills in as travellers negotiate.</p></div></div>
+    <div class="card"><p class="k">From our workshop</p><p class="small">Four tech-confident students shared <b>82%</b> of what an event asked for and <b>68%</b> for a hotel, but only <b>14%</b> for an insurer. Nobody let a business read their chats or email.</p></div>
     <button class="reset" id="reset">Reset today’s numbers</button>
   </section>
 </div>
@@ -125,83 +127,87 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY=new URLSearchParams(location.search).get('key')||'';
-let D,H,AI=false,M={},NEG={},order=[],view=null,follow=true,saveT;
+let D,H,AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
+const CATD={trip:'To plan arrival and departure',need:'Room, route and service needs',diet:'For breakfast and room service',card:'Proof of disability',health:'Diagnoses from the health record',passport:'To check identity before arrival',dob:'For birthday offers',spend:'For personalised offers'};
+const SENS=['card','health','passport','dob','spend'];
 const OFFERS=[['stepfree','Step-free rooms listed online','Guests see which rooms work before booking.'],['form','Screen-reader check-in form','No paper form read out at the desk.'],['keypad','Card terminals with physical keys','Nobody is asked to share a PIN.'],['animal','Staff briefed on assistance animals','No “let me check with my manager”.']];
-const TRUST=[['delete','We delete guest details at checkout',''],['nopartners','We never pass details on, not even to our bistro',''],['contact','A named person answers data questions',''],['audit','Yearly outside security audit','Only if you really have one.']];
+const TRUST=[['delete','We delete guest details at checkout',''],['nopartners','We never pass details on, not even to our restaurant',''],['contact','A named person answers data questions',''],['audit','Yearly outside security audit','Only if you really have one.']];
 const KEEPS=[['stay','Until checkout','Deleted when the guest leaves.'],['d30','30 days','For questions after the stay.'],['y1','One year','For returning guests and offers.']];
-function Q(id){return D.questions.find(q=>q.id===id)}
-function G(id){return D.guests.find(g=>g.id===id)}
+const PT={transport:'Transport',hotel:'Hotel',restaurant:'Restaurant',venue:'Venue',insurer:'Insurer',taxi:'Taxi',pharmacy:'Pharmacy',spa:'Spa','trip planner app':'Trip planner','grocery delivery':'Groceries',tour:'Tour',museum:'Museum','work event':'Work event'};
+const CL={trip:'Trip dates',need:'Needs',diet:'Allergies and diet',card:'Disability card',health:'Health records',passport:'Passport',dob:'Date of birth',spend:'Spending',other:'Other records'};
+function P(id){return D.people.find(p=>p.id===id)}
 async function boot(){
-  D=await (await fetch('/static/data.json')).json();
-  const st=await (await fetch('/api/state')).json();H=st.hotel;AI=st.ai;M=st.models;renderCfg();stats(st.stats);
+  D=await (await fetch('/static/trip.json')).json();
+  const st=await (await fetch('/api/state')).json();H=st.hotel;AI=st.ai;M=st.models;CATS=st.cats;renderCfg();stats(st.stats);
   const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
   try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
   connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
 }
 function renderCfg(){
-  $('asks').innerHTML=D.questions.map(q=>`<label class="opt"><input type="checkbox" data-a="${q.id}" ${H.asks.includes(q.id)?'checked':''}><span>${esc(q.l)} ${q.sens?'<span class="sens">Sensitive</span>':''}<small>${esc(q.why[0].toUpperCase()+q.why.slice(1))}</small></span></label>`).join('');
+  $('asks').innerHTML=Object.entries(CATS).map(([c,l])=>`<label class="opt"><input type="checkbox" data-a="${c}" ${H.asks.includes(c)?'checked':''}><span>${esc(l)} ${SENS.includes(c)?'<span class="sens">Sensitive</span>':''}<small>${esc(CATD[c]||'')}</small></span></label>`).join('');
   $('offers').innerHTML=OFFERS.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-o="${v}" ${(H.offers||[]).includes(v)?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
   $('trust').innerHTML=TRUST.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-t="${v}" ${(H.trust||[]).includes(v)?'checked':''}><span>${esc(l)}${d?`<small>${esc(d)}</small>`:''}</span></label>`).join('');
   $('keep').innerHTML=KEEPS.map(([v,l,d])=>`<label class="opt"><input type="radio" name="keep" value="${v}" ${H.keep===v?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
-  $('sum').checked=!!H.sum;$('review').checked=!!H.review;hint();
+  $('review').checked=!!H.review;hint();
 }
-function hint(){
-  const h=[];if(H.asks.includes('health'))h.push('Health conditions: guests with access needs are pushed to disclose more than others. Ask for the access need instead.');
-  if(H.asks.includes('spend'))h.push('Spending history isn’t needed for a stay, and Helmi will usually refuse it.');
-  if(H.asks.includes('passport'))h.push('Passport before arrival: most Helmis will offer to show it at the desk.');
-  $('askhint').hidden=!h.length;$('askhint').textContent=h.join(' ');
-}
+function hint(){const h=[];
+  if(H.asks.includes('health'))h.push('Diagnoses: only guests with access needs have anything to tell you, so they carry the privacy cost. Ask for the need instead.');
+  if(H.asks.includes('spend'))h.push('Spending history isn’t needed for a stay.');
+  if(H.asks.includes('passport'))h.push('Passport before arrival: many Helmis will offer to show it at the desk.');
+  if((H.trust||[]).includes('delete')&&H.keep!=='stay')h.push('You promise to delete at checkout but keep data longer. That promise is broken.');
+  $('askhint').hidden=!h.length;$('askhint').textContent=h.join(' ')}
 document.addEventListener('change',e=>{const t=e.target;
-  if(t.dataset.a){H.asks=D.questions.map(q=>q.id).filter(id=>document.querySelector(`[data-a="${id}"]`).checked)}
+  if(t.dataset.a){H.asks=Object.keys(CATS).filter(c=>document.querySelector(`[data-a="${c}"]`).checked)}
   else if(t.dataset.o){H.offers=OFFERS.map(o=>o[0]).filter(id=>document.querySelector(`[data-o="${id}"]`).checked)}
   else if(t.dataset.t){H.trust=TRUST.map(o=>o[0]).filter(id=>document.querySelector(`[data-t="${id}"]`).checked)}
-  else if(t.name==='keep'){H.keep=t.value}
-  else if(t.id==='sum'){H.sum=t.checked}else if(t.id==='review'){H.review=t.checked}else return;
+  else if(t.name==='keep'){H.keep=t.value}else if(t.id==='review'){H.review=t.checked}else return;
   hint();clearTimeout(saveT);saveT=setTimeout(save,300)});
-async function save(){
-  try{const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,hotel:H})});const j=await r.json();
-    $('cfgstat').textContent=j.ok?'Saved. Applies to the next guest.':(j.error||'Not saved');}catch(e){$('cfgstat').textContent='Not saved: no connection'}
-}
+async function save(){try{const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,hotel:H})});const j=await r.json();
+  $('cfgstat').textContent=j.ok?'Saved. Applies to the next trip.':(j.error||'Not saved')}catch(e){$('cfgstat').textContent='Not saved: no connection'}}
 function connect(){
   const es=new EventSource('/events?role=stand');
   es.onopen=()=>{$('livek').textContent=AI?'Live · two AI models':'Live · scripted messages'};
   es.onerror=()=>{$('livek').textContent='Reconnecting…'};
   es.addEventListener('config',e=>{const h=JSON.parse(e.data).hotel;if(JSON.stringify(h)!==JSON.stringify(H)){H=h;renderCfg()}});
   es.addEventListener('stats',e=>stats(JSON.parse(e.data).stats));
-  ['start','msg','stepin','stepin_done','stepin_timeout','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
+  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
 }
 function ev(t,d){
-  if(t==='start'){NEG[d.nid]={...d,items:[],done:false};order.push(d.nid);if(follow||!view)view=d.nid}
-  const n=NEG[d.nid];if(!n)return;
+  if(t==='start'){NEG[d.nid]={...d,items:[],done:false,pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
+  const n=NEG[d.nid];if(!n)return;const p=P(n.person);
+  if(t==='place'){n.i++;n.cur=d.pname;n.items.push({k:'sep',text:d.pname,sub:`${d.ptype} · ${n.i} of ${n.places.length}`})}
   if(t==='msg')n.items.push({k:'msg',...d});
-  if(t==='stepin')n.items.push({k:'wait',q:d.q,text:`Waiting for ${d.name} to decide on ${d.label.toLowerCase()}…`});
-  if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.q===d.q&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?'The guest said yes.':'The guest said no. Helmi keeps it.'}}
-  if(t==='done'){n.done=true;n.items.push({k:'sys',text:`Booking confirmed. Shared ${d.shared.length} of ${d.shared.length+d.kept.length} requested details.`});stats(d.stats)}
+  if(t==='stepin')n.items.push({k:'wait',key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
+  if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
+  if(t==='place_done')n.items.push({k:'sys',text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`});
+  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});stats(d.stats)}
   if(t==='error'){n.done=true;n.items.push({k:'sys',text:d.text})}
-  draw();
+  if(d.nid===view)draw();else drawTabs();
 }
+function drawTabs(){const act=order.filter(id=>!NEG[id].done),ids=[...new Set([...act,...order.slice(-4)])];
+  $('tabs').innerHTML=ids.length>1?ids.map(id=>`<button aria-pressed="${id===view}" data-n="${id}">${esc(P(NEG[id].person).short)}${NEG[id].done?'':' ●'}</button>`).join(''):''}
 function draw(){
-  const act=order.filter(id=>!NEG[id].done),recent=order.slice(-4);const ids=[...new Set([...act,...recent])];
-  $('tabs').innerHTML=ids.length>1?ids.map(id=>`<button aria-pressed="${id===view}" data-n="${id}">${esc(G(NEG[id].guest).short)}${NEG[id].done?'':' ●'}</button>`).join(''):'';
-  const n=NEG[view];if(!n)return;
-  $('title').textContent=`${n.name} · ${n.who}`;
-  $('models').textContent=n.models?`Helmi: ${n.models.helmi} · Hotel bot: ${n.models.bot}`:'Scripted messages (no AI key set)';
+  drawTabs();const n=NEG[view];if(!n)return;const p=P(n.person);
+  $('title').textContent=`${n.name} · ${n.who}`+(n.cur&&!n.done?` · at ${n.cur}`:'');
+  $('models').textContent=n.models?`Helmi: ${n.models.helmi} · Businesses’ bots: ${n.models.bot}`:'Scripted messages (no AI key set)';
   $('chat').innerHTML=n.items.map(x=>{
-    if(x.k==='wait')return `<p class="wait">${esc(x.text)}</p>`;
+    if(x.k==='sep')return `<div class="sep"><b>${esc(x.text)}</b><span>${esc(x.sub)}</span></div>`;
+    if(x.k==='wait')return `<p class="wait ${x.offer?'offer':''}">${esc(x.text)}</p>`;
     if(x.k==='sys')return `<p class="sys">${esc(x.text)}</p>`;
-    const bot=x.who==='bot';
-    const tags=[...(x.shared||[]).map(q=>`<span class="tag s">Got: ${esc(Q(q).l)}</span>`),...(x.kept||[]).map(q=>`<span class="tag n">Kept: ${esc(Q(q).l)}</span>`)].join('');
-    return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?'M':'H'}</div><div class="b"><span class="who">${bot?'Your bot':esc(G(n.guest).short)+'’s Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src)}</p></div></div>`}).join('');
+    const bot=x.who==='bot',F=p.fields,sh=l=>l.split(': ').pop();
+    const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
+    const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with a safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src);
+    return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.pn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc(n.pn[x.place]||'Business')+' bot':esc(p.short)+'’s Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
   $('chat').scrollTop=$('chat').scrollHeight;
 }
-$('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;follow=!!NEG[view].done===false;draw()};
+$('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};
+function bars(el,obj,names){const rows=Object.entries(obj||{}).filter(([,v])=>v.asked).sort((a,b)=>b[1].asked-a[1].asked);
+  $(el).innerHTML=rows.length?rows.map(([k,v])=>`<div class="bar"><span>${esc(names[k]||k)}</span><div class="track" role="img" aria-label="${v.shared} shared, ${v.kept} kept"><i class="s" style="width:${v.shared/v.asked*100}%"></i><i class="n" style="width:${v.kept/v.asked*100}%"></i></div><span class="pct">${Math.round(v.shared/v.asked*100)}%</span></div>`).join(''):'<p class="small muted">Fills in as travellers negotiate.</p>'}
 function stats(s){if(!s)return;
   $('n-done').textContent=s.done;$('n-step').textContent=s.stepins;
-  let sh=0,as=0;Object.values(s.items||{}).forEach(v=>{sh+=v.shared;as+=v.shared+v.kept});
-  $('n-share').textContent=as?Math.round(sh/as*100)+'%':'–';$('n-yes').textContent=s.stepins?Math.round(s.stepin_yes/s.stepins*100)+'%':'–';
-  const rows=Object.entries(s.items||{}).sort((a,b)=>b[1].asked-a[1].asked);
-  $('bars').innerHTML=rows.length?rows.map(([q,v])=>{const t=v.asked||1;const app=v.shared+v.kept;return `<div class="bar"><span>${esc(Q(q).l)}</span><div class="track" role="img" aria-label="${v.shared} shared, ${v.kept} kept, ${v.na} did not apply"><i class="s" style="width:${v.shared/t*100}%"></i><i class="n" style="width:${v.kept/t*100}%"></i></div><span class="pct">${app?Math.round(v.shared/app*100)+'%':'–'}</span></div>`}).join(''):'<p class="small muted">Fills in as guests negotiate.</p>';
-}
+  let sh=0,as=0;Object.values(s.places||{}).forEach(v=>{sh+=v.shared;as+=v.asked});
+  $('n-share').textContent=as?Math.round(sh/as*100)+'%':'–';$('n-offer').textContent=s.offers?`${s.offers_yes} of ${s.offers}`:'–';
+  bars('bars-p',s.places,PT);bars('bars-c',s.cats,CL)}
 $('reset').onclick=async()=>{await fetch('/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY})}).catch(()=>{});const st=await (await fetch('/api/state')).json();stats(st.stats)};
 boot();
 </script>

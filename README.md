@@ -1,72 +1,111 @@
-# Helmi live: the demo fair stand
+# Helmi Live
 
-Visitors scan a QR code and play an invented guest on their phone. They set what their Helmi may share, then Helmi negotiates with Hotel Merikaari's booking bot. The stand screen shows the hotel's side live, plus what guests shared.
+Live negotiations between AI agents: **Helmi**, a personal assistant acting for a traveller, and the bots of every place on the trip: the airline or train, the hotel, the restaurant, the venue, the insurer and optional extras such as a taxi or pharmacy. Built for the Demola *Data for Value* project (Tampere University) and shown at a demo fair.
 
-- **Phone page:** `https://<your-service>.onrender.com/`
-- **Stand screen:** `https://<your-service>.onrender.com/stand?key=<your stand key>`
+Visitors play one of eight invented travellers on their phone, choose the places on their trip and set a rule for each detail. Helmi then negotiates with each place in turn. The visitor's phone buzzes when Helmi needs a decision, and some businesses come back with an offer (a discount, a free companion ticket) to see whether a benefit changes the answer. A stand screen shows the negotiations live, lets you set up the hotel's bot, and charts what travellers shared by place and by kind of detail.
 
-Two AI models write the messages: Helmi uses `openai/gpt-oss-120b` and the hotel's bot uses `qwen/qwen3.8-27b`, with `openai/gpt-oss-20b` as a backup. **The code decides what data moves.** A detail leaves Helmi only if the visitor's rule says "Share", or the visitor taps "Share it" when pinged. If a model's message mentions anything that wasn't shared, the server throws the message away and uses a safe scripted line, and the screen says so. With no API key, every message is scripted and everything else still works.
+All people, businesses and data in this project are invented.
 
-Everything is synthetic. Nothing is stored on disk: the numbers on the stand reset when the service restarts.
+## The idea in one line
 
-## Put it on Render (about 15 minutes)
+**The AI writes the words. The person's rules decide what data moves.**
 
-1. **Put this folder on GitHub.** Make a new repository (for example `helmi-live`) and upload everything in this folder: `server.py`, `requirements.txt`, `render.yaml`, `.python-version`, `README.md` and the `static` folder. Don't upload the `test` folder. On Windows, `.python-version` may be hidden; if it doesn't upload, it doesn't matter.
-2. **Create the service.** On render.com choose **New > Web Service**, connect your GitHub and pick the `helmi-live` repository.
-   - Runtime: **Python**
-   - Build command: `pip install -r requirements.txt`
-   - Start command: `uvicorn server:app --host 0.0.0.0 --port $PORT`
-   - Instance type: **Free**
-3. **Add the settings.** Under **Environment**, add:
-   - `GROQ_API_KEY`: your Groq key
-   - `STAND_KEY`: any password you choose, for example `merikaari18`. Only someone with it can change the hotel's settings from the stand screen.
-4. **Deploy.** Render gives you an address like `https://helmi-live-xxxx.onrender.com`. Open it: you should see "Send your Helmi to book a hotel".
-5. **Open the stand screen** at `/stand?key=<your STAND_KEY>`. The QR code on the right points to the phone page.
+Language models only phrase the messages. Every decision about data is made in code:
 
-Keep this as a separate Render service from your personal site, so a busy stand can't affect it.
+- A detail leaves Helmi only if the guest's rule is **Share**, or the guest taps **Share it** when asked.
+- Details marked **Ask me** wait for the guest. With no answer within 45 seconds, Helmi keeps them.
+- Details marked **Never** are never sent, whatever a business offers.
+- Every business asks separately, even a restaurant owned by the hotel. Helmi never reuses what was shared with another place.
+- If a business makes an offer for something the visitor declined, the visitor is asked again. Their answer is final.
+- Each model only sees the details it is allowed to mention. If a message still mentions something that wasn't shared, it is discarded and replaced with a safe scripted line, and both screens say so.
+- Requests mix **needs** ("seat with floor space for the guide dog") with **records** (diagnoses, the disability card) and **lots of data** (bank transactions, chats). The visitor sees which is which.
 
-## On the day
+## What's in the repo
 
-- **Open the stand screen at least 5 minutes before 11:30.** A free Render service sleeps after 15 minutes without visitors and takes about a minute to wake. The stand screen pings the server every 4 minutes, so it stays awake while it's open.
-- **Use "Reset today's numbers"** after you've tested, so the stand starts at zero.
-- **Change the hotel's settings live** in the left column. Business people can try asking for less, adding the keypad terminal or promising deletion at checkout, then watch the next guest's negotiation and the share rates.
-- **If the Wi-Fi fails,** the offline business mode still works on the laptop: `trip.html#business` from the demo folder.
+| Path | What it is |
+|---|---|
+| `server.py` | The negotiation server (Starlette). Runs the agents, enforces the rules, streams events |
+| `static/live.html` | Phone page for visitors: pick a traveller and places, set Helmi's rules, follow the trip |
+| `static/stand.html` | Stand screen: set up the hotel's bot, watch negotiations live, see share rates by place and by detail |
+| `static/trip.json` | The eight invented travellers, the places on each trip, what each place asks for, and every detail's value |
+| `requirements.txt`, `render.yaml`, `.python-version` | Deployment on Render |
 
-## Free limits
+## How it works
 
-Each model allows about 8,000 tokens a minute on Groq's free plan. One negotiation uses roughly 3,000–5,000 tokens across both models. The server runs two negotiations at a time, queues the rest (visitors see "you are number 2 in the queue"), and switches to the backup model or to scripted lines when a model is at its limit. Expect 60–80 AI negotiations over the day.
+```
+ phone (Helmi's side)            server                       stand screen (hotel's side)
+ ─────────────────────           ──────                       ───────────────────────────
+ choose person, places, rules ─POST─▶ /api/start              hotel settings ──POST──▶ /api/config
+                                   │
+                                   │  for each place on the trip:
+                                   ├─ business bot asks      (BOT_MODEL)
+                                   ├─ code decides each detail: share / ask / never
+                                   ├─ Helmi replies          (HELMI_MODEL)
+ "Helmi needs you"  ◀──event───────┤  step-in for "ask me" details
+ tap Share / Don't  ──POST──▶ /api/answer
+                                   ├─ bot pushes back once: an offer, or an alternative
+ "An offer"         ◀──event───────┤  if offered, the visitor decides again
+                                   └─ bot confirms what is prepared
+ live messages      ◀──────── /events (Server-Sent Events) ────────▶ live messages + stats
+```
 
-## Settings you can change on Render
+- **Models:** Helmi uses `openai/gpt-oss-120b`, the hotel uses `qwen/qwen3.8-27b`, and `openai/gpt-oss-20b` is the backup. All run on Groq's free tier through its OpenAI-compatible API. Any OpenAI-compatible endpoint works, including a local model through Ollama.
+- **Limits:** the server tracks tokens per model per minute, runs two negotiations at a time and queues the rest. It falls back to the backup model, then to scripted lines.
+- **No storage:** nothing is written to disk. Settings and stats live in memory and reset when the server restarts.
+- **Stand settings (the hotel's bot):** which kinds of detail it asks for, accessible options it offers (step-free rooms, screen-reader check-in form, keypad card terminals, staff briefed on assistance animals), promises shown to guests' assistants, retention, and human review.
 
-| Setting | Default | What it does |
-|---|---|---|
-| `HELMI_MODEL` | `openai/gpt-oss-120b` | Model that writes Helmi's messages |
-| `BOT_MODEL` | `qwen/qwen3.8-27b` | Model that writes the hotel bot's messages |
-| `BACKUP_MODEL` | `openai/gpt-oss-20b` | Used when either is at its limit |
-| `TOKENS_PER_MINUTE` | `7000` | Stays under Groq's 8K per minute |
-| `PACE_SECONDS` | `1.4` | Pause between messages, so people can read |
-| `LLM_BASE_URL` | Groq | Any OpenAI-compatible server, for example a local model |
+## Run locally
 
-## Running it on the laptop instead (optional)
-
-You need Python 3.11 or newer.
+Python 3.11 or newer.
 
 ```
 pip install -r requirements.txt
-set GROQ_API_KEY=your-key-here
-uvicorn server:app --host 0.0.0.0 --port 8000
+uvicorn server:app --port 8000
 ```
 
-Then open `http://localhost:8000/stand`. Phones on the same network open `http://<laptop's IP>:8000/`. Many guest Wi-Fi networks stop phones reaching a laptop, so Render is the safer choice at the fair.
+- Phone page: http://localhost:8000/
+- Stand screen: http://localhost:8000/stand
 
-For a fully offline version with a local model, install Ollama, run `ollama pull llama3.2:3b`, and start the server with:
+Without an API key, messages are scripted and everything else works. To use the models, set `GROQ_API_KEY` before starting.
 
-```
-set LLM_BASE_URL=http://localhost:11434/v1
-set HELMI_MODEL=llama3.2:3b
-set BOT_MODEL=llama3.2:3b
-set BACKUP_MODEL=llama3.2:3b
-uvicorn server:app --host 0.0.0.0 --port 8000
-```
+## Configuration
 
-Expect several seconds per message on a laptop without a graphics card.
+| Variable | Default | Purpose |
+|---|---|---|
+| `GROQ_API_KEY` | none | Groq API key. Without it, messages are scripted |
+| `STAND_KEY` | none | Password needed to change the hotel's settings. Open the stand as `/stand?key=…` |
+| `HELMI_MODEL` | `openai/gpt-oss-120b` | Writes Helmi's messages |
+| `BOT_MODEL` | `qwen/qwen3.8-27b` | Writes the hotel bot's messages |
+| `BACKUP_MODEL` | `openai/gpt-oss-20b` | Used when a model is at its limit |
+| `LLM_BASE_URL` | `https://api.groq.com/openai/v1` | Any OpenAI-compatible API, e.g. `http://localhost:11434/v1` for Ollama |
+| `TOKENS_PER_MINUTE` | `7000` | Per-model budget, under Groq's free 8K |
+| `PACE_SECONDS` | `1.8` | Pause between messages so people can read them |
+
+## Deploy
+
+`render.yaml` describes a free Render web service:
+
+- build `pip install -r requirements.txt`
+- start `uvicorn server:app --host 0.0.0.0 --port $PORT`
+
+Add `GROQ_API_KEY` and `STAND_KEY` as environment variables in the Render dashboard. Never put them in the repo.
+
+## API
+
+| Method | Path | Body | |
+|---|---|---|---|
+| GET | `/events?role=stand` or `?vid=<visitor id>` | | Event stream: `hello`, `config`, `start`, `place`, `msg`, `stepin`, `stepin_done`, `stepin_timeout`, `place_done`, `queue`, `done`, `error`, `stats` |
+| GET | `/api/diag?key=…` | | Tries each model once and shows recent model errors |
+| GET | `/api/state` | | Hotel settings, stats, models, active trips |
+| GET | `/api/requests?person=<id>` | | What each place on that person's trip asks for, with the current hotel settings |
+| POST | `/api/start` | `{vid, person, places:[ids], policy:{detail:"share"\|"ask"\|"never"}}` | Start a trip |
+| POST | `/api/answer` | `{nid, place, k, ok}` | Answer a step-in or an offer |
+| POST | `/api/config` | `{key, hotel}` | Change the hotel's bot settings |
+| POST | `/api/reset` | `{key}` | Reset the stand's numbers |
+
+## Related
+
+- Main demo (trip mode, business mode, researcher page): https://selorme.github.io/data-for-value-demo/
+- Project journey: https://selorme.github.io/data-for-value-demo/journey/
+
+Made by Ruth, Dora, Towhidul and Rui for the Demola Data for Value challenge, 2026.

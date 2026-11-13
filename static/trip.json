@@ -1,0 +1,2449 @@
+{
+ "people": [
+  {
+   "id": "aino",
+   "name": "Aino Laine",
+   "short": "Aino",
+   "who": "29, wheelchair user",
+   "pron": {
+    "sub": "she",
+    "obj": "her",
+    "pos": "her"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Kestrel Air",
+     "type": "transport",
+     "why": "To book airport assistance in Tampere and Stockholm, carry her wheelchair safely, and add her free companion ticket.",
+     "fields": [
+      "need.rail",
+      "dev.main",
+      "card",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Strandkajen",
+     "type": "hotel",
+     "why": "To give her a room that works for her, have it ready when her flight lands, and keep her safe in an emergency.",
+     "fields": [
+      "need.shower",
+      "need.transfer",
+      "need.reach",
+      "need.evac",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Strandkajen Bistro",
+     "type": "restaurant",
+     "why": "To set the right table and mark the dishes she can eat. Optional: to send her a loyalty offer based on what she spends eating out.",
+     "fields": [
+      "need.seating",
+      "diet",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Kajhallen Concert Hall",
+     "type": "venue",
+     "why": "To sell her a wheelchair space with a free companion seat and put her close to an accessible toilet.",
+     "fields": [
+      "need.venue",
+      "card",
+      "need.toilet"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer her a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits her and pick her up on time.",
+     "fields": [
+      "need.width",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for her and check it against her health record.",
+     "fields": [
+      "allergy",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "tour",
+     "name": "Old Town Walks",
+     "type": "tour",
+     "why": "To plan a route and a guide that work for her, and suggest a pace that fits her fitness.",
+     "fields": [
+      "need.mobility",
+      "activity"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for her.",
+     "fields": [
+      "allergy",
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "work",
+     "name": "Nordic Product Days",
+     "type": "work event",
+     "why": "To prepare her badge, her lunch and any support her need.",
+     "fields": [
+      "diet",
+      "need.mobility",
+      "study.grades"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits her and suggest products her might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Design Museum",
+     "type": "museum",
+     "why": "To give her the right ticket and help her get around.",
+     "fields": [
+      "card",
+      "need.width"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in her email and chats and build her itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "107 health records and 35 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "15,912 messages with 63 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "need.transfer": {
+     "label": "Mobility: bed transfer",
+     "value": "Transfers independently from the left side; bed height 46-52 cm",
+     "kind": "need"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "Lactose-free",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.rail": {
+     "label": "Transport: airport assistance",
+     "value": "Airport assistance: aisle chair to her seat; her own wheelchair to the aircraft door and back",
+     "kind": "need"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Table with knee clearance of 70 cm; step-free route to table and toilet",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“shoulder pain wheelchair users”, “disability allowance appeal”, “is it normal to feel lonely at 29”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Wheelchair space with a companion seat beside it",
+     "kind": "need"
+    },
+    "need.width": {
+     "label": "Mobility: chair size",
+     "value": "Wheelchair overall width 64 cm; needs doorways of at least 80 cm",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "9,844 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "BSc Computer Science, Tampere University (2019): average 3.4 of 5, one failed course (Statistics II)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Flight Tampere to Stockholm 12 Nov, lands 08:55. Hotel 12 to 14 Nov. Return flight 14 Nov, 14:10.",
+     "kind": "record"
+    },
+    "need.mobility": {
+     "label": "Mobility: how she moves",
+     "value": "Uses a manual wheelchair; cannot use stairs or escalators",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.evac": {
+     "label": "Emergency: evacuation",
+     "value": "Needs assistance to evacuate (cannot use stairs); has a personal evacuation plan",
+     "kind": "need"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "570 transactions",
+     "kind": "bulk"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "Penicillin (mild rash)",
+     "kind": "record"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "14,208 photos: friends, her flat, a scan of her spine, screenshots of her bank balance",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "G82.2 Paraplegia, incomplete, T10 level; N31.9 Neurogenic bladder, managed",
+     "kind": "record"
+    },
+    "dev.main": {
+     "label": "Main assistive device",
+     "value": "Manual wheelchair, rigid frame: Seat width 40 cm, overall width 64 cm, length 86 cm, weight 11 kg incl. wheels; push rims; not foldable (wheels quick-release)",
+     "kind": "record"
+    },
+    "need.toilet": {
+     "label": "Events: toilet",
+     "value": "Accessible toilet within 50 m; step-free route",
+     "kind": "need"
+    },
+    "need.reach": {
+     "label": "Accommodation: reach",
+     "value": "Reach from seated: counters, keycard readers and switches below 110 cm",
+     "kind": "need"
+    },
+    "card": {
+     "label": "EU Disability Card",
+     "value": "Issued; symbols: wheelchair, companion (A). Valid until 2028-05-12.",
+     "kind": "record"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "61 payments, 1,243.79 euros in total",
+     "kind": "bulk"
+    },
+    "need.shower": {
+     "label": "Accommodation: shower",
+     "value": "Roll-in (level) shower with fold-down seat and grab rails; no bathtub",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 7731…, valid to 2031",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "2 June 1997",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "elina",
+   "name": "Elina Koskinen",
+   "short": "Elina",
+   "who": "36, blind, with her guide dog Kide",
+   "pron": {
+    "sub": "she",
+    "obj": "her",
+    "pos": "her"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Rata Rail",
+     "type": "transport",
+     "why": "To have an assistant meet her at both stations, give her a seat with room for her guide dog, and add her free companion ticket.",
+     "fields": [
+      "need.rail",
+      "need.dogseat",
+      "card",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Merikaari",
+     "type": "hotel",
+     "why": "To welcome her guide dog, send information she can read, give her an easy room and keep her safe in an emergency.",
+     "fields": [
+      "need.dog",
+      "need.formats",
+      "need.room",
+      "need.orient",
+      "need.evac"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Merikaari Bistro",
+     "type": "restaurant",
+     "why": "To send her a menu she can read, keep peanuts away from her food give Kide room and have a card terminal ready that she can use. Optional: to send her a loyalty offer based on what she spends eating out.",
+     "fields": [
+      "need.menu",
+      "allergy",
+      "need.seating",
+      "need.pay",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Satama Concert Hall",
+     "type": "venue",
+     "why": "To add her free companion seat, guide her to her seat and offer audio description.",
+     "fields": [
+      "card",
+      "need.venue",
+      "need.audio"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer her a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits her and pick her up on time.",
+     "fields": [
+      "need.dog",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for her and check it against her health record.",
+     "fields": [
+      "allergy",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "tour",
+     "name": "Old Town Walks",
+     "type": "tour",
+     "why": "To plan a route and a guide that work for her, and suggest a pace that fits her fitness.",
+     "fields": [
+      "need.assist",
+      "activity"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for her.",
+     "fields": [
+      "allergy",
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "work",
+     "name": "Nordic Product Days",
+     "type": "work event",
+     "why": "To prepare her badge, her lunch and any support her need.",
+     "fields": [
+      "diet",
+      "need.formats",
+      "study.grades"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits her and suggest products her might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Design Museum",
+     "type": "museum",
+     "why": "To give her the right ticket and help her get around.",
+     "fields": [
+      "card",
+      "need.audio"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in her email and chats and build her itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "71 health records and 96 prescriptions",
+     "kind": "bulk"
+    },
+    "need.pay": {
+     "label": "Paying: card terminal",
+     "value": "A card terminal with physical keys, or a payment link to her phone. Her PIN stays with her.",
+     "kind": "need"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "17,406 messages with 71 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "need.formats": {
+     "label": "Communication: information format",
+     "value": "Information as accessible digital text (works with screen readers) or spoken; not PDFs of scans or paper forms",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "No peanuts or peanut oil",
+     "kind": "need"
+    },
+    "need.rail": {
+     "label": "Transport: train assistance",
+     "value": "Meet-and-assist at stations: guide from entrance to seat and seat to exit",
+     "kind": "need"
+    },
+    "need.dog": {
+     "label": "Assistance animal: guide dog",
+     "value": "Travels with guide dog Kide (Labrador); needs floor space and a relief area",
+     "kind": "need"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Table with space for the dog to lie beside her, away from the walkway",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“will I go fully blind”, “guide dog refused taxi law Finland”, “how to tell her child her are losing her sight”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Guided from the entrance to her seat; companion seat beside her",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "11,208 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "need.menu": {
+     "label": "Dining: menu",
+     "value": "Menu in accessible digital text, or read aloud; staff describe the buffet",
+     "kind": "need"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "MSc Industrial Engineering, Aalto University (2014): average 3.9 of 5, one failed course (Thermodynamics)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Train Tampere to Helsinki 12 Nov, 08:05 to 09:52. Hotel 12 to 14 Nov. Return train 14 Nov, 14:10.",
+     "kind": "record"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.evac": {
+     "label": "Emergency: evacuation",
+     "value": "Needs to be guided out in an evacuation; cannot see exit signs",
+     "kind": "need"
+    },
+    "need.dogseat": {
+     "label": "Transport: seat for the dog",
+     "value": "Seat with floor space for the guide dog (row with extra legroom)",
+     "kind": "need"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "Peanut (anaphylaxis, carries adrenaline pen)",
+     "kind": "record"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "601 transactions",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "H35.5 Hereditary retinal dystrophy (retinitis pigmentosa); H54.0 Blindness, both eyes",
+     "kind": "record"
+    },
+    "need.assist": {
+     "label": "Communication: how to offer help",
+     "value": "Say her name when her approach; offer an elbow, do not grab her arm or the harness",
+     "kind": "need"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "21,540 photos: Aava, Kide, her home, screenshots read out to her by her phone",
+     "kind": "bulk"
+    },
+    "card": {
+     "label": "EU Disability Card",
+     "value": "Issued; symbols: visual impairment, companion (A). Valid until 2028-05-12.",
+     "kind": "record"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "55 payments, 1,221.49 euros in total",
+     "kind": "bulk"
+    },
+    "need.room": {
+     "label": "Accommodation: room location",
+     "value": "Room close to a lift, at the start of the corridor; keycard with a tactile notch",
+     "kind": "need"
+    },
+    "need.orient": {
+     "label": "Accommodation: orientation",
+     "value": "A short orientation walk of a new room and route to lift, breakfast and exit",
+     "kind": "need"
+    },
+    "need.audio": {
+     "label": "Events: audio description",
+     "value": "Audio description if available; aisle seat with room for the dog",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 4419…, valid to 2029",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "17 January 1990",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "sanna",
+   "name": "Sanna Mäkinen",
+   "short": "Sanna",
+   "who": "36, here for a client meeting",
+   "pron": {
+    "sub": "she",
+    "obj": "her",
+    "pos": "her"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Väylä Bus",
+     "type": "transport",
+     "why": "To give her the seat she likes, add her loyalty points and book her return seat to match.",
+     "fields": [
+      "need.seat",
+      "need.busclub",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Aurajoki",
+     "type": "hotel",
+     "why": "To give her a quiet room the way she likes it, have it ready when her bus arrives and send her receipt by email.",
+     "fields": [
+      "need.quiet",
+      "need.pillow",
+      "need.breakfast",
+      "need.checkin",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Aurajoki Brasserie",
+     "type": "restaurant",
+     "why": "To show her the vegetarian dishes, know about any allergies and give her a quiet table. Optional: to send her a loyalty offer based on what she spends eating out.",
+     "fields": [
+      "diet",
+      "allergy",
+      "need.seating",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Joki Concert Hall",
+     "type": "venue",
+     "why": "To apply her Friends discount, give her the seat she likes and have her interval drink ready.",
+     "fields": [
+      "need.friends",
+      "need.venue",
+      "need.interval"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer her a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits her and pick her up on time.",
+     "fields": [
+      "need.checkin",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for her and check it against her health record.",
+     "fields": [
+      "allergy",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for her.",
+     "fields": [
+      "allergy",
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "work",
+     "name": "Nordic Product Days",
+     "type": "work event",
+     "why": "To prepare her badge, her lunch and any support her need.",
+     "fields": [
+      "diet",
+      "need.checkin",
+      "study.grades"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits her and suggest products her might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "cowork",
+     "name": "Hub Turku",
+     "type": "coworking space",
+     "why": "To give her a desk that works for her and send her receipts.",
+     "fields": [
+      "need.quiet",
+      "need.checkin",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in her email and chats and build her itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "52 health records and 11 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "21,330 messages with 94 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "Vegetarian (no meat or fish)",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.seat": {
+     "label": "Transport: seat",
+     "value": "Seat near the front with a table and a power socket, to work on the way",
+     "kind": "need"
+    },
+    "need.pillow": {
+     "label": "Accommodation: pillow and bedding",
+     "value": "Firm pillow and an extra blanket",
+     "kind": "need"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Quiet table for two, away from the kitchen door",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“knee pain after running years later”, “IVF success rate 36”, “how to quit a job without burning bridges”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Aisle seat in the middle of the stalls",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "13,870 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "MSc Economics (Marketing), University of Turku (2015): average 4.1 of 5, one failed course (Corporate finance)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Bus Tampere to Turku 12 Nov, 07:30 to 09:45. Hotel 12 to 14 Nov. Return bus 14 Nov, 16:00.",
+     "kind": "record"
+    },
+    "need.breakfast": {
+     "label": "Accommodation: early breakfast",
+     "value": "Early breakfast from 06:30 on workdays; oat milk for coffee",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.busclub": {
+     "label": "Loyalty: loyalty number",
+     "value": "Väylä Plus member (earns points on every trip)",
+     "kind": "need"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "588 transactions",
+     "kind": "bulk"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "No food allergies. Birch pollen (hay fever)",
+     "kind": "record"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "18,935 photos: Joonas, nights out, her knee X-ray, screenshots of job offers",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "J30.1 Allergic rhinitis due to pollen; S83.5 Sprain of cruciate ligament, right knee (2019, healed)",
+     "kind": "record"
+    },
+    "need.friends": {
+     "label": "Events: Friends membership",
+     "value": "Satama Friends member (15% off tickets)",
+     "kind": "need"
+    },
+    "need.quiet": {
+     "label": "Accommodation: quiet room",
+     "value": "Quiet room on a high floor, away from the lift and ice machine",
+     "kind": "need"
+    },
+    "need.interval": {
+     "label": "Events: interval drink",
+     "value": "Pre-ordered interval drink: sparkling water",
+     "kind": "need"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "62 payments, 1,387.41 euros in total",
+     "kind": "bulk"
+    },
+    "need.checkin": {
+     "label": "Communication: email check-in",
+     "value": "Check-in and receipts by email, no paper (for expense claims)",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 6602…, valid to 2033",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "3 May 1990",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "laura",
+   "name": "Laura Heikkinen",
+   "short": "Laura",
+   "who": "34, travelling with her son Onni, 10 months",
+   "pron": {
+    "sub": "she",
+    "obj": "her",
+    "pos": "her"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Aalto Line",
+     "type": "transport",
+     "why": "To add Onni's free ticket, get her and the pushchair on board without stairs and give her seats in the family lounge.",
+     "fields": [
+      "need.pram",
+      "need.family",
+      "need.child",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Vanalinn",
+     "type": "hotel",
+     "why": "To have a cot and a fridge ready, give her a room near the lift and add Onni to the booking.",
+     "fields": [
+      "need.cot",
+      "need.fridge",
+      "need.room",
+      "need.child",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Vanalinn Bistro",
+     "type": "restaurant",
+     "why": "To have a high chair ready, keep milk away from Onni's food and bring warm water for his bottle. Optional: to send her a loyalty offer based on what she spends eating out.",
+     "fields": [
+      "need.highchair",
+      "allergy",
+      "need.babyfood",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Meri Family Theatre",
+     "type": "venue",
+     "why": "To keep a pushchair spot for her, show her the baby-care room and seat her near an exit.",
+     "fields": [
+      "need.pramspot",
+      "need.babycare",
+      "need.venue"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer her a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits her and pick her up on time.",
+     "fields": [
+      "need.child",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for her and check it against her health record.",
+     "fields": [
+      "allergy",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "tour",
+     "name": "Old Town Walks",
+     "type": "tour",
+     "why": "To plan a route and a guide that work for her, and suggest a pace that fits her fitness.",
+     "fields": [
+      "need.pram",
+      "activity"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for her.",
+     "fields": [
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits her and suggest products her might like.",
+     "fields": [
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Design Museum",
+     "type": "museum",
+     "why": "To give her the right ticket and help her get around.",
+     "fields": [
+      "need.pramspot",
+      "need.babycare"
+     ],
+     "core": false
+    },
+    {
+     "id": "babysit",
+     "name": "Kid Care Tallinn",
+     "type": "childcare",
+     "why": "To look after Onni safely while her go out.",
+     "fields": [
+      "need.child",
+      "allergy",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in her email and chats and build her itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "school",
+     "name": "Kalamaja School",
+     "type": "school",
+     "why": "To confirm her are a qualified teacher and plan her visit.",
+     "fields": [
+      "study.grades",
+      "need.pram"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "66 health records and 41 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "19,874 messages with 58 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "need.cot": {
+     "label": "Accommodation: baby cot",
+     "value": "Baby cot in the room, with a fitted sheet",
+     "kind": "need"
+    },
+    "need.highchair": {
+     "label": "Dining: high chair",
+     "value": "High chair at the table, with room for the pushchair beside it",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.fridge": {
+     "label": "Accommodation: fridge and kettle",
+     "value": "Fridge in the room for milk, and a kettle to warm bottles",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“postnatal depression signs”, “cow’s milk allergy baby”, “can I go back to work part time”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Seat at the end of a row near an exit, in case Onni needs to go out",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "8,932 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "MA Education (primary teacher), University of Jyväskylä (2017): average 3.7 of 5, one failed course (Mathematics teaching II)",
+     "kind": "record"
+    },
+    "need.pramspot": {
+     "label": "Events: pushchair parking",
+     "value": "Pushchair parking near the door",
+     "kind": "need"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Ferry Helsinki to Tallinn 12 Nov, 10:30 to 12:30. Hotel 12 to 14 Nov. Return ferry 14 Nov, 15:30.",
+     "kind": "record"
+    },
+    "need.babyfood": {
+     "label": "Dining: baby food",
+     "value": "Warm water for bottles, or a plain purée for Onni on request",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.child": {
+     "label": "Family: travelling with a baby",
+     "value": "Travelling with her son Onni, 10 months (infants travel free, cot and breakfast free)",
+     "kind": "need"
+    },
+    "allergy": {
+     "label": "Onni's allergy (child health record)",
+     "value": "Onni (10 months): cow's milk protein allergy, from the child health clinic",
+     "kind": "record"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "627 transactions",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "O24.4 Gestational diabetes (2025, resolved after birth); M54.5 Low back pain after pregnancy",
+     "kind": "record"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "25,310 photos: Onni from birth, the hospital, her body after birth, her home",
+     "kind": "bulk"
+    },
+    "need.family": {
+     "label": "Transport: family lounge",
+     "value": "Seats in the family lounge near the play room",
+     "kind": "need"
+    },
+    "need.pram": {
+     "label": "Transport: pushchair",
+     "value": "Travels with a pushchair (folds to 60 x 45 cm); needs step-free routes and lifts",
+     "kind": "need"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "78 payments, 1,941.95 euros in total",
+     "kind": "bulk"
+    },
+    "need.room": {
+     "label": "Accommodation: room location",
+     "value": "Room close to the lift, with space to park the pushchair",
+     "kind": "need"
+    },
+    "need.babycare": {
+     "label": "Events: baby-care room",
+     "value": "Baby-care room for feeding and changing",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 2286…, valid to 2030",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "8 October 1992",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "juho",
+   "name": "Juho Mäkelä",
+   "short": "Juho",
+   "who": "34, Deaf, signs Finnish Sign Language",
+   "pron": {
+    "sub": "he",
+    "obj": "him",
+    "pos": "his"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Pohjola Air",
+     "type": "transport",
+     "why": "To send him gate changes and boarding calls by text, give the crew a written safety briefing, and add his disability card discount.",
+     "fields": [
+      "need.rail",
+      "need.announce",
+      "card",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Nyhavn Kaj",
+     "type": "hotel",
+     "why": "To give him a room with a visual fire alarm, contact him by text, and keep him safe in an emergency.",
+     "fields": [
+      "need.alarm",
+      "need.door",
+      "need.text",
+      "need.evac",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Nyhavn Kaj Bistro",
+     "type": "restaurant",
+     "why": "To give him a table where he can see faces and talk with his hands. Optional: to send him a loyalty offer based on what he spends eating out.",
+     "fields": [
+      "need.seating",
+      "need.face",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Kanal Theatre",
+     "type": "venue",
+     "why": "To seat him where he can see the sign language interpreter and the captions.",
+     "fields": [
+      "need.captions",
+      "need.venue",
+      "card"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer him a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits him and pick him up on time.",
+     "fields": [
+      "need.text",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for him and check it against his health record.",
+     "fields": [
+      "allergy",
+      "need.text",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "tour",
+     "name": "Old Town Walks",
+     "type": "tour",
+     "why": "To plan a route and a guide that work for him, and suggest a pace that fits his fitness.",
+     "fields": [
+      "need.face",
+      "activity"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for him.",
+     "fields": [
+      "allergy",
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "work",
+     "name": "Nordic Product Days",
+     "type": "work event",
+     "why": "To prepare his badge, his lunch and any support him need.",
+     "fields": [
+      "diet",
+      "need.sign",
+      "study.grades"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits him and suggest products him might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Design Museum",
+     "type": "museum",
+     "why": "To give him the right ticket and help him get around.",
+     "fields": [
+      "card",
+      "need.captions"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in his email and chats and build his itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "53 health records and 17 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "13,820 messages with 47 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "No restrictions",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.rail": {
+     "label": "Transport: flight information",
+     "value": "Gate changes and boarding calls by text or on screen; tell the crew he is deaf",
+     "kind": "need"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Well-lit table where he can see faces, away from loud music",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“cochlear implant adults worth it”, “interpreter shortage Oulu”, “how to tell a client I am deaf”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Seat in the front rows on the interpreter's side",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "7,720 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "need.alarm": {
+     "label": "Accommodation: visual fire alarm",
+     "value": "Visual and vibrating fire alarm in the room (flashing light and pillow shaker)",
+     "kind": "need"
+    },
+    "need.captions": {
+     "label": "Events: captions and interpreting",
+     "value": "Captioned or sign-interpreted performance",
+     "kind": "need"
+    },
+    "need.announce": {
+     "label": "Transport: safety briefing",
+     "value": "Safety briefing and any announcements in writing",
+     "kind": "need"
+    },
+    "need.sign": {
+     "label": "Communication: sign language",
+     "value": "Finnish Sign Language (FinSL) user; reads and writes Finnish. Needs a FinSL interpreter for meetings and appointments (Kela interpreting service)",
+     "kind": "need"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "BA Graphic Design, Oulu University of Applied Sciences (2015): average 4.2 of 5, one failed course (Presentation skills)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Flight Oulu to Copenhagen 12 Nov, 06:10, lands 09:40 (via Helsinki). Hotel 12 to 14 Nov. Return flight 14 Nov, 15:20.",
+     "kind": "record"
+    },
+    "need.face": {
+     "label": "Communication: talking with him",
+     "value": "Face him when him speak, do not cover his mouth, write it down if he asks",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.evac": {
+     "label": "Emergency: evacuation",
+     "value": "Cannot hear alarms or announcements; needs a visual alarm or someone to tell him",
+     "kind": "need"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "587 transactions",
+     "kind": "bulk"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "No food allergies. Mild cat allergy",
+     "kind": "record"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "16,402 photos: Tiina, his cat, sign-language selfies, a photo of his hearing test",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "H90.3 Sensorineural hearing loss, both ears, profound, from birth; J45.9 Asthma, mild",
+     "kind": "record"
+    },
+    "need.door": {
+     "label": "Accommodation: door alerts",
+     "value": "Door light or a text message instead of knocking",
+     "kind": "need"
+    },
+    "card": {
+     "label": "EU Disability Card",
+     "value": "Issued; symbol: hearing impairment. Valid until 2029-02-01.",
+     "kind": "record"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "59 payments, 1,391.78 euros in total",
+     "kind": "bulk"
+    },
+    "need.text": {
+     "label": "Communication: contact by text",
+     "value": "Cannot take phone calls. Contact by text message, chat or email only",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 3054…, valid to 2032",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "21 March 1992",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "ahmed",
+   "name": "Ahmed Warsame",
+   "short": "Ahmed",
+   "who": "41, nurse with type 1 diabetes",
+   "pron": {
+    "sub": "he",
+    "obj": "him",
+    "pos": "his"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Kiito Rail",
+     "type": "transport",
+     "why": "To give him a seat near the restaurant car and tell the crew what to do if his blood sugar drops.",
+     "fields": [
+      "need.seat",
+      "need.hypo",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Harju",
+     "type": "hotel",
+     "why": "To give him a fridge for his insulin, a sharps box, and a quiet place to pray.",
+     "fields": [
+      "need.fridge",
+      "need.sharps",
+      "need.prayer",
+      "need.hypo",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Harju Kitchen",
+     "type": "restaurant",
+     "why": "To mark the halal dishes and list the carbohydrates, so he can dose his insulin. Optional: to send him a loyalty offer based on what he spends eating out.",
+     "fields": [
+      "need.halal",
+      "need.meals",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Harju Arena",
+     "type": "venue",
+     "why": "To let him bring juice and a snack in, and give him an aisle seat so he can step out.",
+     "fields": [
+      "need.snack",
+      "need.venue"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer him a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits him and pick him up on time.",
+     "fields": [
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for him and check it against his health record.",
+     "fields": [
+      "need.insulin",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for him.",
+     "fields": [
+      "need.insulin",
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "work",
+     "name": "Nordic Product Days",
+     "type": "work event",
+     "why": "To prepare his badge, his lunch and any support him need.",
+     "fields": [
+      "diet",
+      "need.meals",
+      "study.grades"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits him and suggest products him might like.",
+     "fields": [
+      "need.halal",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in his email and chats and build his itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "need.hypo": {
+     "label": "Emergency: low blood sugar plan",
+     "value": "If he seems confused or shaky, give him sugar (juice) and stay with him. Glucagon is in his bag",
+     "kind": "need"
+    },
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "60 health records and 43 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "22,410 messages with 112 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "need.insulin": {
+     "label": "Health: insulin and supplies",
+     "value": "Type 1 diabetes. Carries insulin, pump supplies, glucagon and a glucose sensor, and needs them with him at all times",
+     "kind": "need"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "Halal (no pork, no alcohol in food); counts carbohydrates for his insulin",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.seat": {
+     "label": "Transport: seat",
+     "value": "Seat near the restaurant car, with his cool bag for insulin beside him",
+     "kind": "need"
+    },
+    "need.fridge": {
+     "label": "Accommodation: fridge for insulin",
+     "value": "Fridge in the room for spare insulin (2 to 8 °C)",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“insulin pump during Ramadan”, “diabetes and driving licence Finland”, “nurse salary Norway”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Aisle seat, so he can step out to check his glucose",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "10,340 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "Practical nurse qualification, Varia (2012): average 3.9 of 5, one failed course (Finnish for health care)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Train Tikkurila to Jyväskylä 12 Nov, 07:20 to 10:35. Hotel 12 to 14 Nov. Return train 14 Nov, 15:00.",
+     "kind": "record"
+    },
+    "need.halal": {
+     "label": "Dining: halal food",
+     "value": "Halal food: no pork, no alcohol in dishes",
+     "kind": "need"
+    },
+    "need.meals": {
+     "label": "Dining: meal times",
+     "value": "Meals at regular times; carbohydrates listed for each dish if possible",
+     "kind": "need"
+    },
+    "need.prayer": {
+     "label": "Accommodation: place to pray",
+     "value": "A quiet place to pray, if there is one",
+     "kind": "need"
+    },
+    "need.snack": {
+     "label": "Events: snacks in the venue",
+     "value": "Allowed to bring juice and a snack into the venue for low blood sugar",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.sharps": {
+     "label": "Accommodation: sharps box",
+     "value": "Sharps box for used needles and pump patches",
+     "kind": "need"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "589 transactions",
+     "kind": "bulk"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "22,870 photos: his children, family weddings, screenshots of his glucose graphs",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "E10.9 Type 1 diabetes, insulin pump; E16.0 Severe low blood sugar, ambulance call (2024)",
+     "kind": "record"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "61 payments, 1,283.47 euros in total",
+     "kind": "bulk"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 8817…, valid to 2028",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "11 July 1985",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "pekka",
+   "name": "Pekka Nieminen",
+   "short": "Pekka",
+   "who": "72, walks with a rollator, wears hearing aids",
+   "pron": {
+    "sub": "he",
+    "obj": "him",
+    "pos": "his"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Revontuli Night Train",
+     "type": "transport",
+     "why": "To give him a lower berth in an accessible cabin, help with his luggage, and send times he can read.",
+     "fields": [
+      "need.rail",
+      "need.luggage",
+      "need.hearing",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Napapiiri",
+     "type": "hotel",
+     "why": "To give him a room near the lift with a walk-in shower, and keep him safe at night.",
+     "fields": [
+      "need.room",
+      "need.mobility",
+      "need.evac",
+      "need.meds",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Napapiiri Kitchen",
+     "type": "restaurant",
+     "why": "To give him a table near the door with a proper chair, and mark the low-salt dishes. Optional: to send him a loyalty offer based on what he spends eating out.",
+     "fields": [
+      "need.seating",
+      "diet",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Lumo Hall",
+     "type": "venue",
+     "why": "To seat him in the hearing loop, with a step-free route and a place for his rollator.",
+     "fields": [
+      "need.loop",
+      "need.venue"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer him a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits him and pick him up on time.",
+     "fields": [
+      "need.mobility",
+      "need.luggage",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for him and check it against his health record.",
+     "fields": [
+      "allergy",
+      "need.meds",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "tour",
+     "name": "Old Town Walks",
+     "type": "tour",
+     "why": "To plan a route and a guide that work for him, and suggest a pace that fits his fitness.",
+     "fields": [
+      "need.mobility",
+      "activity"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for him.",
+     "fields": [
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits him and suggest products him might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Design Museum",
+     "type": "museum",
+     "why": "To give him the right ticket and help him get around.",
+     "fields": [
+      "need.mobility",
+      "need.hearing"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in his email and chats and build his itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "course",
+     "name": "Lapland Open University",
+     "type": "course",
+     "why": "To check his earlier qualifications and choose the right course level.",
+     "fields": [
+      "study.grades",
+      "need.hearing"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "63 health records and 28 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "3,120 messages with 18 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "Low salt; no grapefruit (blood thinner)",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.rail": {
+     "label": "Transport: sleeper cabin",
+     "value": "Lower berth in an accessible sleeper cabin; help with luggage on and off the train",
+     "kind": "need"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Table near the entrance, a chair with armrests, space for the rollator",
+     "kind": "need"
+    },
+    "need.loop": {
+     "label": "Events: hearing loop",
+     "value": "Seat in the hearing-loop area, on the aisle near the entrance",
+     "kind": "need"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Step-free route to his seat and a place to park the rollator",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“atrial fibrillation life expectancy”, “how to video call on WhatsApp”, “hearing aid whistling fix”",
+     "kind": "bulk"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "2,210 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "Electrician’s vocational qualification, Lahti Vocational Institute (1972): average 3.6 of 5, one failed course (Mathematics)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Night train Lahti to Rovaniemi 11 Nov, 19:50, arrives 12 Nov, 08:05. Hotel 12 to 14 Nov. Return night train 14 Nov, 18:00.",
+     "kind": "record"
+    },
+    "need.mobility": {
+     "label": "Mobility: how he moves",
+     "value": "Walks with a rollator (62 cm wide); manages 3 or 4 steps with a handrail; cannot carry luggage",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "need.hearing": {
+     "label": "Communication: hearing",
+     "value": "Hearing aids with a telecoil; uses hearing loops. Face him, speak clearly and write down times and numbers",
+     "kind": "need"
+    },
+    "need.luggage": {
+     "label": "Transport: help with luggage",
+     "value": "Help carrying one suitcase",
+     "kind": "need"
+    },
+    "need.evac": {
+     "label": "Emergency: evacuation",
+     "value": "Slow on stairs; may not hear a fire alarm at night without his hearing aids",
+     "kind": "need"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "602 transactions",
+     "kind": "bulk"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "No allergies",
+     "kind": "record"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "I48.1 Atrial fibrillation, on a blood thinner; Z96.6 Hip replacement, right (2023)",
+     "kind": "record"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "9,120 photos: his grandchildren, his late wife, his allotment, photos of his pill boxes",
+     "kind": "bulk"
+    },
+    "need.meds": {
+     "label": "Health: blood thinner",
+     "value": "Takes a blood thinner: tell staff if he falls or hits his head",
+     "kind": "need"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "60 payments, 1,318.61 euros in total",
+     "kind": "bulk"
+    },
+    "need.room": {
+     "label": "Accommodation: room location",
+     "value": "Room near the lift; walk-in shower with a seat and grab rails; bed not too low",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "FI 1209…, valid to 2027",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "30 April 1954",
+     "kind": "record"
+    }
+   }
+  },
+  {
+   "id": "ravi",
+   "name": "Ravi Menon",
+   "short": "Ravi",
+   "who": "23, autistic student with ADHD",
+   "pron": {
+    "sub": "he",
+    "obj": "him",
+    "pos": "his"
+   },
+   "places": [
+    {
+     "id": "rail",
+     "name": "Fjord Air",
+     "type": "transport",
+     "why": "To let him board early, give him a quiet place to wait, and send every step in writing.",
+     "fields": [
+      "need.rail",
+      "need.written",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Akerbrygge",
+     "type": "hotel",
+     "why": "To give him a quiet room, and send him clear written instructions before he arrives.",
+     "fields": [
+      "need.quiet",
+      "need.written",
+      "need.routine",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Akerbrygge Café",
+     "type": "restaurant",
+     "why": "To give him a quiet table and send him the menu in advance. Optional: to send him a loyalty offer based on what he spends eating out.",
+     "fields": [
+      "need.seating",
+      "diet",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Aker Music Hall",
+     "type": "venue",
+     "why": "To seat him near an exit and show him the quiet room.",
+     "fields": [
+      "need.venue",
+      "need.break",
+      "need.sensory"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer him a personalised price for travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car that suits him and pick him up on time.",
+     "fields": [
+      "need.written",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for him and check it against his health record.",
+     "fields": [
+      "allergy",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "tour",
+     "name": "Old Town Walks",
+     "type": "tour",
+     "why": "To plan a route and a guide that work for him, and suggest a pace that fits his fitness.",
+     "fields": [
+      "need.sensory",
+      "activity"
+     ],
+     "core": false
+    },
+    {
+     "id": "spa",
+     "name": "Spa Lumo",
+     "type": "spa",
+     "why": "To build a personalised wellness plan for him.",
+     "fields": [
+      "activity",
+      "health.diag"
+     ],
+     "core": false
+    },
+    {
+     "id": "work",
+     "name": "Nordic Product Days",
+     "type": "work event",
+     "why": "To prepare his badge, his lunch and any support him need.",
+     "fields": [
+      "diet",
+      "need.sensory",
+      "study.grades"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver food that suits him and suggest products him might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Design Museum",
+     "type": "museum",
+     "why": "To give him the right ticket and help him get around.",
+     "fields": [
+      "need.sensory"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To find every booking in his email and chats and build his itinerary automatically.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "82 health records and 36 prescriptions",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "9,480 messages with 31 people, including family, friends and voice notes",
+     "kind": "bulk"
+    },
+    "need.break": {
+     "label": "Events: quiet room for breaks",
+     "value": "A quiet room to take a break if it gets too much",
+     "kind": "need"
+    },
+    "need.sensory": {
+     "label": "Sensory: sensory needs",
+     "value": "Sensitive to noise, bright light and crowds; uses noise-cancelling headphones",
+     "kind": "need"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "Vegetarian (no meat, fish or eggs); prefers plain food",
+     "kind": "need"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep",
+     "kind": "bulk"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Quiet corner table away from the kitchen and music; menu in advance",
+     "kind": "need"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“how to tell if someone is joking”, “autistic burnout recovery”, “should I tell my employer I am autistic”",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seat",
+     "value": "Seat at the end of a row near an exit; may leave at the interval; earplugs allowed",
+     "kind": "need"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "5,630 emails, including payslips, health letters and bank messages",
+     "kind": "bulk"
+    },
+    "study.grades": {
+     "label": "University transcript and grades",
+     "value": "BSc Computer Science (in progress), Tampere University: average 3.8 of 5, one failed course (Communication skills)",
+     "kind": "record"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Flight Tampere to Oslo 12 Nov, 07:10, lands 09:35. Hotel 12 to 14 Nov. Return flight 14 Nov, 16:20.",
+     "kind": "record"
+    },
+    "need.written": {
+     "label": "Communication: written instructions",
+     "value": "Instructions in writing, step by step, before he arrives. No phone calls: text or email only",
+     "kind": "need"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "5,888 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "621 transactions",
+     "kind": "bulk"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "No allergies",
+     "kind": "record"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "11,754 photos: games, trains, screenshots of chats him asked friends to explain",
+     "kind": "bulk"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "F84.5 Autism spectrum disorder; F90.0 ADHD",
+     "kind": "record"
+    },
+    "need.quiet": {
+     "label": "Accommodation: quiet room",
+     "value": "Quiet room away from the lift, ice machine and street; blackout curtains",
+     "kind": "need"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "65 payments, 1,456.27 euros in total",
+     "kind": "bulk"
+    },
+    "need.routine": {
+     "label": "Accommodation: routine",
+     "value": "Times in advance; the same breakfast table each morning",
+     "kind": "need"
+    },
+    "need.rail": {
+     "label": "Transport: airport assistance",
+     "value": "Early boarding and a quiet place to wait at the airport (wears a sunflower lanyard)",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport number",
+     "value": "IN Z48…, valid to 2031",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Date of birth",
+     "value": "5 December 2002",
+     "kind": "record"
+    }
+   }
+  }
+ ]
+}
