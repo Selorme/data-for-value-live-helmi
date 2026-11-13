@@ -177,7 +177,7 @@ function connect(){
   const es=new EventSource('/events?vid='+vid);
   es.onopen=()=>{$('conn').className='conn on';$('conn').lastChild.textContent='Live'};
   es.onerror=()=>{$('conn').className='conn';$('conn').lastChild.textContent='Reconnecting'};
-  es.addEventListener('config',()=>{if(cur&&!$('s-rules').hidden)loadReq().then(rules)});
+  es.addEventListener('config',()=>{if(!cur)return;if(!$('s-rules').hidden)loadReq().then(rules);else if(!$('s-trip').hidden)loadReq().then(trip)});
   ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','queue','error'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)on(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
 }
 async function loadReq(){REQ=(await (await fetch('/api/requests?person='+cur.id)).json()).places}

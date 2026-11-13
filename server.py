@@ -6,7 +6,7 @@ Two language models write the messages. The code decides what data moves, and wh
 
 Run locally:   uvicorn server:app --port 8000
 Environment:   GROQ_API_KEY (no key = scripted messages), HELMI_MODEL, BOT_MODEL, BACKUP_MODEL,
-               LLM_BASE_URL, TOKENS_PER_MINUTE, STAND_KEY, PACE_SECONDS
+               LLM_BASE_URL, TOKENS_PER_MINUTE, STAND_KEY, PACE_SECONDS, READ_WPM, MAX_PAUSE_SECONDS
 """
 import asyncio, json, os, re, time, uuid, urllib.request, urllib.error
 from collections import deque
@@ -32,24 +32,36 @@ TPM = int(os.getenv("TOKENS_PER_MINUTE", "7000"))  # Groq's free plan allows 8K 
 STAND_KEY = os.getenv("STAND_KEY", "")
 LOCAL_LLM = any(h in LLM_URL for h in ("localhost", "127.0.0.1", "0.0.0.0"))
 AI_ON = bool(LLM_KEY) or LOCAL_LLM
-PACE = float(os.getenv("PACE_SECONDS", "1.8"))
+PACE = float(os.getenv("PACE_SECONDS", "1.0"))    # fixed pause after every message
+READ_WPM = float(os.getenv("READ_WPM", "200"))     # plus time to read it, at this many words a minute
+MAX_PAUSE = float(os.getenv("MAX_PAUSE_SECONDS", "14"))
+
+
+def pause_for(text):
+    """Seconds to wait after a message: a short pause plus the time it takes to read it."""
+    words = len(str(text).split())
+    return max(2.0, min(MAX_PAUSE, PACE + words * 60 / READ_WPM))
 STEPIN_TIMEOUT = 45
 
-# ---------------------------------------------------------------- what the hotel's bot asks (set from the stand)
+# ---------------------------------------------------------------- what each business's bot asks (set from the stand)
 CATS = {
     "trip": "Trip dates", "need": "Access and comfort needs", "diet": "Allergies and diet", "card": "Disability card",
-    "health": "Diagnoses (health record)", "passport": "Passport number", "dob": "Date of birth", "spend": "Spending history",
+    "health": "Health records and diagnoses", "passport": "Passport number", "dob": "Dates of birth", "spend": "Spending and bank history",
+    "location": "Location history", "messages": "Chats and email", "online": "Search history", "photos": "Photos",
+    "activity": "Daily activity and sleep", "other": "Other records",
 }
+HOTEL_EXTRA = ["trip", "diet", "card", "passport", "dob", "health", "spend"]  # the hotel can ask for these even if trip mode didn't
 OFFERS = {
     "stepfree": "step-free rooms listed on the website", "form": "a check-in form that works with screen readers",
     "keypad": "card terminals with physical keys", "animal": "staff briefed on assistance animals",
 }
 TRUST = {
-    "delete": "the hotel deletes guest details at checkout", "nopartners": "the hotel never passes details on, not even to its restaurant",
+    "delete": "details are deleted when the visit is over", "nopartners": "details are never passed on, not even to a sister business",
     "contact": "a named person answers data questions", "audit": "the booking system is audited every year by an outside firm",
 }
-KEEP = {"stay": "until checkout", "d30": "for 30 days", "y1": "for one year"}
-HOTEL = {"asks": ["trip", "need", "diet", "card", "passport", "dob"], "offers": ["stepfree"], "trust": ["delete"], "keep": "stay", "review": True}
+KEEP = {"stay": "until the visit is over", "d30": "for 30 days", "y1": "for one year"}
+CONFIG = {}  # business id -> {"asks", "offers", "trust", "keep", "review", "push"}, filled in once the data is loaded
+META = {}    # business id -> {"type", "bot", "cats", "names", "push"}
 
 
 def cat(k, f):
@@ -57,16 +69,24 @@ def cat(k, f):
     if k in ("allergy", "diet"): return "diet"
     if k == "card": return "card"
     if k == "id.passport": return "passport"
-    if k == "id.dob": return "dob"
+    if k in ("id.dob", "id.kids_dob"): return "dob"
     if k.startswith("health.") or k == "dev.main": return "health"
     if k.startswith("bank."): return "spend"
+    if k.startswith("loc."): return "location"
+    if k.startswith(("msg.", "mail.")): return "messages"
+    if k.startswith("web."): return "online"
+    if k.startswith("photos."): return "photos"
+    if k == "activity": return "activity"
     if f["kind"] == "need": return "need"
     return "other"
 
 
-def hotel_request(p, place):
-    F, asks = p["fields"], HOTEL["asks"]
+def request(p, place):
+    """What this business asks this person for, with the business's current settings."""
+    F, asks = p["fields"], CONFIG[place["id"]]["asks"]
     keys = [k for k in place["fields"] if cat(k, F[k]) in asks]
+    if place["id"] != "hotel":
+        return keys
     extra = {"trip": ["trip"], "diet": ["allergy", "diet"], "card": ["card"], "passport": ["id.passport"], "dob": ["id.dob"],
              "health": ["health.diag"], "spend": ["bank.all"]}
     for c in asks:
@@ -102,7 +122,7 @@ PUSH = {
 }
 ALT = {"id.kids_dob": "the children's ages are enough", "photos.kids": "no photos of the children", "id.passport": "show the passport at the desk", "id.dob": "not needed for the stay", "health.diag": "the needs that matter are already shared",
        "health.all": "the needs that matter are already shared", "bank.all": "not needed", "bank.dining": "not needed",
-       "loc.hist": "a pickup address is enough", "msg.whatsapp": "private conversations with other people", "mail.inbox": "private",
+       "loc.hist": "not needed for this", "msg.whatsapp": "private conversations with other people", "mail.inbox": "private",
        "web.history": "private", "photos.all": "other people are in them", "activity": "not needed", "card": "can show the card in person",
        "study.grades": "not needed for the event"}
 
@@ -131,7 +151,7 @@ def push(ev, vid=None):
 
 
 def public_state():
-    return {"hotel": HOTEL, "stats": STATS, "ai": AI_ON, "models": {"helmi": HELMI_MODEL, "bot": BOT_MODEL, "backup": BACKUP_MODEL},
+    return {"config": CONFIG, "meta": META, "stats": STATS, "ai": AI_ON, "models": {"helmi": HELMI_MODEL, "bot": BOT_MODEL, "backup": BACKUP_MODEL},
             "active": [{"nid": n["nid"], "person": n["person"]} for n in ACTIVE.values()], "queue": len(QUEUE), "cats": CATS}
 
 
@@ -273,7 +293,7 @@ def jn(xs):
 async def say(n, who, out, **extra):
     text, src, blocked = out
     push({"t": "msg", "nid": n["nid"], "who": who, "text": text, "src": src, "blocked": blocked, **extra}, n["vid"])
-    await asyncio.sleep(PACE)
+    await asyncio.sleep(pause_for(text))
 
 
 async def ask_person(n, place, k, offer=None):
@@ -306,7 +326,8 @@ async def negotiate_place(n, place, hotel_name):
     pl = p.get("plural", False)
     vb = lambda s, plural: plural if pl else s
     poss = name + ("'" if pl else "'s")
-    keys = hotel_request(p, place) if place["id"] == "hotel" else list(place["fields"])
+    C = CONFIG[place["id"]]
+    keys = request(p, place)
     if not keys:
         return {"shared": [], "kept": []}
     def lab(k):
@@ -318,13 +339,14 @@ async def negotiate_place(n, place, hotel_name):
     # 1. the business's bot opens
     ctx = f"Ask Helmi for these details about {name} and say briefly why: {jn(lab(k) for k in keys)}. Your reason: {place['why']}"
     fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. To prepare for {name}, could you share {P['pos']} {jn(lab(k) for k in keys)}? {place['why']}"
-    if place["id"] == "hotel":
-        ctx += f" Say you keep guest details {KEEP[HOTEL['keep']]}."
-        fb += f" We keep guest details {KEEP[HOTEL['keep']]}."
-        if HOTEL["offers"]:
-            ctx += " Also mention that the hotel offers " + jn(OFFERS[o] for o in HOTEL["offers"]) + "."
-        if HOTEL["trust"]:
-            ctx += " Also say that " + jn(TRUST[t] for t in HOTEL["trust"]) + "."
+    ctx += f" Say you keep customers' details {KEEP[C['keep']]}."
+    fb += f" We keep customers' details {KEEP[C['keep']]}."
+    if C["offers"]:
+        ctx += f" Also mention that {place['name']} offers " + jn(OFFERS[o] for o in C["offers"]) + "."
+        fb += f" We offer {jn(OFFERS[o] for o in C['offers'])}."
+    if C["trust"]:
+        ctx += " Also promise that " + jn(TRUST[t] for t in C["trust"]) + "."
+        fb += " " + cap(jn(TRUST[t] for t in C["trust"])) + "."
     if place["id"] == "bistro" and hotel_name:
         ctx += f" First ask whether you may simply reuse what {name} already shared with {hotel_name}, which has the same owner as you."
         fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, could you share {P['pos']} {jn(lab(k) for k in keys)}?"
@@ -380,6 +402,8 @@ async def negotiate_place(n, place, hotel_name):
     # 4. the business pushes back once on something it didn't get
     base = PUSH.get(place["id"], {})
     target = next((k for k in base.get("keys", []) if k in keep), None)
+    if not C["push"]:
+        target = None
     rule = {**base, **base.get("by", {}).get(target, {})}
     if "alt" in base.get("by", {}).get(target, {}):
         rule.pop("offer", None)
@@ -415,7 +439,7 @@ async def negotiate_place(n, place, hotel_name):
 
     # 5. the business confirms
     prepared = [F[k]["value"] for k in give if F[k]["kind"] == "need"][:4]
-    extra = (" A person at reception double-checks the room plan." if place["id"] == "hotel" and HOTEL["review"] and prepared else "")
+    extra = (" A member of staff double-checks the arrangements." if C["review"] and prepared else "")
     out = await write("bot", bot_sys(place, p),
                       f"Confirm what you will do for {name}, using only these details: {'; '.join(prepared) or 'only the basic booking'}."
                       + (f" Also say that {name} {vb('gets','get')} {lost}." if lost else "") + extra,
@@ -511,18 +535,22 @@ async def api_config(req: Request):
     b = await req.json()
     if not keyok(b):
         return JSONResponse({"ok": False, "error": "Wrong stand key"}, status_code=403)
-    h = b.get("hotel") or {}
-    HOTEL["asks"] = [c for c in h.get("asks", HOTEL["asks"]) if c in CATS]
-    HOTEL["offers"] = [o for o in h.get("offers", HOTEL["offers"]) if o in OFFERS]
-    HOTEL["trust"] = [t for t in h.get("trust", HOTEL["trust"]) if t in TRUST]
-    HOTEL["keep"] = h.get("keep") if h.get("keep") in KEEP else HOTEL["keep"]
-    HOTEL["review"] = bool(h.get("review", HOTEL["review"]))
+    biz = b.get("biz", "hotel")
+    if biz not in CONFIG:
+        return JSONResponse({"ok": False, "error": "Unknown business"}, status_code=400)
+    h, C = b.get("settings") or {}, CONFIG[biz]
+    C["asks"] = [c for c in h.get("asks", C["asks"]) if c in META[biz]["cats"]]
+    C["offers"] = [o for o in h.get("offers", C["offers"]) if o in OFFERS]
+    C["trust"] = [t for t in h.get("trust", C["trust"]) if t in TRUST]
+    C["keep"] = h.get("keep") if h.get("keep") in KEEP else C["keep"]
+    C["review"] = bool(h.get("review", C["review"]))
+    C["push"] = bool(h.get("push", C["push"]))
     for c in list(CLIENTS.values()):
         try:
-            c["q"].put_nowait({"t": "config", "hotel": HOTEL, "at": time.time()})
+            c["q"].put_nowait({"t": "config", "biz": biz, "settings": C, "at": time.time()})
         except asyncio.QueueFull:
             pass
-    return JSONResponse({"ok": True, "hotel": HOTEL})
+    return JSONResponse({"ok": True, "settings": C})
 
 
 async def api_requests(req: Request):
@@ -531,7 +559,7 @@ async def api_requests(req: Request):
     if not p:
         return JSONResponse({"ok": False}, status_code=404)
     return JSONResponse({"ok": True, "places": [{"id": pl["id"], "name": pl["name"], "type": pl["type"], "why": pl["why"], "core": pl["core"],
-                                                 "bot": bot_name(pl), "keys": hotel_request(p, pl) if pl["id"] == "hotel" else pl["fields"]} for pl in p["places"]]})
+                                                 "bot": bot_name(pl), "keys": request(p, pl)} for pl in p["places"]]})
 
 
 async def api_start(req: Request):
@@ -599,6 +627,32 @@ async def api_diag(req: Request):
         out["tokens_last_minute"][m] = used(m)
     out["recent_errors"] = list(ERRORS)
     return JSONResponse(out)
+
+
+def setup():
+    order = ["rail", "hotel", "bistro", "venue", "ins", "kidsclub", "taxi", "pharmacy", "spa", "grocery", "museum", "tour", "work", "planner",
+             "cowork", "babysit", "school", "course"]
+    for p in DATA["people"]:
+        for pl in p["places"]:
+            m = META.setdefault(pl["id"], {"type": pl["type"], "bot": bot_name(pl), "cats": [], "names": [], "push": None})
+            if pl["name"] not in m["names"]:
+                m["names"].append(pl["name"])
+            for k in pl["fields"]:
+                c = cat(k, p["fields"][k])
+                if c not in m["cats"]:
+                    m["cats"].append(c)
+    META["hotel"]["cats"] += [c for c in HOTEL_EXTRA if c not in META["hotel"]["cats"]]
+    for b, m in META.items():
+        m["cats"].sort(key=list(CATS).index)
+        r = PUSH.get(b, {})
+        m["push"] = (f"Offers {r['offer']}" if "offer" in r else f"Suggests: {r['alt']}" if "alt" in r else None)
+        m["order"] = order.index(b) if b in order else 99
+        CONFIG[b] = {"asks": list(m["cats"]), "offers": [], "trust": [], "keep": "stay", "review": False, "push": bool(r)}
+    CONFIG["hotel"].update(asks=["trip", "need", "diet", "card", "passport", "dob"], offers=["stepfree"], trust=["delete"], review=True)
+    CONFIG["ins"].update(keep="y1")
+
+
+setup()
 
 
 page = lambda f: (lambda req: FileResponse(STATIC / f))
