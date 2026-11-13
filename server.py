@@ -108,11 +108,20 @@ def _post(model, messages, extras=True):
     if extras and "qwen3" in model:
         body.update(reasoning_effort="none")
     req = urllib.request.Request(LLM_URL + "/chat/completions", data=json.dumps(body).encode(),
-                                 headers={"Content-Type": "application/json", "Authorization": "Bearer " + (LLM_KEY or "local")})
+                                 headers={"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "helmi-live/1.0",
+                                          "Authorization": "Bearer " + (LLM_KEY or "local")})
     with urllib.request.urlopen(req, timeout=25) as r:
         j = json.loads(r.read())
     txt = (j["choices"][0]["message"].get("content") or "")
     return txt, int(j.get("usage", {}).get("total_tokens") or 900)
+
+
+ERRORS = deque(maxlen=20)
+
+
+def log_err(model, msg):
+    ERRORS.append({"at": time.strftime("%H:%M:%S"), "model": model, "error": msg})
+    print("LLM error", model, msg, flush=True)
 
 
 def clean(t):
@@ -145,16 +154,24 @@ async def write(role, system, user, fallback, forbidden=()):
                     STATS["blocked"] = STATS.get("blocked", 0) + 1
                     break
                 if len(txt) < 8:
+                    log_err(m, "empty reply (the model may have spent its tokens thinking)")
                     break
                 STATS["ai"] += 1
                 return txt, m, False
             except urllib.error.HTTPError as e:
+                body = ""
+                try:
+                    body = e.read().decode("utf-8", "replace")[:300]
+                except Exception:
+                    pass
+                log_err(m, f"HTTP {e.code}: {body}")
                 if e.code == 400 and extras:
                     continue  # model may not support the extra setting, try plain
                 if e.code == 429:
                     note(m, TPM)  # treat as full for a minute
                 break
-            except Exception:
+            except Exception as e:
+                log_err(m, repr(e)[:300])
                 break
     STATS["script"] += 1
     return fallback, "script", blocked
@@ -419,6 +436,32 @@ async def api_answer(req: Request):
     return JSONResponse({"ok": False}, status_code=404)
 
 
+async def api_diag(req: Request):
+    """Try each model once with a tiny prompt and report what happened. Needs the stand key if one is set."""
+    if STAND_KEY and req.query_params.get("key") != STAND_KEY:
+        return JSONResponse({"ok": False, "error": "Add ?key=<your stand key>"}, status_code=403)
+    out = {"ai_on": AI_ON, "key_set": bool(LLM_KEY), "key_looks_like": (LLM_KEY[:4] + "…" + str(len(LLM_KEY)) + " chars") if LLM_KEY else None,
+           "base_url": LLM_URL, "models": {}}
+    for m in dict.fromkeys([HELMI_MODEL, BOT_MODEL, BACKUP_MODEL]):
+        r = {}
+        for extras in (True, False):
+            try:
+                txt, n = await asyncio.to_thread(_post, m, [{"role": "user", "content": "Say hello in five words."}], extras)
+                r = {"ok": True, "reply": clean(txt)[:120], "tokens": n, "extras": extras}
+                break
+            except urllib.error.HTTPError as e:
+                try:
+                    body = e.read().decode("utf-8", "replace")[:300]
+                except Exception:
+                    body = ""
+                r = {"ok": False, "error": f"HTTP {e.code}: {body}", "extras": extras}
+            except Exception as e:
+                r = {"ok": False, "error": repr(e)[:300], "extras": extras}
+        out["models"][m] = r
+    out["recent_errors"] = list(ERRORS)
+    return JSONResponse(out)
+
+
 async def api_reset(req: Request):
     b = await req.json()
     if STAND_KEY and b.get("key") != STAND_KEY:
@@ -439,5 +482,6 @@ app = Starlette(routes=[
     Route("/api/start", api_start, methods=["POST"]),
     Route("/api/answer", api_answer, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),
+    Route("/api/diag", api_diag),
     Mount("/static", StaticFiles(directory=STATIC)),
 ])
