@@ -2444,6 +2444,296 @@
      "kind": "record"
     }
    }
+  },
+  {
+   "id": "okafor",
+   "name": "The Okafor family",
+   "short": "The Okafors",
+   "who": "Chidi and Ada with Amara (9) and Tobi (6)",
+   "pron": {
+    "sub": "they",
+    "obj": "them",
+    "pos": "their"
+   },
+   "plural": true,
+   "places": [
+    {
+     "id": "rail",
+     "name": "Rata Rail",
+     "type": "transport",
+     "why": "To seat the family together, add child fares and check the children’s ages.",
+     "fields": [
+      "need.family",
+      "need.kids",
+      "trip",
+      "id.kids_dob"
+     ],
+     "core": true
+    },
+    {
+     "id": "hotel",
+     "name": "Hotel Merikaari",
+     "type": "hotel",
+     "why": "To make up two extra beds, give the family a room that fits, and keep Amara safe at breakfast.",
+     "fields": [
+      "need.beds",
+      "need.room",
+      "allergy",
+      "trip"
+     ],
+     "core": true
+    },
+    {
+     "id": "bistro",
+     "name": "Merikaari Bistro",
+     "type": "restaurant",
+     "why": "To set a table for four, prepare the children’s menu and keep tree nuts away from Amara’s food. Optional: to send a family offer based on what they spend eating out.",
+     "fields": [
+      "need.kidsmenu",
+      "need.seating",
+      "allergy",
+      "bank.dining"
+     ],
+     "core": true
+    },
+    {
+     "id": "venue",
+     "name": "Satama Family Circus",
+     "type": "venue",
+     "why": "To seat the family together, and to make a souvenir photo package with the children’s photos.",
+     "fields": [
+      "need.venue",
+      "photos.kids"
+     ],
+     "core": true
+    },
+    {
+     "id": "ins",
+     "name": "Vakaa Insurance",
+     "type": "insurer",
+     "why": "To offer them a personalised price for family travel insurance.",
+     "fields": [
+      "health.diag",
+      "health.all",
+      "loc.hist",
+      "bank.all",
+      "activity",
+      "msg.whatsapp",
+      "web.history"
+     ],
+     "core": true
+    },
+    {
+     "id": "kidsclub",
+     "name": "Merikaari Kids Club",
+     "type": "childcare",
+     "why": "To look after Amara and Tobi on Saturday evening, keep Amara safe and hand the children only to their parents.",
+     "fields": [
+      "need.ages",
+      "need.pickup",
+      "allergy",
+      "health.diag",
+      "photos.kids"
+     ],
+     "core": false
+    },
+    {
+     "id": "taxi",
+     "name": "Kulku Taxi",
+     "type": "taxi",
+     "why": "To send a car with two booster seats and pick them up on time.",
+     "fields": [
+      "need.carseats",
+      "trip",
+      "loc.hist"
+     ],
+     "core": false
+    },
+    {
+     "id": "museum",
+     "name": "Tiede Science Centre",
+     "type": "museum",
+     "why": "To sell the right family ticket.",
+     "fields": [
+      "need.kids",
+      "id.kids_dob"
+     ],
+     "core": false
+    },
+    {
+     "id": "pharmacy",
+     "name": "Apteekki Kulma",
+     "type": "pharmacy",
+     "why": "To recommend something safe for the children and check it against their health records.",
+     "fields": [
+      "allergy",
+      "health.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "grocery",
+     "name": "Co-op Delivery",
+     "type": "grocery delivery",
+     "why": "To deliver snacks that suit the family and suggest products they might like.",
+     "fields": [
+      "diet",
+      "allergy",
+      "bank.all"
+     ],
+     "core": false
+    },
+    {
+     "id": "planner",
+     "name": "TripMate",
+     "type": "trip planner app",
+     "why": "To plan the whole weekend automatically from their emails, chats and photos.",
+     "fields": [
+      "mail.inbox",
+      "msg.whatsapp",
+      "trip",
+      "photos.all"
+     ],
+     "core": false
+    }
+   ],
+   "fields": {
+    "need.family": {
+     "label": "Transport: seats together",
+     "value": "Four seats together for two adults and two children (6 and 9)",
+     "kind": "need"
+    },
+    "need.kids": {
+     "label": "Transport: child tickets",
+     "value": "Child tickets for two children, aged 6 and 9",
+     "kind": "need"
+    },
+    "trip": {
+     "label": "Trip dates from calendar",
+     "value": "Train Tampere to Helsinki 14 Nov, 09:05 to 10:52. Hotel 14 to 16 Nov. Return train 16 Nov, 15:10.",
+     "kind": "record"
+    },
+    "id.kids_dob": {
+     "label": "Children’s dates of birth",
+     "value": "Amara: 3 March 2017; Tobi: 19 August 2020",
+     "kind": "record"
+    },
+    "need.beds": {
+     "label": "Accommodation: extra beds",
+     "value": "Two extra beds for children aged 6 and 9",
+     "kind": "need"
+    },
+    "need.room": {
+     "label": "Accommodation: room",
+     "value": "Family room, or two connecting rooms",
+     "kind": "need"
+    },
+    "allergy": {
+     "label": "Allergies (health record)",
+     "value": "Amara (9): severe tree nut allergy, carries an adrenaline pen",
+     "kind": "record"
+    },
+    "diet": {
+     "label": "Diet",
+     "value": "No tree nuts for Amara",
+     "kind": "need"
+    },
+    "need.kidsmenu": {
+     "label": "Dining: children",
+     "value": "Children’s menu and two booster seats",
+     "kind": "need"
+    },
+    "need.seating": {
+     "label": "Dining: table",
+     "value": "Table for four, away from the kitchen door",
+     "kind": "need"
+    },
+    "bank.dining": {
+     "label": "Restaurant and café spending, 12 months",
+     "value": "48 payments, 1,104.20 euros in total",
+     "kind": "bulk"
+    },
+    "need.venue": {
+     "label": "Events: seats",
+     "value": "Four seats together, with the children on the aisle",
+     "kind": "need"
+    },
+    "photos.kids": {
+     "label": "Photos of the children",
+     "value": "Recent photos of Amara and Tobi, for a souvenir photo package and the venue’s social media",
+     "kind": "record"
+    },
+    "health.diag": {
+     "label": "Diagnoses",
+     "value": "Amara: T78.1 anaphylaxis to tree nuts (2021); Chidi: I10 high blood pressure",
+     "kind": "record"
+    },
+    "health.all": {
+     "label": "Full health record and prescriptions",
+     "value": "Family records: 112 health records and 38 prescriptions",
+     "kind": "bulk"
+    },
+    "loc.hist": {
+     "label": "Location history, 3 months",
+     "value": "Two phones, 9,410 location points, Aug to Oct 2026",
+     "kind": "bulk"
+    },
+    "bank.all": {
+     "label": "All bank transactions, 12 months",
+     "value": "1,022 transactions from the family account",
+     "kind": "bulk"
+    },
+    "activity": {
+     "label": "Daily activity, 12 months",
+     "value": "365 days of activity and sleep for both parents",
+     "kind": "bulk"
+    },
+    "msg.whatsapp": {
+     "label": "WhatsApp chats, 12 months",
+     "value": "24,310 messages with 93 people, including the school parents’ group and family in Lagos",
+     "kind": "bulk"
+    },
+    "web.history": {
+     "label": "Search history, 3 years",
+     "value": "“nut-free restaurants Helsinki”, “child booster seat law Finland”, “allergy plan for school trips”",
+     "kind": "bulk"
+    },
+    "mail.inbox": {
+     "label": "Email inbox",
+     "value": "14,880 emails, including school letters, payslips and bank messages",
+     "kind": "bulk"
+    },
+    "photos.all": {
+     "label": "Your photo library",
+     "value": "31,200 photos, most of them of Amara and Tobi",
+     "kind": "bulk"
+    },
+    "need.carseats": {
+     "label": "Transport: child seats",
+     "value": "Two booster seats for children aged 6 and 9",
+     "kind": "need"
+    },
+    "need.pickup": {
+     "label": "Childcare: who collects",
+     "value": "Only Chidi or Ada may collect the children",
+     "kind": "need"
+    },
+    "need.ages": {
+     "label": "Childcare: children",
+     "value": "Amara (9) and Tobi (6); Tobi is shy with new adults",
+     "kind": "need"
+    },
+    "id.passport": {
+     "label": "Passport numbers (parents)",
+     "value": "NG A0391… and NG A0392…, valid to 2028",
+     "kind": "record"
+    },
+    "id.dob": {
+     "label": "Dates of birth (parents)",
+     "value": "Chidi: 14 May 1984; Ada: 2 September 1986",
+     "kind": "record"
+    }
+   }
   }
  ]
 }

@@ -166,8 +166,8 @@ function F(k){return cur.fields[k]}
 function short(l){return l.split(': ').pop()}
 function low(l){const s=short(l);return s.slice(0,2)===s.slice(0,2).toUpperCase()?s:s[0].toLowerCase()+s.slice(1)}
 async function boot(){
-  D=await (await fetch('/static/trip.json')).json();
-  const st=await (await fetch('/api/state')).json();AI=st.ai;M=st.models;
+  D=await (await fetch('/static/trip.json',{cache:'no-store'})).json();
+  const st=await (await fetch('/api/state',{cache:'no-store'})).json();AI=st.ai;M=st.models;
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
   $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(b)pick(b.dataset.p)};
   connect();
@@ -184,7 +184,7 @@ async function loadReq(){REQ=(await (await fetch('/api/requests?person='+cur.id)
 async function pick(id){cur=D.people.find(p=>p.id===id);pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id);trip();show('s-trip')}
 function trip(){
   $('t-who').textContent='You are '+cur.name+', '+cur.who;
-  $('t-places').innerHTML=REQ.map(p=>`<label class="place"><input type="checkbox" data-pl="${p.id}" ${chosen.includes(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small>${esc(p.why)}</small><span class="tagt">${esc(p.type)} · asks for ${p.keys.length} detail${p.keys.length===1?'':'s'}</span></span></label>`).join('');
+  $('t-places').innerHTML=REQ.map(p=>`<label class="place"><input type="checkbox" data-pl="${p.id}" ${chosen.includes(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small>${esc(p.why)}</small><span class="tagt">${esc(p.type)} · bot: ${esc(p.bot||'')} · asks for ${p.keys.length} detail${p.keys.length===1?'':'s'}</span></span></label>`).join('');
 }
 $('t-places').addEventListener('change',e=>{const k=e.target.dataset.pl;if(!k)return;chosen=REQ.map(p=>p.id).filter(id=>document.querySelector(`[data-pl="${id}"]`).checked);$('t-next').disabled=!chosen.length});
 $('t-next').onclick=()=>{rules();show('s-rules')};
@@ -209,7 +209,7 @@ $('go').onclick=async()=>{
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
     nid=j.nid;$('chat').innerHTML='';results={};nPlaces=chosen.length;iPlace=0;pend={};
     $('c-title').textContent=cur.short+'’s trip';$('c-prog').textContent='Starting';
-    $('c-models').textContent=AI?`Helmi writes with ${M.helmi}. The businesses’ bots write with ${M.bot}.`:'Messages are scripted right now.';
+    $('c-models').textContent=AI?`Helmi writes with ${M.helmi}. The businesses’ bots (Vera, Otto, Maija, Kasper and friends) write with ${M.bot}.`:'Messages are scripted right now.';
     typing('Getting ready…');show('s-chat');
     (EARLY[nid]||[]).forEach(([t,d])=>on(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
@@ -218,18 +218,18 @@ $('go').onclick=async()=>{
 function err(t){let b=document.querySelector('#s-rules .err');if(!b){b=document.createElement('p');b.className='err';b.setAttribute('role','alert');$('go').before(b)}b.textContent=t}
 function typing(t){let x=$('typing');if(!x){x=document.createElement('p');x.id='typing';x.className='typing'}x.textContent=t;x.hidden=!t;$('chat').append(x)}
 function add(html){const d=document.createElement('div');d.innerHTML=html;const el=d.firstElementChild;$('chat').insertBefore(el,$('typing'));el.scrollIntoView({block:'end',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return el}
-let PN={};
+let PN={},BN={};
 function on(t,d){
   if(t==='queue'){typing(`The stand is busy. You are number ${d.pos} in the queue…`);return}
   if(t==='error'){typing('');add(`<p class="err">${esc(d.text)}</p>`);return}
-  if(t==='start'){PN={};d.places.forEach(([id,n])=>PN[id]=n);return}
-  if(t==='place'){iPlace++;$('c-prog').textContent=`Place ${iPlace} of ${nPlaces}`;add(`<div class="sep"><span class="k">${esc(d.ptype)} · ${iPlace} of ${nPlaces}</span><b>${esc(d.pname)}</b></div>`);typing(d.pname+'’s bot is writing…');return}
+  if(t==='start'){PN={};BN={};d.places.forEach(([id,n,ty,bn])=>{PN[id]=n;BN[id]=bn||'Bot'});return}
+  if(t==='place'){iPlace++;$('c-prog').textContent=`Place ${iPlace} of ${nPlaces}`;add(`<div class="sep"><span class="k">${esc(d.ptype)} · ${iPlace} of ${nPlaces}</span><b>${esc(d.pname)}</b><span class="small muted">Their bot: ${esc(d.bot||'')}</span></div>`);typing((d.bot||'The bot')+' from '+d.pname+' is writing…');return}
   if(t==='msg'){
     const bot=d.who==='bot';
     const tags=[...(d.shared||[]).map(k=>`<span class="tag s">Shared: ${esc(short(F(k).label))}</span>`),...(d.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(short(F(k).label))}</span>`)].join('');
     const src=d.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':d.src==='script'?'Scripted line':'Written by '+esc(d.src);
-    add(`<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?esc((PN[d.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc(PN[d.place]||'Business')+' bot':'Your Helmi'}</span>${esc(d.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`);
-    typing(bot?'Helmi is writing…':(PN[d.place]||'The business')+'’s bot is writing…');return}
+    add(`<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?esc((BN[d.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc((BN[d.place]||'Bot')+' · '+(PN[d.place]||'')):'Your Helmi'}</span>${esc(d.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`);
+    typing(bot?'Helmi is writing…':(BN[d.place]||'The bot')+' is writing…');return}
   if(t==='stepin'){
     typing('');try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}
     const o=d.offer;

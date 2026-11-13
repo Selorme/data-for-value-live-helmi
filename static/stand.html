@@ -92,9 +92,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
 <body>
 <div class="app">
   <section class="col scroll" aria-label="Set up the hotel's bot">
-    <div class="card"><div class="brand"><div class="av" aria-hidden="true">H</div><div><h1 style="font-size:1.3rem">You run the hotel</h1><p class="small muted">Every guest’s trip includes a hotel. Set up the bot that talks to their assistants.</p></div></div>
+    <div class="card"><div class="brand"><div class="av" aria-hidden="true">H</div><div><h1 style="font-size:1.3rem">You run the hotel</h1><p class="small muted">Every guest’s trip includes a hotel. Set up Otto, the hotel’s bot, who talks to their assistants.</p></div></div>
       <p class="status" id="cfgstat">Changes apply to the next trip.</p></div>
-    <div class="card set"><h3>1. What the bot asks every guest</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
+    <div class="card set"><h3>1. What Otto asks every guest</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
     <div class="card set"><h3>2. What you offer, so guests don’t have to explain</h3><div id="offers"></div>
       <p class="small muted">The accessible route should never be the less private route.</p></div>
     <div class="card set"><h3>3. What you promise</h3><div id="trust"></div>
@@ -137,8 +137,8 @@ const PT={transport:'Transport',hotel:'Hotel',restaurant:'Restaurant',venue:'Ven
 const CL={trip:'Trip dates',need:'Needs',diet:'Allergies and diet',card:'Disability card',health:'Health records',passport:'Passport',dob:'Date of birth',spend:'Spending',other:'Other records'};
 function P(id){return D.people.find(p=>p.id===id)}
 async function boot(){
-  D=await (await fetch('/static/trip.json')).json();
-  const st=await (await fetch('/api/state')).json();H=st.hotel;AI=st.ai;M=st.models;CATS=st.cats;renderCfg();stats(st.stats);
+  D=await (await fetch('/static/trip.json',{cache:'no-store'})).json();
+  const st=await (await fetch('/api/state',{cache:'no-store'})).json();H=st.hotel;AI=st.ai;M=st.models;CATS=st.cats;renderCfg();stats(st.stats);
   const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
   try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
   connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
@@ -173,9 +173,9 @@ function connect(){
   ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
 }
 function ev(t,d){
-  if(t==='start'){NEG[d.nid]={...d,items:[],done:false,pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
+  if(t==='start'){NEG[d.nid]={...d,items:[],done:false,pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
   const n=NEG[d.nid];if(!n)return;const p=P(n.person);
-  if(t==='place'){n.i++;n.cur=d.pname;n.items.push({k:'sep',text:d.pname,sub:`${d.ptype} · ${n.i} of ${n.places.length}`})}
+  if(t==='place'){n.i++;n.cur=d.pname;n.items.push({k:'sep',text:d.pname,sub:`${d.ptype} · ${n.i} of ${n.places.length} · bot: ${d.bot||''}`})}
   if(t==='msg')n.items.push({k:'msg',...d});
   if(t==='stepin')n.items.push({k:'wait',key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
   if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
@@ -197,7 +197,7 @@ function draw(){
     const bot=x.who==='bot',F=p.fields,sh=l=>l.split(': ').pop();
     const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
     const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with a safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src);
-    return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.pn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc(n.pn[x.place]||'Business')+' bot':esc(p.short)+'’s Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
+    return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.bn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc((n.bn[x.place]||'Bot')+' · '+(n.pn[x.place]||'')):esc(p.short)+(p.plural?'’':'’s')+' Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
   $('chat').scrollTop=$('chat').scrollHeight;
 }
 $('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};
@@ -208,7 +208,7 @@ function stats(s){if(!s)return;
   let sh=0,as=0;Object.values(s.places||{}).forEach(v=>{sh+=v.shared;as+=v.asked});
   $('n-share').textContent=as?Math.round(sh/as*100)+'%':'–';$('n-offer').textContent=s.offers?`${s.offers_yes} of ${s.offers}`:'–';
   bars('bars-p',s.places,PT);bars('bars-c',s.cats,CL)}
-$('reset').onclick=async()=>{await fetch('/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY})}).catch(()=>{});const st=await (await fetch('/api/state')).json();stats(st.stats)};
+$('reset').onclick=async()=>{await fetch('/api/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY})}).catch(()=>{});const st=await (await fetch('/api/state',{cache:'no-store'})).json();stats(st.stats)};
 boot();
 </script>
 </body>

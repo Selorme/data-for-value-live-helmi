@@ -2,7 +2,7 @@
 
 Live negotiations between AI agents: **Helmi**, a personal assistant acting for a traveller, and the bots of every place on the trip: the airline or train, the hotel, the restaurant, the venue, the insurer and optional extras such as a taxi or pharmacy. Built for the Demola *Data for Value* project (Tampere University) and shown at a demo fair.
 
-Visitors play one of eight invented travellers on their phone, choose the places on their trip and set a rule for each detail. Helmi then negotiates with each place in turn. The visitor's phone buzzes when Helmi needs a decision, and some businesses come back with an offer (a discount, a free companion ticket) to see whether a benefit changes the answer. A stand screen shows the negotiations live, lets you set up the hotel's bot, and charts what travellers shared by place and by kind of detail.
+Visitors play one of nine invented travellers (eight people and one family) on their phone, choose the places on their trip and set a rule for each detail. Helmi then negotiates with each place in turn. The visitor's phone buzzes when Helmi needs a decision, and some businesses come back with an offer (a discount, a free companion ticket) to see whether a benefit changes the answer. A stand screen shows the negotiations live, lets you set up the hotel's bot, and charts what travellers shared by place and by kind of detail.
 
 All people, businesses and data in this project are invented.
 
@@ -27,7 +27,7 @@ Language models only phrase the messages. Every decision about data is made in c
 | `server.py` | The negotiation server (Starlette). Runs the agents, enforces the rules, streams events |
 | `static/live.html` | Phone page for visitors: pick a traveller and places, set Helmi's rules, follow the trip |
 | `static/stand.html` | Stand screen: set up the hotel's bot, watch negotiations live, see share rates by place and by detail |
-| `static/trip.json` | The eight invented travellers, the places on each trip, what each place asks for, and every detail's value |
+| `static/trip.json` | The nine invented travellers, the places on each trip, what each place asks for, and every detail's value |
 | `requirements.txt`, `render.yaml`, `.python-version` | Deployment on Render |
 
 ## How it works
@@ -49,6 +49,7 @@ Language models only phrase the messages. Every decision about data is made in c
  live messages      ◀──────── /events (Server-Sent Events) ────────▶ live messages + stats
 ```
 
+- **Bots with names:** each business's bot has its own name and manner, for example Vera (train, brisk), Otto (hotel concierge), Maija (restaurant), Lumi (venue), Kasper (insurer, persuasive) and Pippa (kids club). The hotel's bot, Otto, is the one the stand sets up.
 - **Models:** Helmi uses `openai/gpt-oss-120b`, the hotel uses `qwen/qwen3.8-27b`, and `openai/gpt-oss-20b` is the backup. All run on Groq's free tier through its OpenAI-compatible API. Any OpenAI-compatible endpoint works, including a local model through Ollama.
 - **Limits:** the server tracks tokens per model per minute, runs two negotiations at a time and queues the rest. It falls back to the backup model, then to scripted lines.
 - **No storage:** nothing is written to disk. Settings and stats live in memory and reset when the server restarts.
