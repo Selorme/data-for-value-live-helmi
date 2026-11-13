@@ -22,7 +22,54 @@
       "card",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 08:05",
+     "moments": [
+      {
+       "t": "Booking the flight",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The website cannot add the free companion ticket. She phones customer service, waits 14 minutes and reads out her card number.",
+       "b": "The companion ticket is added at checkout. No phone call."
+      },
+      {
+       "t": "Airport assistance",
+       "dep": [
+        "need.rail"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Assistance is booked by phone. She explains her needs again. In her last 18 flights, assistance was missing, late or not booked 5 times.",
+       "b": "An assistant with an aisle chair meets her at the gate in Tampere and at the aircraft door in Stockholm."
+      },
+      {
+       "t": "Her wheelchair",
+       "dep": [
+        "dev.main"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "At the gate, staff ask how wide and heavy her chair is and whether it folds. It comes back at the baggage belt, not the aircraft door.",
+       "b": "Ground staff already know her chair is rigid, 64 cm wide and 11 kg. It is loaded last and waiting at the aircraft door in Stockholm."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return flight on 14 Nov she has to book assistance all over again.",
+       "b": "Assistance for the 14 Nov return flight is booked from her calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -36,7 +83,65 @@
       "need.evac",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "The room",
+       "dep": [
+        "need.shower"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She booked an \"accessible room\". It has a bathtub with a grab rail. Reception has to ask a manager before she can swap rooms.",
+       "b": "Her room has a roll-in shower with a fold-down seat."
+      },
+      {
+       "t": "Arriving early",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She arrives at 10:30 straight from the airport. The room is not ready, so she waits in the lobby with her bags.",
+       "b": "The hotel knows her flight lands at 08:55 and has the room ready early."
+      },
+      {
+       "t": "Check-in",
+       "dep": [
+        "need.reach"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The counter is 115 cm high. She signs the form on her lap while staff talk over her head.",
+       "b": "She checks in at the low desk in the lounge. Her keycard reader and lift buttons are all below 110 cm."
+      },
+      {
+       "t": "Getting into bed",
+       "dep": [
+        "need.transfer"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The bed is 62 cm high, too high to transfer safely. Housekeeping lowers it after 40 minutes.",
+       "b": "The bed is set to 50 cm, with free space on its left side for her transfer."
+      },
+      {
+       "t": "Fire alarm test, 07:30",
+       "dep": [
+        "need.evac"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody on duty knows she is in room 418 and cannot use the stairs.",
+       "b": "Her room is on floor 1 near an exit. The duty manager has her on the evacuation list."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -48,7 +153,43 @@
       "diet",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 19:00",
+     "moments": [
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her table is in a raised booth up two steps. Staff move tables while she waits at the door.",
+       "b": "Her table has knee clearance and is on the step-free route to the accessible toilet."
+      },
+      {
+       "t": "Ordering",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She asks which dishes are lactose-free. The waiter checks with the kitchen twice.",
+       "b": "Her menu marks the lactose-free dishes."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The bistro can now see a year of her restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -60,7 +201,43 @@
       "card",
       "need.toilet"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 19:00",
+     "moments": [
+      {
+       "t": "Buying tickets",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Wheelchair spaces cannot be bought online. She emails the box office and waits a day for an answer.",
+       "b": "She picks a wheelchair space on the seat map, like everyone else."
+      },
+      {
+       "t": "Companion seat",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She has to show her card at the box office before the concert to get the companion seat free.",
+       "b": "The companion seat is free. Her card was checked digitally."
+      },
+      {
+       "t": "The interval",
+       "dep": [
+        "need.toilet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The nearest accessible toilet is two floors down. With the lift queue she misses the start of the second half.",
+       "b": "Her space is next to an accessible toilet. An usher shows her the lift kept free for wheelchair users."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -76,7 +253,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 24.80 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she writes on the standard form.",
+       "b": "The policy now excludes any claim linked to her spinal cord injury."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where she has been every 15 minutes for 3 months."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she wrote on the form.",
+       "b": "The insurer’s system reads a year of her WhatsApp chats looking for risk, and flags her messages about her health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what she searches for.",
+       "b": "The insurer’s system reads three years of her searches and raises her risk score because of what she looked up about her health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -88,7 +323,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The car",
+       "dep": [
+        "need.width"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Two ordinary taxis drive off. She waits 30 minutes for an accessible van.",
+       "b": "A wheelchair-accessible van with a ramp is waiting at the exit."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino phones the taxi company to say when she will arrive.",
+       "b": "The driver already knows when she arrives and waits if she is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where she has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -99,7 +370,32 @@
       "allergy",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "At the counter",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino explains her allergies at the counter while a queue listens.",
+       "b": "The pharmacist checks her allergy record and suggests a painkiller that is safe for her."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what she tells it.",
+       "b": "The pharmacy can now see her whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "tour",
@@ -110,7 +406,32 @@
       "need.mobility",
       "activity"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The route",
+       "dep": [
+        "need.mobility"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Halfway, the route goes up 40 steps. She waits at the bottom while the group goes on.",
+       "b": "The guide plans a step-free route and skips the cobbled hill."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that she booked.",
+       "b": "The tour company can now see a year of her steps and sleep."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -122,7 +443,43 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "The massage oil",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino reads the labels on the oil bottles herself.",
+       "b": "The therapist has checked the oils against her allergies."
+      },
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of her sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about her health.",
+       "b": "Her diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "work",
@@ -134,7 +491,43 @@
       "need.mobility",
       "study.grades"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "The workshop room",
+       "dep": [
+        "need.mobility"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her workshop is up a flight of stairs. Staff move the session while everyone waits.",
+       "b": "Her workshop is in a room with step-free access, and her seat is at the end of a row."
+      },
+      {
+       "t": "Lunch",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch has nothing she can eat. She buys a sandwich outside.",
+       "b": "Her lunch is ready, labelled with her name."
+      },
+      {
+       "t": "Mentor matching",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Aino finds people to talk to herself.",
+       "b": "Aino is matched with a mentor. The conference’s sponsors, two recruiting firms, can now see every grade she got, including the course she failed."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -146,7 +539,43 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino reads every label in the app.",
+       "b": "The app only suggests things she can eat."
+      },
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino checks each product for allergens herself.",
+       "b": "Products with her allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all her bank payments."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -157,7 +586,32 @@
       "card",
       "need.width"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 11:00",
+     "moments": [
+      {
+       "t": "Getting around",
+       "dep": [
+        "need.width"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The old lift is too narrow. She misses the top floor.",
+       "b": "Staff show her the lift to the top floor, wide enough for her chair."
+      },
+      {
+       "t": "Your ticket",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino shows her card at the desk to get the companion ticket.",
+       "b": "Her companion gets in free. Her card was checked digitally."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -170,7 +624,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Aino types in her bookings herself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Aino sets her own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what she gives it.",
+       "b": "The app now holds every email she has: payslips, letters from her doctor, messages from her bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her chats stay between her and the people she talks to.",
+       "b": "The app reads a year of her chats, including what her family and friends wrote to her. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her photos stay on her phone.",
+       "b": "The app makes a trip album for her, and keeps her whole photo library: other people’s faces, her home, her screenshots."
+      }
+     ]
     }
    ],
    "fields": {
@@ -338,7 +852,54 @@
       "card",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 08:05",
+     "moments": [
+      {
+       "t": "Booking the ticket",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her screen reader cannot get past the companion-ticket step on the website. She phones, waits 14 minutes and reads out her card number.",
+       "b": "The companion ticket is added at checkout. No phone call."
+      },
+      {
+       "t": "Getting to the train",
+       "dep": [
+        "need.rail"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Meet-and-assist is booked by phone. In her last 18 trips, it was missing, late or not booked 5 times.",
+       "b": "An assistant meets her at the station entrance and walks her to car 3."
+      },
+      {
+       "t": "Her seat",
+       "dep": [
+        "need.dogseat"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her seat has no floor space for Kide. She stands in the aisle with him until the conductor finds another seat.",
+       "b": "Seat 41 has extra floor space. Kide lies at her feet."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return train on 14 Nov she has to book assistance all over again.",
+       "b": "Assistance for the 14 Nov return train is booked from her calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -352,7 +913,65 @@
       "need.orient",
       "need.evac"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "Arriving with Kide",
+       "dep": [
+        "need.dog"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Reception says \"no dogs\". She explains that Kide is a guide dog and the law allows him in.",
+       "b": "Staff are expecting Kide. There is a water bowl, and they show her the dog relief area."
+      },
+      {
+       "t": "Check-in",
+       "dep": [
+        "need.formats"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She is given a paper form and a touch screen. A stranger helps, reading her details out loud in the lobby.",
+       "b": "She checked in on her phone the day before, in a format her screen reader reads."
+      },
+      {
+       "t": "Finding the room",
+       "dep": [
+        "need.room"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Room 618 is at the end of a long corridor with two turns.",
+       "b": "Room 102, first door from the lift. The keycard has a tactile notch."
+      },
+      {
+       "t": "Learning the room",
+       "dep": [
+        "need.orient"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She finds the light switches, shower controls and kettle by touch, on her own.",
+       "b": "A staff member walks her through the room, the route to breakfast and the nearest exit."
+      },
+      {
+       "t": "Fire alarm test, 07:30",
+       "dep": [
+        "need.evac"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody on duty knows she cannot see the exit signs.",
+       "b": "She is on the evacuation list. Staff will come to guide her out."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -366,7 +985,65 @@
       "need.pay",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 19:00",
+     "moments": [
+      {
+       "t": "The menu",
+       "dep": [
+        "need.menu"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The menu is printed, with a QR code to a scanned PDF her screen reader cannot read. The waiter reads it out in a hurry.",
+       "b": "The menu arrives on her phone as text, and VoiceOver reads it to her."
+      },
+      {
+       "t": "Her peanut allergy",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She asks about peanuts for every dish and has to trust a guess about the sauce.",
+       "b": "The kitchen knows about her allergy before she arrives and marks the safe dishes."
+      },
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her table is next to the walkway, and a waiter steps on Kide.",
+       "b": "A corner table with room for Kide."
+      },
+      {
+       "t": "Paying",
+       "dep": [
+        "need.pay"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The card terminal is a flat touch screen she cannot use. The waiter offers to type in her PIN for her. She says no, and after 15 minutes they find another way for her to pay.",
+       "b": "The waiter brings a terminal with physical keys, and she types her own PIN."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The bistro can now see a year of her restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -378,7 +1055,43 @@
       "need.venue",
       "need.audio"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 19:00",
+     "moments": [
+      {
+       "t": "Companion seat",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She has to show her card at the box office before the concert to get the companion seat free.",
+       "b": "The companion seat is free. Her card was checked digitally."
+      },
+      {
+       "t": "Finding her seat",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "In the crowded foyer she cannot find the door to her row, and asks strangers.",
+       "b": "An usher meets her at the entrance and guides her to her seat."
+      },
+      {
+       "t": "The performance",
+       "dep": [
+        "need.audio"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The first half has a dance piece with no words. She cannot follow it.",
+       "b": "An audio description headset is waiting on her aisle seat, with room for Kide."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -394,7 +1107,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 24.80 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she writes on the standard form.",
+       "b": "The policy now excludes any claim linked to her sight loss, including falls."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where she has been every 15 minutes for 3 months."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she wrote on the form.",
+       "b": "The insurer’s system reads a year of her WhatsApp chats looking for risk, and flags her messages about her health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what she searches for.",
+       "b": "The insurer’s system reads three years of her searches and raises her risk score because of what she looked up about her health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -406,7 +1177,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The car",
+       "dep": [
+        "need.dog"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The first driver refuses to take the dog. She explains the law and waits for the next car.",
+       "b": "The driver knows Kide is coming and greets her by name at the entrance."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina phones the taxi company to say when she will arrive.",
+       "b": "The driver already knows when she arrives and waits if she is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where she has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -417,7 +1224,32 @@
       "allergy",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "At the counter",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina explains her allergies at the counter while a queue listens.",
+       "b": "The pharmacist checks her allergy record and suggests a painkiller that is safe for her."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what she tells it.",
+       "b": "The pharmacy can now see her whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "tour",
@@ -428,7 +1260,32 @@
       "need.assist",
       "activity"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The guide",
+       "dep": [
+        "need.assist"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The guide points at buildings and says “as she can see”.",
+       "b": "The guide describes each place out loud and offers an elbow on the stairs."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that she booked.",
+       "b": "The tour company can now see a year of her steps and sleep."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -440,7 +1297,43 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "The massage oil",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina reads the labels on the oil bottles herself.",
+       "b": "The therapist has checked the oils against her allergies."
+      },
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of her sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about her health.",
+       "b": "Her diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "work",
@@ -452,7 +1345,43 @@
       "need.formats",
       "study.grades"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "The slides",
+       "dep": [
+        "need.formats"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The slides are images her screen reader cannot read.",
+       "b": "Slides and handouts arrive as accessible text before each talk."
+      },
+      {
+       "t": "Lunch",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch has nothing she can eat. She buys a sandwich outside.",
+       "b": "Her lunch is ready, labelled with her name."
+      },
+      {
+       "t": "Mentor matching",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Elina finds people to talk to herself.",
+       "b": "Elina is matched with a mentor. The conference’s sponsors, two recruiting firms, can now see every grade she got, including the course she failed."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -464,7 +1393,43 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina reads every label in the app.",
+       "b": "The app only suggests things she can eat."
+      },
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina checks each product for allergens herself.",
+       "b": "Products with her allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all her bank payments."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -475,7 +1440,32 @@
       "card",
       "need.audio"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 11:00",
+     "moments": [
+      {
+       "t": "The exhibition",
+       "dep": [
+        "need.audio"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no audio description. Her companion reads the labels to her.",
+       "b": "An audio guide with descriptions is ready for her."
+      },
+      {
+       "t": "Your ticket",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina shows her card at the desk to get the companion ticket.",
+       "b": "Her companion gets in free. Her card was checked digitally."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -488,7 +1478,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Elina types in her bookings herself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Elina sets her own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what she gives it.",
+       "b": "The app now holds every email she has: payslips, letters from her doctor, messages from her bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her chats stay between her and the people she talks to.",
+       "b": "The app reads a year of her chats, including what her family and friends wrote to her. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her photos stay on her phone.",
+       "b": "The app makes a trip album for her, and keeps her whole photo library: other people’s faces, her home, her screenshots."
+      }
+     ]
     }
    ],
    "fields": {
@@ -665,7 +1715,43 @@
       "need.busclub",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 07:30",
+     "moments": [
+      {
+       "t": "Booking the ticket",
+       "dep": [
+        "need.busclub"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She types her membership number by hand. The page times out and the points are not added.",
+       "b": "Her Väylä Plus points are added at checkout."
+      },
+      {
+       "t": "Her seat",
+       "dep": [
+        "need.seat"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The only seat left is at the back, by the toilet, with no table or socket. Her laptop battery runs out on the way.",
+       "b": "Seat 3, near the front, with a table and a power socket, so she works the whole way."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return bus on 14 Nov she has to choose a seat all over again.",
+       "b": "Her return seat on 14 Nov is booked to match, from her calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -679,7 +1765,65 @@
       "need.checkin",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "Arriving early",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She arrives at 10:00 straight from the bus station. The room is not ready, so she waits in the lobby with her bags.",
+       "b": "The hotel knows her bus arrives at 09:45 and has the room ready early."
+      },
+      {
+       "t": "The room",
+       "dep": [
+        "need.quiet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Room 212 is next to the lift and the ice machine. At 23:00 she asks to move.",
+       "b": "Room 714, high floor, at the quiet end of the corridor."
+      },
+      {
+       "t": "The bed",
+       "dep": [
+        "need.pillow"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The pillows are soft. She calls housekeeping and waits for a firm one.",
+       "b": "A firm pillow and an extra blanket are already on the bed."
+      },
+      {
+       "t": "Breakfast",
+       "dep": [
+        "need.breakfast"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Breakfast starts at 07:00. She skips it to make her 08:00 workshop.",
+       "b": "Early breakfast from 06:30, with oat milk for her coffee."
+      },
+      {
+       "t": "The receipt",
+       "dep": [
+        "need.checkin"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She fills in a paper form, and gets a paper receipt she has to scan for her expense claim.",
+       "b": "Check-in and the receipt arrive by email, ready for her expense claim."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -692,7 +1836,54 @@
       "need.seating",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 19:00",
+     "moments": [
+      {
+       "t": "The menu",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Two vegetarian dishes are not marked. The waiter checks with the kitchen.",
+       "b": "Her menu shows the vegetarian dishes first."
+      },
+      {
+       "t": "Allergies",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The waiter asks the table about allergies. She says she has none.",
+       "b": "The kitchen already knows she has no food allergies."
+      },
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her table is next to the kitchen door.",
+       "b": "A quiet table for two, away from the kitchen door."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The brasserie can now see a year of her restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -704,7 +1895,43 @@
       "need.venue",
       "need.interval"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Buying tickets",
+       "dep": [
+        "need.friends"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The discount needs a separate Friends login. She resets her password first.",
+       "b": "Her 15% Friends discount is applied at checkout."
+      },
+      {
+       "t": "Her seat",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She chooses in a hurry and ends up at the far side of the hall.",
+       "b": "An aisle seat in the middle of the stalls."
+      },
+      {
+       "t": "The interval",
+       "dep": [
+        "need.interval"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She queues at the bar for 15 minutes and misses the start of the second half.",
+       "b": "Her sparkling water is waiting at the bar."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -720,7 +1947,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 24.80 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she writes on the standard form.",
+       "b": "The policy now excludes any claim linked to her right knee, injured in 2019."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where she has been every 15 minutes for 3 months."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she wrote on the form.",
+       "b": "The insurer’s system reads a year of her WhatsApp chats looking for risk, and flags her messages about her health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what she searches for.",
+       "b": "The insurer’s system reads three years of her searches and raises her risk score because of what she looked up about her health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -732,7 +2017,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The receipt",
+       "dep": [
+        "need.checkin"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna gets a paper receipt and types it into the expense system later.",
+       "b": "The receipt arrives by email, ready for her expense claim."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna phones the taxi company to say when she will arrive.",
+       "b": "The driver already knows when she arrives and waits if she is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where she has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -743,7 +2064,32 @@
       "allergy",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "At the counter",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna explains her allergies at the counter while a queue listens.",
+       "b": "The pharmacist checks her allergy record and suggests a painkiller that is safe for her."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what she tells it.",
+       "b": "The pharmacy can now see her whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -755,7 +2101,43 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "The massage oil",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna reads the labels on the oil bottles herself.",
+       "b": "The therapist has checked the oils against her allergies."
+      },
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of her sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about her health.",
+       "b": "Her diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "work",
@@ -767,7 +2149,43 @@
       "need.checkin",
       "study.grades"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "The paperwork",
+       "dep": [
+        "need.checkin"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna collects paper receipts and scans them in the evening.",
+       "b": "Her receipt and certificate arrive by email."
+      },
+      {
+       "t": "Lunch",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch has nothing she can eat. She buys a sandwich outside.",
+       "b": "Her lunch is ready, labelled with her name."
+      },
+      {
+       "t": "Mentor matching",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Sanna finds people to talk to herself.",
+       "b": "Sanna is matched with a mentor. The conference’s sponsors, two recruiting firms, can now see every grade she got, including the course she failed."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -779,7 +2197,43 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna reads every label in the app.",
+       "b": "The app only suggests things she can eat."
+      },
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna checks each product for allergens herself.",
+       "b": "Products with her allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all her bank payments."
+      }
+     ]
     },
     {
      "id": "cowork",
@@ -791,7 +2245,43 @@
       "need.checkin",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 13:00",
+     "moments": [
+      {
+       "t": "Your desk",
+       "dep": [
+        "need.quiet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The only free desk is next to the coffee machine.",
+       "b": "A quiet desk away from the café area is booked for her."
+      },
+      {
+       "t": "Receipts",
+       "dep": [
+        "need.checkin"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna gets paper receipts again.",
+       "b": "Receipts arrive by email."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this booking.",
+       "b": "The coworking space can now see a year of all her bank payments."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -804,7 +2294,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Sanna types in her bookings herself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Sanna sets her own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what she gives it.",
+       "b": "The app now holds every email she has: payslips, letters from her doctor, messages from her bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her chats stay between her and the people she talks to.",
+       "b": "The app reads a year of her chats, including what her family and friends wrote to her. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her photos stay on her phone.",
+       "b": "The app makes a trip album for her, and keeps her whole photo library: other people’s faces, her home, her screenshots."
+      }
+     ]
     }
    ],
    "fields": {
@@ -962,7 +2512,54 @@
       "need.child",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 10:30",
+     "moments": [
+      {
+       "t": "Booking the ticket",
+       "dep": [
+        "need.child"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The website has no way to add a baby. She queues at the terminal desk to add Onni's free ticket.",
+       "b": "Onni's free ticket is added at checkout. No queue."
+      },
+      {
+       "t": "Boarding",
+       "dep": [
+        "need.pram"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She is sent up the stairs to the passenger deck, carrying Onni and folding the pushchair with one hand.",
+       "b": "Staff wave her to the lift from the car deck, straight to the passenger deck with the pushchair."
+      },
+      {
+       "t": "On board",
+       "dep": [
+        "need.family"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Every seat near the play room is taken. She stands at the window with Onni for the two hours.",
+       "b": "Reserved seats in the family lounge, next to the play room."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return ferry on 14 Nov she has to sort it all out again.",
+       "b": "Her family lounge seats on the 14 Nov return ferry are booked from her calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -976,7 +2573,65 @@
       "need.child",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "Arriving early",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She arrives at 13:00 straight from the ferry. The room is not ready, so she walks Onni round the lobby until he sleeps.",
+       "b": "The hotel knows her ferry arrives at 12:30 and has the room ready early."
+      },
+      {
+       "t": "The cot",
+       "dep": [
+        "need.cot"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no cot in the room. One arrives after 40 minutes, without a sheet.",
+       "b": "A made-up cot is waiting by the window."
+      },
+      {
+       "t": "Milk",
+       "dep": [
+        "need.fridge"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no fridge. She keeps Onni's milk on the window sill.",
+       "b": "A fridge for milk and a kettle for bottles."
+      },
+      {
+       "t": "Finding the room",
+       "dep": [
+        "need.room"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Room 618 is at the end of a long corridor, and the pushchair blocks the door.",
+       "b": "Room 104, next to the lift, with space for the pushchair."
+      },
+      {
+       "t": "Breakfast",
+       "dep": [
+        "need.child"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "At breakfast she has to explain that Onni is 10 months old and should not be charged.",
+       "b": "Onni is on the booking, so his cot and breakfast are free."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -989,7 +2644,54 @@
       "need.babyfood",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 17:30",
+     "moments": [
+      {
+       "t": "The table",
+       "dep": [
+        "need.highchair"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "No high chair is free. Onni sits on her lap all through dinner.",
+       "b": "A high chair, with room for the pushchair beside the table."
+      },
+      {
+       "t": "Onni's allergy",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She asks whether the purée has milk in it. The waiter is not sure.",
+       "b": "The kitchen knows Onni cannot have cow's milk and has a dairy-free purée ready."
+      },
+      {
+       "t": "His bottle",
+       "dep": [
+        "need.babyfood"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She asks three times for warm water for his bottle.",
+       "b": "Warm water arrives with the menus."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The bistro can now see a year of her restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -1001,7 +2703,43 @@
       "need.babycare",
       "need.venue"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "Arriving",
+       "dep": [
+        "need.pramspot"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is nowhere to leave the pushchair. She is sent to the cloakroom queue.",
+       "b": "A pushchair spot by the door is kept for her."
+      },
+      {
+       "t": "Feeding Onni",
+       "dep": [
+        "need.babycare"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "She feeds Onni in a toilet cubicle.",
+       "b": "An usher shows her the baby-care room."
+      },
+      {
+       "t": "Her seat",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Her seat is in the middle of a row. When Onni fusses, she climbs past eight people.",
+       "b": "A seat at the end of a row, next to the exit."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -1017,7 +2755,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 24.80 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she writes on the standard form.",
+       "b": "The policy now excludes any claim linked to diabetes, because of her gestational diabetes in 2025."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where she has been every 15 minutes for 3 months."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what she wrote on the form.",
+       "b": "The insurer’s system reads a year of her WhatsApp chats looking for risk, and flags her messages about her health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what she searches for.",
+       "b": "The insurer’s system reads three years of her searches and raises her risk score because of what she looked up about her health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -1029,7 +2825,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The car",
+       "dep": [
+        "need.child"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no baby seat. She waits 25 minutes for a car that has one.",
+       "b": "The taxi has a baby seat fitted for Onni."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Laura phones the taxi company to say when she will arrive.",
+       "b": "The driver already knows when she arrives and waits if she is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where she has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -1040,7 +2872,32 @@
       "allergy",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "For Onni",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Laura explains Onni’s allergy at the counter while a queue listens.",
+       "b": "The pharmacist checks Onni’s milk allergy and suggests a cream that is safe for him."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what she tells it.",
+       "b": "The pharmacy can now see her whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "tour",
@@ -1051,7 +2908,32 @@
       "need.pram",
       "activity"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The route",
+       "dep": [
+        "need.pram"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The route has steps and cobbles. She carries the pushchair twice.",
+       "b": "The route is pushchair-friendly, with a stop at a café that has a changing table."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that she booked.",
+       "b": "The tour company can now see a year of her steps and sleep."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -1062,7 +2944,32 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of her sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about her health.",
+       "b": "Her diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -1073,7 +2980,32 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Laura checks each product for allergens herself.",
+       "b": "Products with her allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all her bank payments."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -1084,7 +3016,22 @@
       "need.pramspot",
       "need.babycare"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 11:00",
+     "moments": [
+      {
+       "t": "With Onni",
+       "dep": [
+        "need.pramspot",
+        "need.babycare"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Laura carries the pushchair up the stairs and changes Onni on a bench.",
+       "b": "Pushchair parking at the door and a baby-care room on her floor."
+      }
+     ]
     },
     {
      "id": "babysit",
@@ -1096,7 +3043,33 @@
       "allergy",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 17:00",
+     "moments": [
+      {
+       "t": "The babysitter",
+       "dep": [
+        "need.child",
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Laura write everything on a note and hope it is read.",
+       "b": "The babysitter knows Onni’s age, his routine and his milk allergy."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The babysitting service can now see where she has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -1109,7 +3082,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Laura types in her bookings herself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Laura sets her own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what she gives it.",
+       "b": "The app now holds every email she has: payslips, letters from her doctor, messages from her bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her chats stay between her and the people she talks to.",
+       "b": "The app reads a year of her chats, including what her family and friends wrote to her. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Her photos stay on her phone.",
+       "b": "The app makes a trip album for her, and keeps her whole photo library: other people’s faces, her home, her screenshots."
+      }
+     ]
     },
     {
      "id": "school",
@@ -1120,7 +3153,43 @@
       "study.grades",
       "need.pram"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "Getting in",
+       "dep": [
+        "need.pram"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The main door has steps. She waits for the caretaker to open the side door.",
+       "b": "Staff meet her at the side door, which has a ramp for the pushchair."
+      },
+      {
+       "t": "Your qualification",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Laura shows her teaching certificate at the office and goes to the class.",
+       "b": "Her degree is confirmed before she arrives. She goes straight to the class."
+      },
+      {
+       "t": "What the school keeps",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The school knows only that she is qualified.",
+       "b": "The school now holds every grade she got, including the course she failed."
+      }
+     ]
     }
    ],
    "fields": {
@@ -1278,7 +3347,54 @@
       "card",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 06:10",
+     "moments": [
+      {
+       "t": "The gate change",
+       "dep": [
+        "need.rail"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "In Helsinki his connecting gate changes. It is announced only over the loudspeaker. He finds out at the old gate when it is empty, and runs.",
+       "b": "A text arrives in Helsinki: “Gate changed to 31. Boarding 08:05.” He walks there in good time."
+      },
+      {
+       "t": "On board",
+       "dep": [
+        "need.announce"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The safety briefing is spoken. When the captain announces a delay, he only notices because everyone else groans.",
+       "b": "The crew know he is deaf. He gets the safety card and a note when the captain announces a delay."
+      },
+      {
+       "t": "His ticket",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The website does not accept his card. He cannot phone customer service, so he writes to them and waits two days.",
+       "b": "His disability card discount is applied at checkout."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return flight he has to ask for text alerts all over again.",
+       "b": "Text alerts for the 14 Nov return flight are set up from his calendar."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -1292,7 +3408,54 @@
       "need.evac",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "The fire alarm",
+       "dep": [
+        "need.alarm"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His room has a normal fire alarm, which he cannot hear. Reception has a flashing alarm kit, but it takes half an hour to find.",
+       "b": "His room has a flashing fire alarm and a pillow shaker, already set up."
+      },
+      {
+       "t": "Room service",
+       "dep": [
+        "need.door"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Room service knocks, waits and leaves. His dinner goes back to the kitchen.",
+       "b": "Room service texts him when it is outside the door."
+      },
+      {
+       "t": "Reception",
+       "dep": [
+        "need.text"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Reception phones his room to say his parcel has arrived. The phone rings and rings.",
+       "b": "Reception sends him a text: “His parcel is at the desk.”"
+      },
+      {
+       "t": "Fire alarm test, 07:30",
+       "dep": [
+        "need.evac"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody on duty knows that the guest in room 312 cannot hear the alarm.",
+       "b": "The duty manager has him on the evacuation list and will knock and flash the room lights."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -1304,7 +3467,43 @@
       "need.face",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 19:00",
+     "moments": [
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His table is in a dark corner next to the speakers. He can hardly see the waiter’s face.",
+       "b": "His table is by the window, well lit, away from the music."
+      },
+      {
+       "t": "Ordering",
+       "dep": [
+        "need.face"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The waiter talks while looking at the kitchen. He guesses, and gets a dish he did not order.",
+       "b": "The waiter faces him, points at the menu and writes the specials on a card."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The bistro can now see a year of his restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -1316,7 +3515,43 @@
       "need.venue",
       "card"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 19:00",
+     "moments": [
+      {
+       "t": "Buying tickets",
+       "dep": [
+        "need.captions"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Online, he cannot tell which night is interpreted. He emails the box office and waits a day.",
+       "b": "The booking page shows him only the sign-interpreted performance, and he books in a minute."
+      },
+      {
+       "t": "His seat",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His seat is on the far side, behind a pillar. He cannot see the interpreter.",
+       "b": "His seat is in row 3, right in front of the interpreter."
+      },
+      {
+       "t": "His ticket price",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He shows his card at the box office before the show to get the discount.",
+       "b": "His discount was applied when he booked. His card was checked digitally."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -1332,7 +3567,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 25.20 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he writes on the standard form.",
+       "b": "The policy now excludes any accident the insurer links to his deafness, such as not hearing traffic."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where he has been every 15 minutes for 3 months."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he wrote on the form.",
+       "b": "The insurer’s system reads a year of his WhatsApp chats looking for risk, and flags his messages about his health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what he searches for.",
+       "b": "The insurer’s system reads three years of his searches and raises his risk score because of what he looked up about his health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -1344,7 +3637,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "Finding you",
+       "dep": [
+        "need.text"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The driver phones him twice. He can’t answer, so he drives off and he waits for another car.",
+       "b": "The driver texts him: “White Volvo, door 3.”"
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho phones the taxi company to say when he will arrive.",
+       "b": "The driver already knows when he arrives and waits if he is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where he has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -1356,7 +3685,43 @@
       "need.text",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "At the counter",
+       "dep": [
+        "need.text"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The pharmacist talks quickly behind a mask. He nods and hopes he understood the dose.",
+       "b": "The pharmacist writes the advice on his phone screen, so nothing is missed."
+      },
+      {
+       "t": "At the counter",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho explains his allergies at the counter while a queue listens.",
+       "b": "The pharmacist checks his allergy record and suggests a painkiller that is safe for him."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what he tells it.",
+       "b": "The pharmacy can now see his whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "tour",
@@ -1367,7 +3732,32 @@
       "need.face",
       "activity"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The guide",
+       "dep": [
+        "need.face"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The guide talks while walking ahead. He follows without knowing what is said.",
+       "b": "The guide faces the group, and a written summary of each stop is on his phone."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that he booked.",
+       "b": "The tour company can now see a year of his steps and sleep."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -1379,7 +3769,43 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "The massage oil",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho reads the labels on the oil bottles himself.",
+       "b": "The therapist has checked the oils against his allergies."
+      },
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of his sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about his health.",
+       "b": "His diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "work",
@@ -1391,7 +3817,43 @@
       "need.sign",
       "study.grades"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "The talks",
+       "dep": [
+        "need.sign"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no interpreter. He follows the slides and guess the rest.",
+       "b": "A sign language interpreter is booked for his workshop, and the talks have live captions."
+      },
+      {
+       "t": "Lunch",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch has nothing he can eat. He buys a sandwich outside.",
+       "b": "His lunch is ready, labelled with his name."
+      },
+      {
+       "t": "Mentor matching",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Juho finds people to talk to himself.",
+       "b": "Juho is matched with a mentor. The conference’s sponsors, two recruiting firms, can now see every grade he got, including the course he failed."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -1403,7 +3865,43 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho reads every label in the app.",
+       "b": "The app only suggests things he can eat."
+      },
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho checks each product for allergens himself.",
+       "b": "Products with his allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all his bank payments."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -1414,7 +3912,32 @@
       "card",
       "need.captions"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 11:00",
+     "moments": [
+      {
+       "t": "The exhibition",
+       "dep": [
+        "need.captions"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The exhibition films have no captions.",
+       "b": "The films have captions, and a sign language video guide is ready for him."
+      },
+      {
+       "t": "Your ticket",
+       "dep": [
+        "card"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho shows his card at the desk to get the companion ticket.",
+       "b": "His companion gets in free. His card was checked digitally."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -1427,7 +3950,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Juho types in his bookings himself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Juho sets his own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what he gives it.",
+       "b": "The app now holds every email he has: payslips, letters from his doctor, messages from his bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His chats stay between him and the people he talks to.",
+       "b": "The app reads a year of his chats, including what his family and friends wrote to him. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His photos stay on his phone.",
+       "b": "The app makes a trip album for him, and keeps his whole photo library: other people’s faces, his home, his screenshots."
+      }
+     ]
     }
    ],
    "fields": {
@@ -1594,7 +4177,43 @@
       "need.hypo",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 07:20",
+     "moments": [
+      {
+       "t": "His seat",
+       "dep": [
+        "need.seat"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His seat is at the far end of the train. When his glucose alarm goes off, he walks six cars to buy juice.",
+       "b": "His seat is next to the restaurant car, with room for his cool bag."
+      },
+      {
+       "t": "If his sugar drops",
+       "dep": [
+        "need.hypo"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "If he becomes confused, the conductor may think he is drunk.",
+       "b": "The crew know he has type 1 diabetes, and what to do if he seems confused."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return train he books his seat all over again.",
+       "b": "His seat for the 14 Nov return train is booked from his calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -1608,7 +4227,54 @@
       "need.hypo",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "His insulin",
+       "dep": [
+        "need.fridge"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The room has a minibar that is too warm for insulin. He asks at the desk, and a fridge arrives 40 minutes later.",
+       "b": "A small fridge set to 4 °C is waiting in the room."
+      },
+      {
+       "t": "Used needles",
+       "dep": [
+        "need.sharps"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is nowhere safe for his used pump patches. He wraps them in tissue and carries them home.",
+       "b": "A sharps box is on the bathroom shelf."
+      },
+      {
+       "t": "Prayer",
+       "dep": [
+        "need.prayer"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He asks where he can pray. Staff are unsure and suggest the luggage room.",
+       "b": "Staff show him a quiet room on the first floor, with the direction marked."
+      },
+      {
+       "t": "In the night",
+       "dep": [
+        "need.hypo"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody on duty knows what to do if his sugar drops at night.",
+       "b": "The night porter knows he has diabetes, and where to find sugar and glucagon."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -1620,7 +4286,43 @@
       "need.meals",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 19:00",
+     "moments": [
+      {
+       "t": "Halal food",
+       "dep": [
+        "need.halal"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He asks which dishes have pork or wine in them. The waiter checks with the kitchen twice.",
+       "b": "His menu marks the halal dishes."
+      },
+      {
+       "t": "His insulin",
+       "dep": [
+        "need.meals"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody knows how much rice is in the dish. He guesses his insulin dose and his sugar goes high in the night.",
+       "b": "The menu lists the carbohydrates for each dish. He doses his insulin and his sugar stays steady."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The restaurant can now see a year of his restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -1631,7 +4333,32 @@
       "need.snack",
       "need.venue"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 18:30",
+     "moments": [
+      {
+       "t": "At the gate",
+       "dep": [
+        "need.snack"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Security takes his juice and glucose tablets. He explains his pump and sensor in the queue while people listen.",
+       "b": "Security has a note on his ticket. He walks through with his juice."
+      },
+      {
+       "t": "His seat",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His seat is in the middle of a row. To check his glucose he climbs over twelve people.",
+       "b": "He has an aisle seat near the stairs."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -1647,7 +4374,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 31.40 euros, higher because of his diabetes."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he writes on the standard form.",
+       "b": "The policy now excludes any claim linked to his diabetes, including falls during low blood sugar."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where he has been every 15 minutes for 3 months, including the mosque he goes to on Fridays."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he wrote on the form.",
+       "b": "The insurer’s system reads a year of his WhatsApp chats looking for risk, and flags his messages about his health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what he searches for.",
+       "b": "The insurer’s system reads three years of his searches and raises his risk score because of what he looked up about his health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -1658,7 +4443,32 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ahmed phones the taxi company to say when he will arrive.",
+       "b": "The driver already knows when he arrives and waits if he is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where he has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -1669,7 +4479,32 @@
       "need.insulin",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "Spare insulin",
+       "dep": [
+        "need.insulin"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ahmed forgot his spare insulin. The pharmacy can’t check his prescription, so he phones his clinic and waits.",
+       "b": "The pharmacist sees his prescription and gives him the spare insulin he forgot at home."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what he tells it.",
+       "b": "The pharmacy can now see his whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -1681,7 +4516,43 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "Your pump",
+       "dep": [
+        "need.insulin"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The therapist presses on his pump and the patch comes loose.",
+       "b": "The therapist knows about the pump on his arm and works around it."
+      },
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of his sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about his health.",
+       "b": "His diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "work",
@@ -1693,7 +4564,43 @@
       "need.meals",
       "study.grades"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "The lunch break",
+       "dep": [
+        "need.meals"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch is late and nobody knows what is in it. His blood sugar drops in the afternoon session.",
+       "b": "Lunch is at 12:00 sharp with the carbohydrates listed, so he can dose his insulin."
+      },
+      {
+       "t": "Lunch",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch has nothing he can eat. He buys a sandwich outside.",
+       "b": "His lunch is ready, labelled with his name."
+      },
+      {
+       "t": "Mentor matching",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Ahmed finds people to talk to himself.",
+       "b": "Ahmed is matched with a mentor. The conference’s sponsors, two recruiting firms, can now see every grade he got, including the course he failed."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -1704,7 +4611,32 @@
       "need.halal",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "need.halal"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ahmed reads every label to check for pork gelatine.",
+       "b": "The app shows only halal products."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all his bank payments."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -1717,7 +4649,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Ahmed types in his bookings himself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ahmed sets his own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what he gives it.",
+       "b": "The app now holds every email he has: payslips, letters from his doctor, messages from his bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His chats stay between him and the people he talks to.",
+       "b": "The app reads a year of his chats, including what his family and friends wrote to him. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His photos stay on his phone.",
+       "b": "The app makes a trip album for him, and keeps his whole photo library: other people’s faces, his home, his screenshots."
+      }
+     ]
     }
    ],
    "fields": {
@@ -1870,7 +4862,54 @@
       "need.hearing",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Wed 11 Nov, 19:50",
+     "moments": [
+      {
+       "t": "His cabin",
+       "dep": [
+        "need.rail"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He gets an upper berth in a standard cabin. He cannot climb up, so the conductor looks for a swap while he waits in the corridor.",
+       "b": "He has the lower berth in the accessible cabin, next to the toilet."
+      },
+      {
+       "t": "His suitcase",
+       "dep": [
+        "need.luggage"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody is there to help. He lifts his suitcase up the steps himself, with his rollator in the other hand.",
+       "b": "A steward meets him on the platform and carries his suitcase to the cabin."
+      },
+      {
+       "t": "Arriving",
+       "dep": [
+        "need.hearing"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The morning announcement is spoken. Without his hearing aids in, he wakes as the train stops.",
+       "b": "The steward knocks and shows him a card: “Rovaniemi in 30 minutes.”"
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return train he phones and explains everything again.",
+       "b": "The same cabin and help are booked for 14 Nov from his calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -1884,7 +4923,54 @@
       "need.meds",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "The room",
+       "dep": [
+        "need.room"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His room is at the end of a long corridor, with a bath he cannot step into. Reception swaps rooms after 25 minutes.",
+       "b": "His room is next to the lift, with a walk-in shower, a seat and grab rails."
+      },
+      {
+       "t": "Getting in",
+       "dep": [
+        "need.mobility"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The main door has four icy steps. He waits for someone to help him lift the rollator.",
+       "b": "Staff meet him at the side door, which has a ramp, and the path is gritted."
+      },
+      {
+       "t": "Fire alarm test, 07:30",
+       "dep": [
+        "need.evac"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He sleeps without his hearing aids. Nobody on duty knows he may not hear the alarm or manage the stairs.",
+       "b": "The duty manager has him on the evacuation list, and his room is on the ground floor."
+      },
+      {
+       "t": "If he falls",
+       "dep": [
+        "need.meds"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "If he falls, staff will not know he takes a blood thinner.",
+       "b": "Staff know he takes a blood thinner and will call for a doctor if he falls."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -1896,7 +4982,43 @@
       "diet",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 17:30",
+     "moments": [
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His table is at the back, with a low stool. He parks the rollator in the walkway and the waiters squeeze past.",
+       "b": "His table is near the entrance, with an armchair and space for the rollator."
+      },
+      {
+       "t": "Ordering",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He asks which dishes are low in salt and whether the sauce has grapefruit. The waiter has to ask the kitchen.",
+       "b": "His menu marks the low-salt dishes. Nothing contains grapefruit."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The restaurant can now see a year of his restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -1907,7 +5029,32 @@
       "need.loop",
       "need.venue"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 19:00",
+     "moments": [
+      {
+       "t": "His seat",
+       "dep": [
+        "need.loop"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His seat is outside the hearing-loop area. He hears the orchestra as a blur.",
+       "b": "His seat is in the hearing-loop area. With his hearing aids on loop, the music is clear."
+      },
+      {
+       "t": "Getting in",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The route to his seat has stairs. An usher carries the rollator while he holds the rail.",
+       "b": "An usher takes him to his seat by the lift and parks the rollator by the door."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -1923,7 +5070,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 39 euros (over 70).",
+       "b": "A personalised price: 46.90 euros, higher because of his heart."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he writes on the standard form.",
+       "b": "The policy now excludes any claim linked to his heart or his blood thinner, including bleeding after a fall."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where he has been every 15 minutes for 3 months."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he wrote on the form.",
+       "b": "The insurer’s system reads a year of his WhatsApp chats looking for risk, and flags his messages about his health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what he searches for.",
+       "b": "The insurer’s system reads three years of his searches and raises his risk score because of what he looked up about his health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -1936,7 +5141,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The car",
+       "dep": [
+        "need.mobility"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "A small car arrives. He folds the rollator and lifts his suitcase into the boot himself.",
+       "b": "An estate car with room for his rollator, and the driver loads his suitcase."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Pekka phones the taxi company to say when he will arrive.",
+       "b": "The driver already knows when he arrives and waits if he is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where he has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -1948,7 +5189,43 @@
       "need.meds",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "Your painkiller",
+       "dep": [
+        "need.meds"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Pekka is sold ibuprofen, which is risky with his blood thinner. He only notices at the hotel.",
+       "b": "The pharmacist knows he takes a blood thinner and gives him paracetamol, not ibuprofen."
+      },
+      {
+       "t": "At the counter",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Pekka explains his allergies at the counter while a queue listens.",
+       "b": "The pharmacist checks his allergy record and suggests a painkiller that is safe for him."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what he tells it.",
+       "b": "The pharmacy can now see his whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "tour",
@@ -1959,7 +5236,32 @@
       "need.mobility",
       "activity"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The route",
+       "dep": [
+        "need.mobility"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The route is long and icy. He turns back after twenty minutes.",
+       "b": "A short, flat route with benches along the way."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that he booked.",
+       "b": "The tour company can now see a year of his steps and sleep."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -1970,7 +5272,32 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of his sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about his health.",
+       "b": "His diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -1982,7 +5309,43 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Pekka reads every label in the app.",
+       "b": "The app only suggests things he can eat."
+      },
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Pekka checks each product for allergens himself.",
+       "b": "Products with his allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all his bank payments."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -1993,7 +5356,21 @@
       "need.mobility",
       "need.hearing"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 11:00",
+     "moments": [
+      {
+       "t": "Getting around",
+       "dep": [
+        "need.mobility"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There are stairs between the rooms and nowhere to sit.",
+       "b": "There is a lift and a seat in every room."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -2006,7 +5383,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Pekka types in his bookings himself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Pekka sets his own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what he gives it.",
+       "b": "The app now holds every email he has: payslips, letters from his doctor, messages from his bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His chats stay between him and the people he talks to.",
+       "b": "The app reads a year of his chats, including what his family and friends wrote to him. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His photos stay on his phone.",
+       "b": "The app makes a trip album for him, and keeps his whole photo library: other people’s faces, his home, his screenshots."
+      }
+     ]
     },
     {
      "id": "course",
@@ -2017,7 +5454,43 @@
       "study.grades",
       "need.hearing"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 13:00",
+     "moments": [
+      {
+       "t": "In the classroom",
+       "dep": [
+        "need.hearing"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no loop. He catches half of what the teacher says.",
+       "b": "The room has a hearing loop, and he sits at the front."
+      },
+      {
+       "t": "Your level",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Pekka tells the teacher about his training and joins the group that fits.",
+       "b": "Pekka is put straight into the advanced group."
+      },
+      {
+       "t": "What the university keeps",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that he joined.",
+       "b": "The university now holds every grade he got in 1972, including the maths he failed."
+      }
+     ]
     }
    ],
    "fields": {
@@ -2174,7 +5647,43 @@
       "need.written",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 07:10",
+     "moments": [
+      {
+       "t": "At the airport",
+       "dep": [
+        "need.rail"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The gate area is packed and loud. He waits in a toilet cubicle until boarding, then queues for 25 minutes.",
+       "b": "He waits in a quiet room near the gate and boards first, before the crowd."
+      },
+      {
+       "t": "What happens next",
+       "dep": [
+        "need.written"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "A delay is announced by loudspeaker and the gate staff phone his mobile. He does not answer unknown numbers.",
+       "b": "Every change arrives as a text, step by step: what, when and where."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "For the return flight he asks for early boarding all over again.",
+       "b": "Early boarding for the 14 Nov return flight is booked from his calendar entry."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -2187,7 +5696,43 @@
       "need.routine",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, arrival",
+     "moments": [
+      {
+       "t": "The room",
+       "dep": [
+        "need.quiet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His room is next to the lift and the ice machine. He lies awake until 3 am.",
+       "b": "His room is at the quiet end of the top floor, with blackout curtains."
+      },
+      {
+       "t": "Check-in",
+       "dep": [
+        "need.written"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The lobby is full of a tour group. He is asked several questions at once and leaves to calm down before trying again.",
+       "b": "His key and a step-by-step note arrived by text. He goes straight to his room."
+      },
+      {
+       "t": "Breakfast",
+       "dep": [
+        "need.routine"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Breakfast is loud and the times are not listed. He skips it.",
+       "b": "He knows breakfast is 06:30 to 10:00, and a corner table is kept for him."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -2199,7 +5744,43 @@
       "diet",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Thu 12 Nov, 18:00",
+     "moments": [
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His table is next to the kitchen door and a speaker. He eats quickly and leaves.",
+       "b": "His table is in a quiet corner, away from the music."
+      },
+      {
+       "t": "Ordering",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He asks which dishes are vegetarian and must choose on the spot.",
+       "b": "He had the menu, with the vegetarian dishes marked, the day before."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A 10% loyalty offer by email. The café can now see a year of his restaurant and café spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -2211,7 +5792,43 @@
       "need.break",
       "need.sensory"
      ],
-     "core": true
+     "core": true,
+     "when": "Fri 13 Nov, 20:00",
+     "moments": [
+      {
+       "t": "His seat",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "His seat is in the middle of a long row. When it gets too loud he cannot leave without climbing over people.",
+       "b": "His seat is at the end of a row, by an exit."
+      },
+      {
+       "t": "Taking a break",
+       "dep": [
+        "need.break"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "He needs a break and ends up outside in the cold for the whole interval.",
+       "b": "An usher shows him a quiet room he can use at any time."
+      },
+      {
+       "t": "The lights",
+       "dep": [
+        "need.sensory"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Nobody warns him about the strobe lights in the second half.",
+       "b": "He gets a text before the strobe lights start, and puts on his sunglasses."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -2227,7 +5844,65 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard travel insurance for the trip: 28 euros.",
+       "b": "A personalised price: 29.90 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he writes on the standard form.",
+       "b": "The policy now excludes any claim linked to his mental health, including accidents when he is overwhelmed."
+      },
+      {
+       "t": "What the insurer keeps",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Nothing beyond the form.",
+       "b": "The insurer can see where he has been every 15 minutes for 3 months, including every visit to his psychotherapist."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what he wrote on the form.",
+       "b": "The insurer’s system reads a year of his WhatsApp chats looking for risk, and flags his messages about his health."
+      },
+      {
+       "t": "Your searches",
+       "dep": [
+        "web.history"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer doesn’t see what he searches for.",
+       "b": "The insurer’s system reads three years of his searches and raises his risk score because of what he looked up about his health."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -2239,7 +5914,43 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The ride",
+       "dep": [
+        "need.written"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The driver phones him, plays loud music and chats all the way.",
+       "b": "The car details arrive by text, with a quiet-ride request. The radio stays off."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ravi phones the taxi company to say when he will arrive.",
+       "b": "The driver already knows when he arrives and waits if he is late."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "loc.hist"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only this booking.",
+       "b": "The taxi company can now see where he has been every 15 minutes for 3 months."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -2250,7 +5961,32 @@
       "allergy",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 17:40",
+     "moments": [
+      {
+       "t": "At the counter",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ravi explains his allergies at the counter while a queue listens.",
+       "b": "The pharmacist checks his allergy record and suggests a painkiller that is safe for him."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The pharmacy knows only what he tells it.",
+       "b": "The pharmacy can now see his whole health record and every prescription."
+      }
+     ]
     },
     {
      "id": "tour",
@@ -2261,7 +5997,32 @@
       "need.sensory",
       "activity"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 10:00",
+     "moments": [
+      {
+       "t": "The group",
+       "dep": [
+        "need.sensory"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The group has 40 people and a guide with a loudspeaker.",
+       "b": "Ravi is put in a small early group, before the crowds."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They know only that he booked.",
+       "b": "The tour company can now see a year of his steps and sleep."
+      }
+     ]
     },
     {
      "id": "spa",
@@ -2272,7 +6033,32 @@
       "activity",
       "health.diag"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 07:00",
+     "moments": [
+      {
+       "t": "Your wellness plan",
+       "dep": [
+        "activity"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "A standard session.",
+       "b": "A plan based on a year of his sleep and steps. The spa keeps the data."
+      },
+      {
+       "t": "Your file at the spa",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The spa knows nothing about his health.",
+       "b": "His diagnoses are now in the spa’s customer file."
+      }
+     ]
     },
     {
      "id": "work",
@@ -2284,7 +6070,43 @@
       "need.sensory",
       "study.grades"
      ],
-     "core": false
+     "core": false,
+     "when": "Fri 13 Nov, 09:00",
+     "moments": [
+      {
+       "t": "The room",
+       "dep": [
+        "need.sensory"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Forty teams share one loud hall. He leaves at lunch with a headache.",
+       "b": "His team gets a quiet room, and there is a calm space with dimmed lights."
+      },
+      {
+       "t": "Lunch",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Lunch has nothing he can eat. He buys a sandwich outside.",
+       "b": "His lunch is ready, labelled with his name."
+      },
+      {
+       "t": "Mentor matching",
+       "dep": [
+        "study.grades"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Ravi finds people to talk to himself.",
+       "b": "Ravi is matched with a mentor. The conference’s sponsors, two recruiting firms, can now see every grade he got, including the course he failed."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -2296,7 +6118,43 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Thu 12 Nov, 20:30",
+     "moments": [
+      {
+       "t": "Your basket",
+       "dep": [
+        "diet"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ravi reads every label in the app.",
+       "b": "The app only suggests things he can eat."
+      },
+      {
+       "t": "Allergens",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ravi checks each product for allergens himself.",
+       "b": "Products with his allergens are hidden."
+      },
+      {
+       "t": "What they keep",
+       "dep": [
+        "bank.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "They see only this order.",
+       "b": "The shop can now see a year of all his bank payments."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -2306,7 +6164,21 @@
      "fields": [
       "need.sensory"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 11:00",
+     "moments": [
+      {
+       "t": "Quiet hour",
+       "dep": [
+        "need.sensory"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "A school group fills every room.",
+       "b": "His ticket is for the quiet hour, with dimmed lights and fewer visitors."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -2319,7 +6191,67 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Mon 9 Nov, 20:00",
+     "moments": [
+      {
+       "t": "Your itinerary",
+       "dep": [
+        "trip"
+       ],
+       "alt": [
+        "mail.inbox"
+       ],
+       "trade": false,
+       "neg": false,
+       "w": "Ravi types in his bookings himself. It takes 20 minutes.",
+       "b": "Every booking appears in one itinerary on its own."
+      },
+      {
+       "t": "Reminders",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ravi sets his own reminders.",
+       "b": "A reminder arrives before every departure."
+      },
+      {
+       "t": "What the app keeps",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The app sees only what he gives it.",
+       "b": "The app now holds every email he has: payslips, letters from his doctor, messages from his bank."
+      },
+      {
+       "t": "Other people’s messages",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His chats stay between him and the people he talks to.",
+       "b": "The app reads a year of his chats, including what his family and friends wrote to him. They never agreed to it."
+      },
+      {
+       "t": "Your trip album",
+       "dep": [
+        "photos.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "His photos stay on his phone.",
+       "b": "The app makes a trip album for him, and keeps his whole photo library: other people’s faces, his home, his screenshots."
+      }
+     ]
     }
    ],
    "fields": {
@@ -2468,7 +6400,54 @@
       "trip",
       "id.kids_dob"
      ],
-     "core": true
+     "core": true,
+     "when": "Sat 14 Nov, 09:05",
+     "moments": [
+      {
+       "t": "Seats together",
+       "dep": [
+        "need.family"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The family is split across two carriages until a passenger swaps seats.",
+       "b": "Four seats together at a table, booked with the tickets."
+      },
+      {
+       "t": "Child fares",
+       "dep": [
+        "need.kids"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "At the ticket machine, Ada works out the child fares and buys them one by one.",
+       "b": "Two child tickets are added at checkout."
+      },
+      {
+       "t": "Checking ages",
+       "dep": [
+        "id.kids_dob"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The conductor asks how old the children are, and Chidi tells him.",
+       "b": "The conductor sees the children’s ages on the ticket."
+      },
+      {
+       "t": "The trip home",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "They book the return seats separately, and sit apart on the way home.",
+       "b": "The return seats for 16 Nov are booked together from their calendar."
+      }
+     ]
     },
     {
      "id": "hotel",
@@ -2481,7 +6460,43 @@
       "allergy",
       "trip"
      ],
-     "core": true
+     "core": true,
+     "when": "Sat 14 Nov, arrival",
+     "moments": [
+      {
+       "t": "The room",
+       "dep": [
+        "need.room"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "They are given a double room, and wait 30 minutes while staff find a bigger one.",
+       "b": "A family room on the second floor is ready when they arrive."
+      },
+      {
+       "t": "Extra beds",
+       "dep": [
+        "need.beds"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The extra beds arrive at 21:30, after Tobi has fallen asleep on the sofa.",
+       "b": "Two extra beds are made up before they arrive."
+      },
+      {
+       "t": "Breakfast",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "At breakfast, Ada asks about nuts in every dish before Amara can eat.",
+       "b": "The kitchen knows about Amara’s allergy and marks the nut-free dishes."
+      }
+     ]
     },
     {
      "id": "bistro",
@@ -2494,7 +6509,54 @@
       "allergy",
       "bank.dining"
      ],
-     "core": true
+     "core": true,
+     "when": "Sat 14 Nov, 18:00",
+     "moments": [
+      {
+       "t": "The table",
+       "dep": [
+        "need.seating"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Their table is by the kitchen door, and Tobi jumps every time it swings open.",
+       "b": "A table for four in a quiet corner."
+      },
+      {
+       "t": "The children",
+       "dep": [
+        "need.kidsmenu"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "There is no children’s menu, so the kitchen makes half portions after a 20-minute wait.",
+       "b": "A children’s menu and two booster seats are waiting."
+      },
+      {
+       "t": "Amara’s allergy",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ada asks the waiter about tree nuts in every dish and checks the dessert twice.",
+       "b": "The kitchen knows about Amara’s allergy and marks the safe dishes."
+      },
+      {
+       "t": "Afterwards",
+       "dep": [
+        "bank.dining"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "No offer.",
+       "b": "A family discount by email. The bistro can now see a year of their restaurant spending."
+      }
+     ]
     },
     {
      "id": "venue",
@@ -2505,7 +6567,32 @@
       "need.venue",
       "photos.kids"
      ],
-     "core": true
+     "core": true,
+     "when": "Sun 15 Nov, 13:00",
+     "moments": [
+      {
+       "t": "Seats",
+       "dep": [
+        "need.venue"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Their seats are in two rows, so Chidi sits behind with Tobi.",
+       "b": "Four seats together, with the children on the aisle."
+      },
+      {
+       "t": "Photos",
+       "dep": [
+        "photos.kids"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "No souvenir photo, and no photos of the children online.",
+       "b": "A printed family photo, and Amara and Tobi appear on the circus’s social media."
+      }
+     ]
     },
     {
      "id": "ins",
@@ -2521,7 +6608,43 @@
       "msg.whatsapp",
       "web.history"
      ],
-     "core": true
+     "core": true,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The price",
+       "dep": [
+        "health.all"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": false,
+       "w": "Standard family travel insurance: 46 euros.",
+       "b": "A personalised price: 41.40 euros."
+      },
+      {
+       "t": "The small print",
+       "dep": [
+        "health.diag"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what they write on the standard form.",
+       "b": "The policy now excludes any claim linked to Amara’s allergy, including a trip to A&E."
+      },
+      {
+       "t": "Their risk check",
+       "dep": [
+        "msg.whatsapp"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "The insurer knows only what they wrote on the form.",
+       "b": "The insurer’s system reads a year of their WhatsApp chats, including the school parents’ group."
+      }
+     ]
     },
     {
      "id": "kidsclub",
@@ -2535,7 +6658,43 @@
       "health.diag",
       "photos.kids"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 19:00",
+     "moments": [
+      {
+       "t": "Drop-off",
+       "dep": [
+        "need.ages"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Staff ask the children’s ages at the door, and Tobi hides behind Ada.",
+       "b": "Staff know Tobi is shy and pair him with one helper."
+      },
+      {
+       "t": "Amara’s allergy",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ada writes Amara’s allergy on a form at the door.",
+       "b": "Staff have Amara’s allergy plan and nut-free snacks ready."
+      },
+      {
+       "t": "Pick-up",
+       "dep": [
+        "need.pickup"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Staff ask Chidi for ID at pick-up.",
+       "b": "Staff hand the children only to Chidi or Ada, as agreed."
+      }
+     ]
     },
     {
      "id": "taxi",
@@ -2547,7 +6706,32 @@
       "trip",
       "loc.hist"
      ],
-     "core": false
+     "core": false,
+     "when": "Sun 15 Nov, 16:00",
+     "moments": [
+      {
+       "t": "The car",
+       "dep": [
+        "need.carseats"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "The car has no booster seats, and they wait 25 minutes for another.",
+       "b": "The car arrives with two booster seats fitted."
+      },
+      {
+       "t": "Pick-up time",
+       "dep": [
+        "trip"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Chidi phones the taxi company to say when they will arrive.",
+       "b": "The driver knows when they arrive and waits if they are late."
+      }
+     ]
     },
     {
      "id": "museum",
@@ -2558,7 +6742,21 @@
       "need.kids",
       "id.kids_dob"
      ],
-     "core": false
+     "core": false,
+     "when": "Sun 15 Nov, 10:00",
+     "moments": [
+      {
+       "t": "Tickets",
+       "dep": [
+        "need.kids"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "At the desk, Ada explains the family and buys four separate tickets.",
+       "b": "A family ticket is ready to scan."
+      }
+     ]
     },
     {
      "id": "pharmacy",
@@ -2569,7 +6767,21 @@
       "allergy",
       "health.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 16:30",
+     "moments": [
+      {
+       "t": "Checking the medicine",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ada reads every label for tree nuts herself.",
+       "b": "The pharmacist checks the medicine against Amara’s allergy before handing it over."
+      }
+     ]
     },
     {
      "id": "grocery",
@@ -2581,7 +6793,21 @@
       "allergy",
       "bank.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Sat 14 Nov, 12:00",
+     "moments": [
+      {
+       "t": "The delivery",
+       "dep": [
+        "allergy"
+       ],
+       "alt": null,
+       "trade": false,
+       "neg": false,
+       "w": "Ada checks every snack for tree nuts when the bag arrives.",
+       "b": "The delivery contains only nut-free snacks."
+      }
+     ]
     },
     {
      "id": "planner",
@@ -2594,7 +6820,21 @@
       "trip",
       "photos.all"
      ],
-     "core": false
+     "core": false,
+     "when": "Before the trip",
+     "moments": [
+      {
+       "t": "The plan",
+       "dep": [
+        "mail.inbox"
+       ],
+       "alt": null,
+       "trade": true,
+       "neg": true,
+       "w": "Ada makes the weekend plan by hand from the bookings.",
+       "b": "A full plan appears, built from their emails, chats and photos."
+      }
+     ]
     }
    ],
    "fields": {

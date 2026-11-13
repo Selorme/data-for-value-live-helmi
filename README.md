@@ -81,7 +81,9 @@ Without an API key, messages are scripted and everything else works. To use the 
 | `BACKUP_MODEL` | `openai/gpt-oss-20b` | Used when a model is at its limit |
 | `LLM_BASE_URL` | `https://api.groq.com/openai/v1` | Any OpenAI-compatible API, e.g. `http://localhost:11434/v1` for Ollama |
 | `TOKENS_PER_MINUTE` | `7000` | Per-model budget, under Groq's free 8K |
-| `PACE_SECONDS` | `1.8` | Pause between messages so people can read them |
+| `PACE_SECONDS` | `1.0` | Fixed pause after every message |
+| `READ_WPM` | `200` | Each message also stays up for the time it takes to read at this many words a minute. Lower is slower |
+| `MAX_PAUSE_SECONDS` | `14` | Longest pause after any one message |
 
 ## Deploy
 

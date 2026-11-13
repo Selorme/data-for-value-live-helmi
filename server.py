@@ -216,7 +216,7 @@ def reset_stats():
                   "cats": {}, "places": {}})
 reset_stats()
 
-CLIENTS, ACTIVE, WAIT, PENDING, TASKS = {}, {}, {}, {}, set()
+CLIENTS, ACTIVE, WAIT, PENDING, TASKS, BYID = {}, {}, {}, {}, set(), {}
 SEM = asyncio.Semaphore(2)
 QUEUE = deque()
 USE = {}
@@ -278,7 +278,7 @@ def clean(t):
     return " ".join(w[:85]).rstrip(",;") + ("…" if len(w) > 85 else "")
 
 
-async def write(role, system, user, fallback, forbidden=()):
+async def write(role, system, user, fallback, forbidden=(), require=None):
     """One chat message from a model, or the scripted line if anything goes wrong. Returns (text, source, blocked)."""
     blocked = False
     if not AI_ON:
@@ -299,6 +299,9 @@ async def write(role, system, user, fallback, forbidden=()):
                     break
                 if len(txt) < 8:
                     log_err(m, "empty reply")
+                    break
+                if require and not re.search(require, txt, re.I):
+                    log_err(m, "reply did not say what it had to: " + txt[:80])
                     break
                 STATS["ai"] += 1
                 return txt, m, False
@@ -346,17 +349,20 @@ def bot_name(place):
     return BOTS.get(place["id"], ("Botti", "polite"))[0]
 
 
-def bot_sys(place, p):
+def bot_sys(place, p, first=False):
     nm, manner = BOTS.get(place["id"], ("Botti", "polite"))
-    return (f"You are {nm}, the booking bot of {place['name']}, a {place['type']}. Your manner: {manner}. Introduce yourself by name in your first message only. You are chatting with Helmi, the personal AI assistant of "
+    turn = ("This is your first message: greet Helmi and introduce yourself by name. " if first else
+            "You are in the middle of the conversation: do not greet, do not introduce yourself and do not say your own name. ")
+    return (f"You are {nm}, the booking bot of {place['name']}, a {place['type']}. Your manner: {manner}. {turn}You are chatting with Helmi, the personal AI assistant of "
             f"your customer {p['name']} ({p['pron']['sub']}/{p['pron']['obj']}). Write ONE chat message to Helmi: 2 or 3 sentences, at most 60 words, "
             "friendly and businesslike, plain English, no lists, no markdown, no emoji. Use only the facts given to you; never invent prices, numbers or policies. "
             f"Refer to the customer as {p['short']} or {p['pron']['sub']}.")
 
 
-def helmi_sys(p):
+def helmi_sys(p, first=False):
     P = p["pron"]
-    return (f"You are Helmi, the personal AI assistant of {p['name']}. You are chatting with a business's bot on {P['pos']} behalf. "
+    turn = "This is your first reply to this bot, so a short hello is fine. " if first else "You are mid-conversation: do not greet again. "
+    return (f"You are Helmi, the personal AI assistant of {p['name']}. You are chatting with a business's bot on {P['pos']} behalf. {turn}"
             f"Speak about {p['short']} in the third person ({P['sub']}/{P['obj']}/{P['pos']}), never as 'we' or 'I' for {P['obj']}. "
             "Write ONE chat message: 2 or 3 sentences, at most 60 words, warm but firm, plain English, no lists, no markdown, no emoji. "
             "Your instructions list exactly what to say. Say only that. Never offer, hint at or promise anything you were told not to share. "
@@ -416,7 +422,7 @@ async def negotiate_place(n, place, hotel_name):
     def lab(k):
         s = F[k]["label"].split(": ")[-1]
         w = s.split(" ")[0]
-        return s if (s[:2].isupper() or any(c.isupper() for c in w[1:])) else s[0].lower() + s[1:]
+        return s if (s[:2].isupper() or any(c.isupper() for c in w[1:]) or "'" in w or "’" in w) else s[0].lower() + s[1:]
     push({"t": "place", "nid": n["nid"], "place": place["id"], "pname": place["name"], "ptype": place["type"], "bot": bot_name(place), "keys": keys,
           "labels": {k: F[k]["label"] for k in keys}}, n["vid"])
 
@@ -435,7 +441,7 @@ async def negotiate_place(n, place, hotel_name):
     if place["id"] == "bistro" and hotel_name:
         ctx += f" First ask whether you may simply reuse what {name} already shared with {hotel_name}, which has the same owner as you."
         fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, could you share {P['pos']} {jn(lab(k) for k in keys)}?"
-    await say(n, "bot", await write("bot", bot_sys(place, p), ctx, fb), place=place["id"], asks=keys)
+    await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb), place=place["id"], asks=keys)
 
     # 2. the code decides each detail from the visitor's rules
     give = [k for k in keys if pol.get(k) == "share"]
@@ -453,11 +459,8 @@ async def negotiate_place(n, place, hotel_name):
                 out.append(frag)
         return out
 
-    async def helmi(new_give, refuse, checking, first=False, why_no_reuse=False):
+    async def helmi(new_give, refuse, checking, first=False):
         lines, fbp = [], []
-        if why_no_reuse:
-            lines.append(f"Say no to reusing the hotel's details: what {name} shared with {hotel_name} was for the hotel only, so you answer this request separately.")
-            fbp.append(f"No: what {name} shared with {hotel_name} was for the hotel only, so I'll answer you separately.")
         if new_give:
             lines.append("Share these details, in your own words but keeping the facts: " + "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in new_give) + ".")
             fbp.append("Here is what " + name + vb(" shares: ", " share: ") + "; ".join(f"{lab(k)}: {F[k]['value'].rstrip('.')}" for k in new_give) + ".")
@@ -470,10 +473,20 @@ async def negotiate_place(n, place, hotel_name):
             fbp.append(f"{cap(jn(lab(k) for k in refuse))} stays with {name}: " + "; ".join(ALT.get(k, "not needed") for k in refuse) + ".")
         if not lines:
             return
-        out = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden())
+        out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden())
         await say(n, "helmi", out, place=place["id"], shared=new_give, kept=refuse)
 
-    await helmi(give, keep, check, True, why_no_reuse=place["id"] == "bistro" and bool(hotel_name))
+    reuse = place["id"] == "bistro" and bool(hotel_name)
+    if reuse:  # a sister business asks to reuse what the hotel got: Helmi always says no, in its own message
+        out = await write("helmi", helmi_sys(p, True),
+                          f"The bot of {place['name']} asked to reuse what {name} shared with {hotel_name}, because they have the same owner. "
+                          f"Refuse clearly: begin your message with the word 'No'. Explain that what {name} shared with {hotel_name} was for the hotel stay only, "
+                          f"that you never pass details from one business to another, even with the same owner, and that you will answer {place['name']}'s own request "
+                          "separately. Do not share any details in this message.",
+                          f"No, I'm sorry. What {name} shared with {hotel_name} was for the hotel stay only, and I never pass details from one business to another, "
+                          f"even with the same owner. I'll answer your own request separately.", forbidden(), require=r"^\W*no\b")
+        await say(n, "helmi", out, place=place["id"], reuse=True)
+    await helmi(give, keep, check, not reuse)
 
     # 3. "ask me" details: the visitor's phone buzzes
     yes, no = [], []
@@ -531,6 +544,12 @@ async def negotiate_place(n, place, hotel_name):
                       f"Thank you. Everything is set for {name}" + (": " + "; ".join(prepared).rstrip(".") + "." if prepared else ".") + (f" Note: {lost}." if lost else "") + extra)
     await say(n, "bot", out, place=place["id"])
 
+    # 6. Helmi says thank you
+    bn = bot_name(place)
+    out = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, {bn}, which has just confirmed everything. Thank {bn} in one short, warm sentence "
+                      "and say goodbye. Do not repeat any details.", f"Thank you, {bn}. That's everything for now.", forbidden())
+    await say(n, "helmi", out, place=place["id"])
+
     for k in keys:
         c = cat(k, F[k])
         s = STATS["cats"].setdefault(c, {"asked": 0, "shared": 0, "kept": 0})
@@ -578,6 +597,7 @@ async def run(n):
                 ACTIVE.pop(n["nid"], None)
     finally:
         PENDING.pop(n["vid"], None)
+        BYID.pop(n["nid"], None)
         if n["nid"] in QUEUE:
             QUEUE.remove(n["nid"])
 
@@ -664,10 +684,21 @@ async def api_start(req: Request):
     n = {"nid": uuid.uuid4().hex[:10], "vid": vid, "person": pid, "p": p, "places": places, "policy": pol}
     STATS["n"] += 1
     PENDING[vid] = n["nid"]
+    BYID[n["nid"]] = n
     t = asyncio.create_task(run(n))
     TASKS.add(t)
     t.add_done_callback(TASKS.discard)
     return JSONResponse({"ok": True, "nid": n["nid"]})
+
+
+async def api_policy(req: Request):
+    """The visitor changed a rule mid-trip. It applies to the places Helmi hasn't reached yet."""
+    b = await req.json()
+    n = BYID.get(b.get("nid"))
+    if not n or n["vid"] != str(b.get("vid", "")):
+        return JSONResponse({"ok": False}, status_code=404)
+    n["policy"].update({k: v for k, v in (b.get("policy") or {}).items() if k in n["p"]["fields"] and v in ("share", "ask", "never")})
+    return JSONResponse({"ok": True})
 
 
 async def api_answer(req: Request):
@@ -745,6 +776,7 @@ page = lambda f: (lambda req: FileResponse(STATIC / f))
 app = Starlette(routes=[
     Route("/", page("live.html")),
     Route("/stand", page("stand.html")),
+    Route("/intro", page("intro.html")),
     Route("/events", events),
     Route("/api/state", api_state),
     Route("/api/ping", api_state),
@@ -752,6 +784,7 @@ app = Starlette(routes=[
     Route("/api/config", api_config, methods=["POST"]),
     Route("/api/start", api_start, methods=["POST"]),
     Route("/api/answer", api_answer, methods=["POST"]),
+    Route("/api/policy", api_policy, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),
     Route("/api/diag", api_diag),
     Mount("/static", StaticFiles(directory=STATIC)),

@@ -370,7 +370,7 @@ function tfOutro(st){ return (t,d)=>{ let s=R(-200,-200,2320,1480,C.teal); s+=Tx
 function tfBuild(data){ let at=0; const scenes=[], caps=[];
   const arr=x=>Array.isArray(x)?x.filter(Boolean):(x?[x]:[]);
   const add=(dur,draw,say)=>{ const L=arr(say); scenes.push({from:at,to:at+dur,draw,say:L}); if(L.length) caps.push({from:at+0.2,to:at+dur-0.1,text:L.join(' '),parts:L}); at+=dur; };
-  const one=s=>{ const v=(typeof TRIPVOX!=='undefined')&&TRIPVOX[s]; return v?v[1]+0.35:String(s||'').split(' ').length*0.33+0.6; };
+  const one=s=>{ const v=(typeof TRIPVOX!=='undefined')&&TRIPVOX[s]; return v?v[1]+0.35:String(s||'').split(' ').length*0.42+0.9; };
   const dur=(base,say)=>{ const L=arr(say); if(!L.length) return base; return Math.max(base-0.8,L.reduce((a,s)=>a+one(s),0)+0.6); };
   add(dur(3.4,data.intro),(t)=>titleCard(['YOUR TRIP'],t,C.teal,'#fff',data.sub),data.intro);
   data.stops.forEach(st=>{ if(st.kind==='breach') add(dur(4.2,st.say),tfBreach(st),st.say); else if(st.kind==='accident') add(dur(5,st.say),tfAccident(st),st.say); else add(dur(4.0,st.say),tfStop(st),st.say); });
@@ -394,17 +394,19 @@ function tfTop(st){ return G('translate(40 18)',R(0,0,620,84,'rgba(255,248,236,.
 let tfF=null, tfPlaying=false, tfT=0, tfT0=0, tfS=0, tfRaf=null, tfVoice=true, tfLast=-1;
 let tfAu=null;
 let tfQ=[];
-function tfSpeak(txt){ if(Array.isArray(txt)){ tfQ=txt.slice(1); tfSpeak1(txt[0]); return; } tfQ=[]; tfSpeak1(txt); }
-function tfNextQ(){ if(tfPlaying&&tfQ.length){ const n=tfQ.shift(); setTimeout(()=>{ if(tfPlaying) tfSpeak1(n); },250); } }
-function tfSpeak1(txt){ if(!tfVoice||!txt) return; const v=(typeof TRIPVOX!=='undefined')&&TRIPVOX[txt]; if(v){ try{ if(!tfAu){ tfAu=new Audio(); tfAu.onended=tfNextQ; } tfAu.pause(); tfAu.src='data:audio/mpeg;base64,'+v[0]; tfAu.currentTime=0; tfAu.play().catch(()=>{}); }catch(e){} return; }
-  try{ if(!window.speechSynthesis) return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='en-GB'; u.rate=1.05; const v=speechSynthesis.getVoices().find(v=>/^en(-|_)GB/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang)); if(v) u.voice=v; u.onend=tfNextQ; speechSynthesis.speak(u); }catch(e){} }
+let tfBusy=false, tfHoldStart=0;
+function tfSpeak(txt){ tfBusy=true;  if(Array.isArray(txt)){ tfQ=txt.slice(1); tfSpeak1(txt[0]); return; } tfQ=[]; tfSpeak1(txt); }
+function tfNextQ(){ if(tfPlaying&&tfQ.length){ const n=tfQ.shift(); setTimeout(()=>{ if(tfPlaying) tfSpeak1(n); },250); } else tfBusy=false; }
+function tfSpeak1(txt){ if(!tfVoice||!txt){ tfBusy=false; return; } const v=(typeof TRIPVOX!=='undefined')&&TRIPVOX[txt]; if(v){ try{ if(!tfAu){ tfAu=new Audio(); tfAu.onended=tfNextQ; } tfAu.pause(); tfAu.src='data:audio/mpeg;base64,'+v[0]; tfAu.currentTime=0; tfAu.play().catch(()=>{}); }catch(e){} return; }
+  try{ if(!window.speechSynthesis){ tfBusy=false; return; } speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='en-GB'; u.rate=1.05; const v=speechSynthesis.getVoices().find(v=>/^en(-|_)GB/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang)); if(v) u.voice=v; u.onend=tfNextQ; speechSynthesis.speak(u); }catch(e){} }
 function tfRender(t){ tfT=t; const i=Math.max(0,tfF.scenes.findIndex(s=>t>=s.from&&t<s.to)), sc=tfF.scenes[i<0?tfF.scenes.length-1:i];
   const lt=t-sc.from, wipe=lt<0.4?R(-10,-10,1940,1100,C.paper,0,`opacity="${(1-ease(lt/0.4)).toFixed(3)}"`):'';
   document.getElementById('tf-world').innerHTML=sc.draw(lt,sc.to-sc.from)+wipe;
   const cap=tfF.caps.find(c=>t>=c.from&&t<c.to); document.getElementById('tf-cap').textContent=cap?cap.text:'';
   if(i!==tfLast){ tfLast=i; if(tfPlaying&&sc.say) tfSpeak(sc.say); }
   const pr=document.getElementById('tf-prog'); if(pr) pr.value=t; }
-function tfLoop(){ if(!tfPlaying) return; let t=tfS+(performance.now()-tfT0)/1000; if(t>=tfF.duration){ t=tfF.duration-0.01; tfRender(t); tfPause(); return; } tfRender(Math.floor(t*24)/24); tfRaf=requestAnimationFrame(tfLoop); }
+function tfLoop(){ if(!tfPlaying) return; let t=tfS+(performance.now()-tfT0)/1000;
+  { const sc=tfF.scenes[tfLast]; if(tfVoice&&tfBusy&&sc&&t>=sc.to-0.15){ if(!tfHoldStart) tfHoldStart=performance.now(); if(performance.now()-tfHoldStart<15000){ t=sc.to-0.15; tfS=t; tfT0=performance.now(); } } else tfHoldStart=0; } if(t>=tfF.duration){ t=tfF.duration-0.01; tfRender(t); tfPause(); return; } tfRender(Math.floor(t*24)/24); tfRaf=requestAnimationFrame(tfLoop); }
 function tfPlay(){ if(tfPlaying) return; if(tfT>=tfF.duration-0.05){ tfT=0; } tfPlaying=true; tfS=tfT; tfT0=performance.now(); tfLast=-1; document.getElementById('tf-pp').textContent='Pause'; tfLoop(); }
 function tfPause(){ tfPlaying=false; tfQ=[]; cancelAnimationFrame(tfRaf); try{ speechSynthesis.cancel(); }catch(e){} try{ if(tfAu) tfAu.pause(); }catch(e){} const b=document.getElementById('tf-pp'); if(b) b.textContent='Play'; }
 function tfOpen(data){ tfF=tfBuild(data); { const miss=tfF.caps.flatMap(c=>c.parts||[c.text]).filter(x=>!(typeof TRIPVOX!=='undefined'&&TRIPVOX[x])); if(miss.length) console.warn('TRIPVOX missing: '+JSON.stringify(miss)); } let el=document.getElementById('tfilm'); if(!el){ el=document.createElement('div'); el.id='tfilm'; el.setAttribute('role','dialog'); el.setAttribute('aria-label','Your trip, replayed'); document.body.appendChild(el); }
@@ -423,5 +425,28 @@ function tfOpen(data){ tfF=tfBuild(data); { const miss=tfF.caps.flatMap(c=>c.par
   document.getElementById('tf-prog').oninput=e=>{ const w=tfPlaying; tfPause(); tfRender(+e.target.value); if(w) tfPlay(); };
   try{ speechSynthesis.cancel(); }catch(e){} tfT=0; tfRender(0); tfPlay(); }
 
-return {open:tfOpen};
+function trip(cur,results,info){
+  const {PN,BN,PTY,OFF}=info;
+  const nm=cur.short;
+  const stops=[];let e=0,m=0;
+  Object.entries(results).forEach(([id,r])=>{
+    e+=r.shared.length;m+=r.kept.length;
+    const pl=(cur.places||[]).find(x=>x.id===id)||{}, ms=pl.moments||[], g=r.shared;
+    const out=ms.map(mo=>{const on=mo.dep.every(k=>g.includes(k))||(mo.alt&&[].concat(mo.alt).some(k=>g.includes(k)));
+      return {mo,on,text:on?mo.b:mo.w,good:mo.trade?!(on&&mo.neg):on,trade:mo.trade}});
+    const core=out.filter(x=>!x.trade), trades=out.filter(x=>x.trade&&x.on);
+    const pickA=core.find(x=>!x.good)||core[0]||out[0];
+    const pickB=core.find(x=>x!==pickA&&x.good!==(pickA&&pickA.good))||core.find(x=>x!==pickA)||trades[0];
+    const picks=[pickA,pickB,...(trades.length&&!trades.includes(pickB)?[trades[0]]:[])].filter(Boolean).slice(0,3);
+    const bad=picks.some(x=>x.trade&&!x.good), slow=picks.some(x=>!x.trade&&!x.good);
+    const lines=picks.map(x=>x.text.trim());
+    stops.push({kind:'stop',id,per:cur.id,name:PN[id]||id,when:(pl.when||PTY[id]||''),ok:bad?false:slow?null:true,
+      title:picks[0]?picks[0].mo.t:(PN[id]||id),text:lines.join(' '),e,m,
+      say:lines.length?lines:[`${nm} ${cur.plural?'are':'is'} at ${PN[id]||id}.`]});
+  });
+  tfOpen({intro:`This is the story of ${nm}${cur.plural?'’':'’s'} trip.`,sub:cur.who,stops,
+    outro:{rows:[[e,'details shared'],[m,'details kept'],[OFF.n?OFF.yes+' of '+OFF.n:'0','offers taken']],
+      sub:`${nm} decided what went where. Nothing went anywhere ${cur.pron.sub} didn’t allow.`,say:'And then the trip is over.'}});
+}
+return {open:tfOpen,trip};
 })();

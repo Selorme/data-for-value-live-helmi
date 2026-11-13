@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Merikaari Stand</title>
+<title>Helmi Live Stand</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="/static/film.css">
+<script src="/static/film.js"></script>
 <style>
 /* Layout: projector screen in three columns. Left: how the hotel sets up its bot. Middle: the live negotiation. Right: scan to join, and what guests gave. */
 :root{
@@ -86,6 +88,13 @@ p{margin:0}
 button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-offset:2px}
 .reset{font:600 12px var(--body);background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;cursor:pointer;align-self:flex-start}
 .pick{font:600 15px var(--body);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.replay{align-self:center;font:600 18px var(--body);background:var(--helmi);color:#fff;border:0;border-radius:12px;padding:12px 20px;cursor:pointer}
+.biztabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex:none}
+.biztabs button{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;font:500 14px var(--body);border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:left}
+.biztabs button span{font:600 11px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.biztabs button.active span{color:var(--helmi)} .biztabs button.done span{color:var(--share)}
+.biztabs button[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.biztabs button:disabled{opacity:.45;cursor:default}
 .status{font-size:12px;color:var(--muted)}
 [hidden]{display:none!important}
 </style>
@@ -97,6 +106,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
       <label class="small" for="bizpick" style="font-weight:600">Business</label>
       <select id="bizpick" class="pick"></select>
       <p class="small muted" id="b-names"></p>
+      <label class="opt"><input type="checkbox" id="follow" checked><span>Follow the live trip<small>Shows each business’s settings while its bot is talking.</small></span></label>
       <p class="status" id="cfgstat">Changes apply to the next trip.</p></div>
     <div class="card set"><h3 id="h-asks">1. What the bot asks for</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
     <div class="card set"><h3>2. What you offer, so people don’t have to explain</h3><div id="offers"></div>
@@ -112,6 +122,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
   <section class="col" aria-label="Live negotiation">
     <div class="card chat-card">
       <div class="head"><div><p class="k" id="livek">Live</p><h2 id="title">Waiting for a traveller</h2><p class="small muted" id="models"></p></div><div class="tabs" id="tabs"></div></div>
+      <div class="biztabs" id="biztabs" aria-label="Conversations on this trip"></div>
       <div class="chat" id="chat" aria-live="polite">
         <div class="idle"><p class="k">Helmi live · a whole trip</p><h2>Scan the code and send your Helmi on a trip</h2><p class="muted">Pick an invented traveller, set what your Helmi may share, and watch it negotiate with the airline or train, the hotel, the restaurant, the venue and the insurer.</p></div>
       </div>
@@ -191,33 +202,39 @@ function connect(){
   ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
 }
 function ev(t,d){
-  if(t==='start'){NEG[d.nid]={...d,items:[],done:false,pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
+  if(t==='start'){NEG[d.nid]={...d,items:[],done:false,off:{n:0,yes:0},offk:{},pty:Object.fromEntries(d.places.map(([id,n,ty])=>[id,ty])),pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
   const n=NEG[d.nid];if(!n)return;const p=P(n.person);
-  if(t==='place'){n.i++;n.cur=d.pname;n.items.push({k:'sep',text:d.pname,sub:`${d.ptype} · ${n.i} of ${n.places.length} · bot: ${d.bot||''}`})}
+  if(t==='place'){n.i++;n.cur=d.pname;n.curid=d.place;n.st=n.st||{};n.st[d.place]='active';if(!n.sel||$('follow').checked||n.st[n.sel]==='done')n.sel=d.place;if(d.nid===view&&$('follow').checked&&META[d.place]&&BIZ!==d.place){BIZ=d.place;picker();renderCfg();$('cfgstat').textContent=`Now showing ${META[d.place].bot}: the trip is at ${d.pname}.`}}
   if(t==='msg')n.items.push({k:'msg',...d});
-  if(t==='stepin')n.items.push({k:'wait',key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
+  if(t==='stepin'&&d.offer){n.off.n++;n.offk[d.place+d.k]=1}
+  if(t==='stepin')n.items.push({k:'wait',place:d.place,key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
+  if(t==='stepin_done'&&d.ok&&n.offk[d.place+d.k])n.off.yes++;
   if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
-  if(t==='place_done')n.items.push({k:'sys',text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`});
-  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});stats(d.stats)}
-  if(t==='error'){n.done=true;n.items.push({k:'sys',text:d.text})}
+  if(t==='place_done'){n.st[d.place]='done';n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
+  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;stats(d.stats)}
+  if(t==='error'){n.done=true;n.items.push({k:'sys',place:'*',text:d.text})}
   if(d.nid===view)draw();else drawTabs();
 }
 function drawTabs(){const act=order.filter(id=>!NEG[id].done),ids=[...new Set([...act,...order.slice(-4)])];
   $('tabs').innerHTML=ids.length>1?ids.map(id=>`<button aria-pressed="${id===view}" data-n="${id}">${esc(P(NEG[id].person).short)}${NEG[id].done?'':' ●'}</button>`).join(''):''}
 function draw(){
   drawTabs();const n=NEG[view];if(!n)return;const p=P(n.person);
-  $('title').textContent=`${n.name} · ${n.who}`+(n.cur&&!n.done?` · at ${n.cur}`:'');
+  $('title').textContent=`${n.name} · ${n.who}`;
+  const st=n.st||{};$('biztabs').innerHTML=n.places.map(([id,nm,ty,bn])=>`<button data-b="${id}" aria-pressed="${id===n.sel}" class="${st[id]||'waiting'}" ${st[id]?'':'disabled'}><b>${esc(bn||'Bot')}</b> · ${esc(nm)}<span>${st[id]==='done'?'Done':st[id]==='active'?'Talking':'Waiting'}</span></button>`).join('');
   $('models').textContent=n.models?`Helmi: ${n.models.helmi} · Businesses’ bots: ${n.models.bot}`:'Scripted messages (no AI key set)';
-  $('chat').innerHTML=n.items.map(x=>{
+  $('chat').innerHTML=n.items.filter(x=>x.place===n.sel||x.place==='*').map(x=>{
     if(x.k==='sep')return `<div class="sep"><b>${esc(x.text)}</b><span>${esc(x.sub)}</span></div>`;
     if(x.k==='wait')return `<p class="wait ${x.offer?'offer':''}">${esc(x.text)}</p>`;
     if(x.k==='sys')return `<p class="sys">${esc(x.text)}</p>`;
+    if(x.k==='replay')return `<button class="replay" data-replay="${view}">▶ Watch the replay of ${esc(p.short)}${p.plural?'’':'’s'} trip</button>`;
     const bot=x.who==='bot',F=p.fields,sh=l=>l.split(': ').pop();
     const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
     const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with a safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src);
     return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.bn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc((n.bn[x.place]||'Bot')+' · '+(n.pn[x.place]||'')):esc(p.short)+(p.plural?'’':'’s')+' Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
   $('chat').scrollTop=$('chat').scrollHeight;
 }
+$('chat').addEventListener('click',e=>{const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off})});
+$('biztabs').onclick=e=>{const b=e.target.closest('[data-b]');if(!b||b.disabled)return;NEG[view].sel=b.dataset.b;draw()};
 $('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};
 function bars(el,obj,names){const rows=Object.entries(obj||{}).filter(([,v])=>v.asked).sort((a,b)=>b[1].asked-a[1].asked);
   $(el).innerHTML=rows.length?rows.map(([k,v])=>`<div class="bar"><span>${esc(names[k]||k)}</span><div class="track" role="img" aria-label="${v.shared} shared, ${v.kept} kept"><i class="s" style="width:${v.shared/v.asked*100}%"></i><i class="n" style="width:${v.kept/v.asked*100}%"></i></div><span class="pct">${Math.round(v.shared/v.asked*100)}%</span></div>`).join(''):'<p class="small muted">Fills in as travellers negotiate.</p>'}

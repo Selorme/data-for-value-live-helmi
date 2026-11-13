@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Helmi in Ten Minutes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a rail line, like the project journey site. Each section is one stop, and in presenting mode each stop fills the screen. */
+:root{
+  --bg:#F2F4F6; --surface:#FFFFFF; --surface-2:#E7EBEF; --ink:#16212C; --ink-2:#44515E; --ink-3:#6A7682;
+  --line:#D3D9DF; --rail:#1F5F9E; --rail-soft:#DCE8F4; --signal:#D9662B; --signal-soft:#FBE7DB; --good:#2E7D5B; --good-soft:#E0F1E8; --bad:#B23A2B; --bad-soft:#F8E3DF;
+  --on-rail:#FFFFFF;
+  --f-display:'Space Grotesk','Trebuchet MS',Arial,sans-serif; --f-body:Inter,Arial,sans-serif; --f-mono:'JetBrains Mono','Courier New',monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F161D; --surface:#17212B; --surface-2:#1F2B37; --ink:#EAF0F5; --ink-2:#B6C2CD; --ink-3:#8D9AA6;
+  --line:#2C3946; --rail:#6EA8E6; --rail-soft:#1C3149; --signal:#F08A55; --signal-soft:#3A2418; --good:#5BC495; --good-soft:#173528; --bad:#EE7B6A; --bad-soft:#3A1E1A; --on-rail:#0F161D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F161D; --surface:#17212B; --surface-2:#1F2B37; --ink:#EAF0F5; --ink-2:#B6C2CD; --ink-3:#8D9AA6;
+  --line:#2C3946; --rail:#6EA8E6; --rail-soft:#1C3149; --signal:#F08A55; --signal-soft:#3A2418; --good:#5BC495; --good-soft:#173528; --bad:#EE7B6A; --bad-soft:#3A1E1A; --on-rail:#0F161D; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+h1,h2,h3{font-family:var(--f-display);line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:clamp(2.4rem,6vw,4.6rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.8rem,3.6vw,2.8rem);font-weight:600;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:600}
+p{margin:0}
+a{color:var(--rail)}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font:600 .8rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--signal)}
+.lede{font-size:1.12rem;color:var(--ink-2);max-width:62ch}
+.muted{color:var(--ink-3)} .small{font-size:.9rem}
+:focus-visible{outline:3px solid var(--signal);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:14px;min-height:56px}
+.brand{display:flex;align-items:center;gap:10px;font:700 1rem var(--f-display);white-space:nowrap}
+.dot{width:28px;height:28px;border-radius:50%;background:var(--rail);color:var(--on-rail);display:grid;place-items:center;font-size:.85rem}
+.stops{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.stops a{flex:none;font:600 .78rem var(--f-mono);color:var(--ink-3);text-decoration:none;padding:6px 8px;border-radius:8px}
+.stops a[aria-current="true"]{background:var(--rail-soft);color:var(--rail)}
+.btn{font:600 .9rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--rail);border-color:var(--rail);color:var(--on-rail)}
+
+section{padding-block:72px;border-bottom:1px solid var(--line);scroll-margin-top:56px}
+section .wrap{display:flex;flex-direction:column;gap:28px}
+.head{display:flex;flex-direction:column;gap:12px;max-width:820px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card .n{font:700 2.4rem var(--f-display);color:var(--rail);line-height:1}
+.tag{display:inline-block;font:600 .75rem var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+.tag.share{background:var(--good-soft);color:var(--good)} .tag.ask{background:var(--rail-soft);color:var(--rail)} .tag.never{background:var(--bad-soft);color:var(--bad)}
+
+/* hero */
+.hero{padding-block:88px 72px}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:40px;align-items:center}
+@media (max-width:860px){.hero .wrap{grid-template-columns:1fr}}
+.hero-cta{display:flex;gap:10px;flex-wrap:wrap}
+.qrbox{background:#fff;border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;color:#16212C;justify-self:center;max-width:100%}
+.qrbox #qr img,.qrbox #qr canvas{width:220px;height:220px;max-width:100%}
+.qrbox p{font:600 .85rem var(--f-mono);text-align:center;word-break:break-all}
+
+/* need vs record */
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch}
+@media (max-width:700px){.vs{grid-template-columns:1fr}}
+.vs .arrow{align-self:center;font:700 1.6rem var(--f-display);color:var(--ink-3);text-align:center}
+.mono{font-family:var(--f-mono);font-size:.92rem}
+
+/* map */
+.mapctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:3px}
+.seg button{font:600 .86rem var(--f-body);border:0;background:none;color:var(--ink-2);padding:7px 14px;border-radius:999px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.mapbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;overflow-x:auto}
+.mapbox svg{display:block;width:100%;min-width:640px;height:auto}
+.mapnote{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.flow{stroke-dasharray:10 8;animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-36}}
+.mtxt{font-family:var(--f-body);fill:var(--ink)}
+.msm{font-family:var(--f-mono);font-size:12px;fill:var(--ink-3)}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;counter-reset:st}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px;position:relative}
+.step::before{counter-increment:st;content:counter(st);width:30px;height:30px;border-radius:50%;background:var(--rail);color:var(--on-rail);display:grid;place-items:center;font:700 .9rem var(--f-display)}
+.chat{display:flex;flex-direction:column;gap:8px}
+.bub{max-width:88%;padding:10px 12px;border-radius:14px;font-size:.95rem}
+.bub b{display:block;font:600 .72rem var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:2px}
+.bub.bot{background:var(--surface-2);border-bottom-left-radius:4px}
+.bub.h{background:var(--rail-soft);align-self:flex-end;border-bottom-right-radius:4px}
+.bub.ping{align-self:center;background:var(--signal-soft);color:var(--ink);border:1px dashed var(--signal)}
+
+/* bars */
+.bars{display:flex;flex-direction:column;gap:10px}
+.barrow{display:grid;grid-template-columns:110px minmax(0,1fr) 48px;gap:10px;align-items:center}
+.track{height:14px;border-radius:7px;background:var(--surface-2);overflow:hidden}
+.track i{display:block;height:100%;background:var(--good)}
+.pct{font:600 .9rem var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+
+.vid{background:#000;border-radius:16px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
+.vid video{display:block;width:100%;height:100%}
+.quote{font:500 1.15rem/1.45 var(--f-display);border-left:4px solid var(--signal);padding-left:14px}
+.line{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
+.line div{border-top:4px solid var(--rail);padding-top:10px}
+.line b{display:block;font:600 .8rem var(--f-mono);color:var(--ink-3)}
+.foot{padding-block:40px;color:var(--ink-3);font-size:.9rem}
+
+/* presenting: one stop per screen, bigger type */
+body.present section{min-height:calc(100vh - 56px);display:flex;align-items:center}
+body.present section .wrap{width:100%}
+body.present{font-size:19px}
+</style>
+</head>
+<body>
+<header class="bar"><div class="wrap">
+  <span class="brand"><span class="dot" aria-hidden="true">H</span>Helmi</span>
+  <nav class="stops" id="stops" aria-label="Sections"></nav>
+  <button class="btn" id="present" aria-pressed="false">Present</button>
+</div></header>
+
+<main>
+<section class="hero" id="start"><div class="wrap">
+  <div class="head" style="gap:18px">
+    <p class="eyebrow">Data for Value · Demola · Tampere University</p>
+    <h1>Tell once. Share selectively.</h1>
+    <p class="lede">Helmi is a personal AI agent that talks to businesses’ bots for you. It shares what a place needs to serve you well, holds back what it doesn’t, and asks you when it isn’t sure. Your rules decide what moves; the AI only writes the words.</p>
+    <div class="hero-cta"><a class="btn primary" href="#try">Play the live demo</a><a class="btn" href="#where">Where your data stays</a></div>
+  </div>
+  <div class="qrbox"><div id="qr" aria-label="QR code for the live demo"></div><p id="qrurl">data-for-value-live-helmi.onrender.com</p></div>
+</div></section>
+
+<section id="problem"><div class="wrap">
+  <div class="head"><p class="eyebrow">01 · The everyday problem</p><h2>Some people explain themselves at every door</h2>
+    <p class="lede">Booking a trip means telling the same things to the train, the hotel, the restaurant and the venue. For most people that’s a form. For someone with an access need it is a conversation at every counter, and often a trade: give more of your privacy, or get a worse service.</p></div>
+  <div class="grid g3">
+    <div class="card"><p class="n">~1 h</p><h3>of explaining and waiting</h3><p class="muted">In our scenario, Elina, who is blind and travels with her guide dog Kide, spends about an hour on one weekend trip explaining Kide, having forms read aloud and waiting for help. Everything works out. It just takes longer.</p></div>
+    <div class="card"><p class="n">PIN</p><h3>shared to pay for dog food</h3><p class="muted">A blind woman in Helsinki couldn’t use a touch-screen card terminal, and staff suggested she tell them her PIN. The EU rules cover new terminals from June 2025, but old ones are still allowed. (Yle, 2026)</p></div>
+    <div class="card"><p class="n">1 rule</p><h3>that came out of it</h3><p class="muted">The accessible route must never be the less private route. If someone with an access need has to share more than everyone else, the design has failed, even if they get through in the end.</p></div>
+  </div>
+</div></section>
+
+<section id="film"><div class="wrap">
+  <div class="head"><p class="eyebrow">02 · The same trip, told twice</p><h2>Elina goes to Helsinki</h2>
+    <p class="lede">Elina is blind and travels with her guide dog Kide. First the trip with Helmi, then the same trip without it. Nothing fails without Helmi. It just takes much longer, and she has to explain herself at every door.</p></div>
+  <div class="vid"><video id="vf" controls preload="metadata" playsinline poster="" aria-label="Film: Elina goes to Helsinki, with and without Helmi"></video></div>
+  <div class="mapctl"><span class="small muted">Jump to</span><div class="seg" role="group" aria-label="Jump to a part of the film"><button data-t="0" aria-pressed="true">With Helmi · 0:00</button><button data-t="121" aria-pressed="false">Without Helmi · 2:01</button></div></div>
+</div></section>
+
+<section id="idea"><div class="wrap">
+  <div class="head"><p class="eyebrow">03 · The idea</p><h2>Your own agent, with your rules</h2>
+    <p class="lede">Your details sit where they already are: your health records, calendar, bank, chats, photos. Helmi can read them only as far as you allow. Businesses send their own bots. The two agents talk, and the code checks every detail before it leaves Helmi.</p></div>
+  <div class="grid g3">
+    <div class="card"><span class="tag share">Share</span><h3>Helmi just sends it</h3><p class="muted">“Seat with floor space for a guide dog.” Needs like this go out without asking you.</p></div>
+    <div class="card"><span class="tag ask">Ask me</span><h3>Your phone buzzes</h3><p class="muted">“Hotel Merikaari wants your passport number. Share it?” You decide place by place. No answer in 45 seconds means no.</p></div>
+    <div class="card"><span class="tag never">Never</span><h3>Whatever they offer</h3><p class="muted">Your chats, your search history, your full health record. If an insurer offers 15% off, Helmi still says no.</p></div>
+  </div>
+  <div class="card"><p class="eyebrow">Share the need, not the record</p>
+    <div class="vs"><div class="card" style="background:var(--bad-soft);border-color:transparent"><p class="small muted">What a hotel could ask for</p><p class="mono">H35.5 Hereditary retinal dystrophy (retinitis pigmentosa); H54.0 Blindness, both eyes</p></div>
+      <div class="arrow" aria-hidden="true">→</div>
+      <div class="card" style="background:var(--good-soft);border-color:transparent"><p class="small muted">What it needs to know</p><p class="mono">Travels with a guide dog. Information as accessible digital text. Room close to the lift.</p></div></div>
+  </div>
+</div></section>
+
+<section id="where"><div class="wrap">
+  <div class="head"><p class="eyebrow">04 · Where your data stays</p><h2>Data stays put. Helmi reads, it doesn’t collect.</h2>
+    <p class="lede">We compared two designs. In both, businesses only get what you allow. The difference shows when something goes wrong. Switch the design and try a break-in.</p></div>
+  <div class="mapctl">
+    <div class="seg" role="group" aria-label="Where the data lives"><button data-arch="A" aria-pressed="true">A · Data stays put</button><button data-arch="B" aria-pressed="false">B · One personal server</button></div>
+    <div class="seg" role="group" aria-label="Simulate a break-in"><button data-br="" aria-pressed="true">No break-in</button><button data-br="hotel" aria-pressed="false">Break-in at the hotel</button><button data-br="own" aria-pressed="false">Break-in at Helmi</button></div>
+  </div>
+  <div class="mapbox"><svg id="map" viewBox="0 0 1000 560" role="img" aria-labelledby="maptitle"><title id="maptitle">Map of where Elina’s data lives and who can reach it</title></svg></div>
+  <div class="mapnote"><div class="card"><h3 id="note-h"></h3><p class="muted" id="note-p"></p></div>
+    <div class="card"><h3>What the map shows</h3><p class="muted">Left: where Elina’s data already lives. Middle: Helmi. Right: the places on her trip. Solid moving lines are details actually shared. Red crosses are requests Helmi turned down.</p></div></div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="head"><p class="eyebrow">05 · How a negotiation goes</p><h2>Two bots talk. You step in when it matters.</h2></div>
+  <div class="grid g2">
+    <div class="steps">
+      <div class="step"><h3>The business’s bot asks</h3><p class="muted">With a reason for each detail, and what it promises about keeping it.</p></div>
+      <div class="step"><h3>The code checks your rules</h3><p class="muted">Every detail, before anything leaves. The AI never decides what to share.</p></div>
+      <div class="step"><h3>Helmi answers</h3><p class="muted">Shares needs, holds back records, offers alternatives: “She can show her passport at the desk.”</p></div>
+      <div class="step"><h3>Your phone buzzes</h3><p class="muted">For anything you marked “Ask me”, place by place.</p></div>
+      <div class="step"><h3>The business may make an offer</h3><p class="muted">A discount for your health record, a free companion seat for your disability card. You decide again.</p></div>
+      <div class="step"><h3>Everyone asks separately</h3><p class="muted">Even the restaurant owned by the hotel. Helmi never passes your details from one business to another.</p></div>
+    </div>
+    <div class="card"><p class="eyebrow">From a live run</p><div class="chat">
+      <p class="bub bot"><b>Vera · Rata Rail</b>Hello Helmi, I’m Vera. To prepare Elina’s journey, could you share her train assistance needs, a seat for her guide dog and her EU Disability Card?</p>
+      <p class="bub h"><b>Helmi</b>She needs meet-and-assist from the entrance to her seat, and a seat with floor space for Kide. I’m checking with Elina about the card.</p>
+      <p class="bub ping">Elina’s phone: “Rata Rail wants your EU Disability Card.” She says no.</p>
+      <p class="bub bot"><b>Vera</b>Understood. If Elina shares the card, her companion travels free. Would she reconsider?</p>
+      <p class="bub ping">An offer. Elina says yes this time.</p>
+      <p class="bub bot"><b>Vera</b>Thank you. An assistant will meet her at the station entrance, seat 41 has room for Kide, and her companion’s ticket is free.</p>
+    </div></div>
+  </div>
+</div></section>
+
+<section id="learned"><div class="wrap">
+  <div class="head"><p class="eyebrow">06 · What people chose</p><h2>People shared less than we expected, and it depended on the place</h2>
+    <p class="lede">Our first workshop, 9 November: four participants played trip mode as invented people, then talked it through.</p></div>
+  <div class="grid g2">
+    <div class="card"><h3>Share of what each place asked for</h3><div class="bars">
+      <div class="barrow"><span>Event</span><div class="track"><i style="width:82%"></i></div><span class="pct">82%</span></div>
+      <div class="barrow"><span>Hotel</span><div class="track"><i style="width:68%"></i></div><span class="pct">68%</span></div>
+      <div class="barrow"><span>Insurer</span><div class="track"><i style="width:14%"></i></div><span class="pct">14%</span></div></div>
+      <p class="small muted">3 of 4 shared nothing with the insurer. Nobody let a business read their chats or email.</p></div>
+    <div class="card"><h3>Let the agent do the legwork, keep the deal</h3><p class="muted">Helmi may search, compare and talk to a car dealer’s bot, but the person sees the car and pays. Buying stocks only inside a limit the person sets. Nobody let Helmi send messages alone.</p>
+      <p class="quote">“Needing access weakens the freedom to say no.”</p><p class="small muted">Participants preferred sharing a need or a verified disability card over a diagnosis.</p></div>
+  </div>
+</div></section>
+
+<section id="business"><div class="wrap">
+  <div class="head"><p class="eyebrow">07 · For businesses</p><h2>Ask for less, get more</h2>
+    <p class="lede">At the stand you run the businesses. Change what a bot asks for and watch what the next traveller shares.</p></div>
+  <div class="grid g4">
+    <div class="card"><h3>Ask for the need</h3><p class="muted">“Step-free room near the lift” serves the guest. A diagnosis is a liability you now have to protect.</p></div>
+    <div class="card"><h3>Offer, so people don’t have to explain</h3><p class="muted">Keypad card terminals, an accessible menu, step-free seats on the map. None of them needs any guest data.</p></div>
+    <div class="card"><h3>Promise only what you keep</h3><p class="muted">Delete at the end of the visit, never pass details to a sister business. Helmi reads these promises.</p></div>
+    <div class="card"><h3>Keep a person in the loop</h3><p class="muted">A member of staff double-checks access plans and allergies before the guest arrives.</p></div>
+  </div>
+</div></section>
+
+<section id="journey"><div class="wrap">
+  <div class="head"><p class="eyebrow">08 · How we got here</p><h2>From a brief to a live demo</h2></div>
+  <div class="line">
+    <div><b>October</b>The Demola brief: personal AI agents that deal with businesses for us</div>
+    <div><b>Late October</b>First Helmi prototypes, synthetic data and short films</div>
+    <div><b>3–4 November</b>Four personas, then Jere’s question: how do agents negotiate?</div>
+    <div><b>5–8 November</b>Trip mode: eight people, a whole trip of decisions</div>
+    <div><b>9 November</b>First workshop</div>
+    <div><b>12 November</b>Class update and feedback</div>
+    <div><b>13 November</b>Helmi live: two AI agents negotiating, built for this fair</div>
+    <div><b>18 November</b>Demola demo fair: you’re here</div>
+  </div>
+</div></section>
+
+<section id="try"><div class="wrap">
+  <div class="head"><p class="eyebrow">09 · Try it</p><h2>Send your Helmi on a trip</h2>
+    <p class="lede">Scan the code, pick an invented traveller, set what your Helmi may share, and watch it negotiate on the big screen. About three minutes. Everyone in it is invented.</p></div>
+  <div class="grid g2">
+    <div class="qrbox" style="justify-self:start"><div id="qr2" aria-label="QR code for the live demo"></div><p id="qrurl2"></p></div>
+    <div class="card"><h3>More to explore</h3><p class="muted">Trip mode, the longer demo from our workshop: <a href="https://selorme.github.io/data-for-value-demo/trip.html#trip" target="_blank" rel="noopener">selorme.github.io/data-for-value-demo</a></p>
+      <p class="muted">The whole project journey, with films and workshop charts: <a href="https://selorme.github.io/data-for-value-demo/journey/" target="_blank" rel="noopener">selorme.github.io/data-for-value-demo/journey</a></p>
+      <p class="small muted">Ruth, Dora, Towhidul and Rui · Tampere University · Demola Data for Value challenge, 2026</p></div>
+  </div>
+</div></section>
+</main>
+<footer class="foot"><div class="wrap">All people, businesses and data in this demo are invented.</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const LIVE=(location.hostname.endsWith('onrender.com')||location.hostname==='localhost'||location.hostname==='127.0.0.1')?location.origin+'/':'https://data-for-value-live-helmi.onrender.com/';
+$('qrurl').textContent=$('qrurl2').textContent=LIVE.replace(/^https?:\/\//,'').replace(/\/$/,'');
+try{[['qr',220],['qr2',220]].forEach(([id,s])=>new QRCode($(id),{text:LIVE,width:440,height:440,correctLevel:QRCode.CorrectLevel.M}))}catch(e){}
+
+/* the film: on Render it is served from /static, as a published page it sits next to the page */
+const FB=(location.hostname.endsWith('onrender.com')||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'/static/films/':'films/';
+$('vf').poster=FB+'elina.jpg';$('vf').src=FB+'elina.mp4';
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const v=$('vf');v.currentTime=+b.dataset.t;v.play().catch(()=>{});document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+$('vf').addEventListener('timeupdate',()=>{const w=$('vf').currentTime>=121;document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.t==='121')===w))});
+
+/* section nav and presenting */
+const secs=[...document.querySelectorAll('main section')];
+const names={start:'Start',problem:'Problem',film:'Film',idea:'Idea',where:'Data',how:'How',learned:'Findings',business:'Business',journey:'Journey',try:'Try it'};
+$('stops').innerHTML=secs.map(s=>`<a href="#${s.id}">${names[s.id]||s.id}</a>`).join('');
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)document.querySelectorAll('#stops a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+e.target.id))}),{rootMargin:'-45% 0px -50% 0px'});
+secs.forEach(s=>io.observe(s));
+$('present').onclick=()=>{const on=document.body.classList.toggle('present');$('present').setAttribute('aria-pressed',on);$('present').textContent=on?'Stop presenting':'Present';
+  if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{})};
+function curIdx(){let i=0;secs.forEach((s,k)=>{if(s.getBoundingClientRect().top<=80)i=k});return i}
+addEventListener('keydown',e=>{if(e.target.closest('input,select,textarea'))return;
+  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();const s=secs[Math.min(secs.length-1,curIdx()+1)];s.scrollIntoView({behavior:'smooth'})}
+  if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();const s=secs[Math.max(0,curIdx()-1)];s.scrollIntoView({behavior:'smooth'})}});
+
+/* where the data stays: the live map from the demo's presenter view */
+const SRC=[['health','Health records','Kanta'],['cal','Calendar','phone'],['bank','Bank','OP'],['chats','Chats','WhatsApp'],['photos','Photos','phone'],['loc','Location','phone']];
+const BIZ=[['rail','Rata Rail','assistance, seat for Kide',['cal']],['hotel','Hotel Merikaari','guide dog, room, allergy',['health','cal']],['bistro','Merikaari Bistro','menu, peanut allergy',['health']],['ins','Vakaa Insurance','wanted chats: declined',[]]];
+let ARCH='A',BR='';
+function draw(){
+  const css=getComputedStyle(document.documentElement),c=v=>css.getPropertyValue(v).trim();
+  const ink=c('--ink'),ink3=c('--ink-3'),line=c('--line'),rail=c('--rail'),bad=c('--bad'),good=c('--good'),surf=c('--surface'),surf2=c('--surface-2');
+  const sy=i=>60+i*88, by=i=>90+i*125, SX=40,HX=ARCH==='A'?500:560,HY=280,SVX=330,BX=760;
+  let s=`<title id="maptitle">Map of where Elina’s data lives and who can reach it</title><defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="${ink3}"/></marker></defs>`;
+  const used=new Set();BIZ.forEach(b=>b[3].forEach(x=>used.add(x)));
+  SRC.forEach(([id,l,w],i)=>{const y=sy(i),hit=(BR==='own'&&ARCH==='B'),u=used.has(id);
+    if(ARCH==='B'){s+=`<line x1="${SX+170}" y1="${y}" x2="${SVX-62}" y2="${HY+(y-HY)*.3}" stroke="${hit?bad:line}" stroke-width="2" marker-end="url(#ar)"/>`}
+    else{s+=`<path d="M${SX+170} ${y} C ${SX+290} ${y}, ${HX-170} ${HY}, ${HX-66} ${HY}" fill="none" stroke="${u?rail:line}" stroke-width="${u?3:1.6}" ${u?'class="flow"':'stroke-dasharray="4 6"'}/>`}
+    s+=`<g><rect x="${SX}" y="${y-26}" width="170" height="52" rx="12" fill="${surf}" stroke="${hit?bad:line}" stroke-width="${hit?3:1.5}"/><text x="${SX+14}" y="${y-3}" class="mtxt" font-size="15" font-weight="600">${l}</text><text x="${SX+14}" y="${y+16}" class="msm">${ARCH==='A'?'stays at ':'copied from '}${w}</text></g>`});
+  if(ARCH==='B'){const hit=BR==='own';
+    s+=`<line x1="${SVX+62}" y1="${HY}" x2="${HX-66}" y2="${HY}" stroke="${hit?bad:ink}" stroke-width="3" marker-end="url(#ar)"/>`;
+    s+=`<g><rect x="${SVX-62}" y="${HY-58}" width="124" height="116" rx="14" fill="${hit?c('--bad-soft'):surf2}" stroke="${hit?bad:ink}" stroke-width="2"/><text x="${SVX}" y="${HY-14}" text-anchor="middle" class="mtxt" font-size="15" font-weight="700">Own server</text><text x="${SVX}" y="${HY+8}" text-anchor="middle" class="msm">a copy of</text><text x="${SVX}" y="${HY+26}" text-anchor="middle" class="msm">everything</text></g>`}
+  BIZ.forEach(([id,n,what,src],i)=>{const y=by(i),on=src.length>0,hit=BR==='hotel'&&id==='hotel';
+    const d=`M${HX+66} ${HY} C ${HX+150} ${HY}, ${BX-130} ${y}, ${BX-6} ${y}`;
+    s+=`<path d="${d}" fill="none" stroke="${on?(hit?bad:rail):bad}" stroke-width="${on?3:2}" ${on?'class="flow"':'stroke-dasharray="8 6"'}/>`;
+    if(!on){const mx=(HX+66+BX)/2,my=(HY+y)/2;s+=`<g transform="translate(${mx},${my})"><circle r="13" fill="${bad}"/><path d="M-5 -5L5 5M5 -5L-5 5" stroke="#fff" stroke-width="2.6"/></g>`}
+    s+=`<g><rect x="${BX}" y="${y-34}" width="220" height="68" rx="12" fill="${hit?c('--bad-soft'):surf}" stroke="${hit?bad:line}" stroke-width="${hit?3:1.5}"/><text x="${BX+14}" y="${y-8}" class="mtxt" font-size="15" font-weight="600">${n}</text><text x="${BX+14}" y="${y+12}" class="msm">${what.length>30?what.slice(0,29)+'…':what}</text></g>`});
+  const hub=BR==='own'&&ARCH==='A';
+  s+=`<g><circle cx="${HX}" cy="${HY}" r="64" fill="${rail}"/><text x="${HX}" y="${HY-4}" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="22" font-weight="700" fill="${c('--on-rail')}">Helmi</text><text x="${HX}" y="${HY+18}" text-anchor="middle" font-family="Inter, sans-serif" font-size="12" fill="${c('--on-rail')}">${ARCH==='A'?'reads, keeps nothing':'reads the copy'}</text></g>`;
+  if(hub)s+=`<circle cx="${HX}" cy="${HY}" r="74" fill="none" stroke="${bad}" stroke-width="3" stroke-dasharray="6 6"/>`;
+  $('map').innerHTML=s;
+  const N={
+    'A':['Data stays put','Helmi reads each detail from where it already lives, only when a business needs it and you allow it. Nothing is gathered in one place.'],
+    'B':['One personal server','Everything is copied into one server that you own. It is convenient, but it is now the most valuable target there is.'],
+    'Ahotel':['Break-in at the hotel','The attacker gets only what Elina gave the hotel: her guide dog, room needs and allergy. Nothing else was ever there.'],
+    'Bhotel':['Break-in at the hotel','Same as design A: only what the hotel was given. The difference is elsewhere.'],
+    'Aown':['Break-in at Helmi','Helmi keeps nothing, so there is nothing to take. Each source still has its own protection.'],
+    'Bown':['Break-in at the own server','The attacker gets everything at once: health records, bank, chats, photos and location. This is why we chose design A.']};
+  const k=ARCH+BR;$('note-h').textContent=(N[k]||N[ARCH])[0];$('note-p').textContent=(N[k]||N[ARCH])[1];
+}
+document.querySelectorAll('[data-arch]').forEach(b=>b.onclick=()=>{ARCH=b.dataset.arch;document.querySelectorAll('[data-arch]').forEach(x=>x.setAttribute('aria-pressed',x===b));draw()});
+document.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>{BR=b.dataset.br;document.querySelectorAll('[data-br]').forEach(x=>x.setAttribute('aria-pressed',x===b));draw()});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+draw();
+</script>
+</body>
+</html>
