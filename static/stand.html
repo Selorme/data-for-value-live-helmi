@@ -85,22 +85,28 @@ p{margin:0}
 .foot b{color:var(--ink)}
 button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-offset:2px}
 .reset{font:600 12px var(--body);background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;cursor:pointer;align-self:flex-start}
+.pick{font:600 15px var(--body);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
 .status{font-size:12px;color:var(--muted)}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div class="app">
-  <section class="col scroll" aria-label="Set up the hotel's bot">
-    <div class="card"><div class="brand"><div class="av" aria-hidden="true">H</div><div><h1 style="font-size:1.3rem">You run the hotel</h1><p class="small muted">Every guest’s trip includes a hotel. Set up Otto, the hotel’s bot, who talks to their assistants.</p></div></div>
+  <section class="col scroll" aria-label="Set up the businesses' bots">
+    <div class="card"><div class="brand"><div class="av" aria-hidden="true" id="b-av">O</div><div><h1 style="font-size:1.3rem">You run the businesses</h1><p class="small muted">Pick a business and set up its bot. Every traveller who visits it gets your settings.</p></div></div>
+      <label class="small" for="bizpick" style="font-weight:600">Business</label>
+      <select id="bizpick" class="pick"></select>
+      <p class="small muted" id="b-names"></p>
       <p class="status" id="cfgstat">Changes apply to the next trip.</p></div>
-    <div class="card set"><h3>1. What Otto asks every guest</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
-    <div class="card set"><h3>2. What you offer, so guests don’t have to explain</h3><div id="offers"></div>
+    <div class="card set"><h3 id="h-asks">1. What the bot asks for</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
+    <div class="card set"><h3>2. What you offer, so people don’t have to explain</h3><div id="offers"></div>
       <p class="small muted">The accessible route should never be the less private route.</p></div>
     <div class="card set"><h3>3. What you promise</h3><div id="trust"></div>
-      <p class="small muted">Only promise what you can back up. Guests’ assistants read these.</p></div>
+      <p class="small muted">Only promise what you can back up. Travellers’ assistants read these.</p></div>
     <div class="card set"><h3>4. How long you keep it</h3><div id="keep"></div>
-      <label class="opt"><input type="checkbox" id="review"><span>A person checks the room plan<small>About 2 staff minutes per guest. Catches mistakes before arrival.</small></span></label></div>
+      <label class="opt"><input type="checkbox" id="review"><span>A person double-checks the arrangements<small>A couple of staff minutes per customer. Catches mistakes before they arrive.</small></span></label></div>
+    <div class="card set" id="pushcard"><h3>5. When someone says no</h3>
+      <label class="opt"><input type="checkbox" id="push"><span id="pushtxt"></span></label></div>
   </section>
 
   <section class="col" aria-label="Live negotiation">
@@ -127,48 +133,61 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY=new URLSearchParams(location.search).get('key')||'';
-let D,H,AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
-const CATD={trip:'To plan arrival and departure',need:'Room, route and service needs',diet:'For breakfast and room service',card:'Proof of disability',health:'Diagnoses from the health record',passport:'To check identity before arrival',dob:'For birthday offers',spend:'For personalised offers'};
-const SENS=['card','health','passport','dob','spend'];
+let D,CFG={},META={},BIZ='hotel',AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
+const CATD={trip:'Travel and arrival times',need:'What the person needs: room, seat, route, service',diet:'Allergies and food',card:'Proof of disability',health:'Diagnoses, health records, device records',passport:'To check identity in advance',dob:'For offers, or checking ages',spend:'Bank transactions and spending',location:'Where the person has been',messages:'Private conversations, with other people in them',online:'What the person has searched for',photos:'Photos, often of other people too',activity:'Steps, sleep and fitness',other:'Grades and other records'};
+const SENS=['card','health','passport','dob','spend','location','messages','online','photos','activity'];
 const OFFERS=[['stepfree','Step-free rooms listed online','Guests see which rooms work before booking.'],['form','Screen-reader check-in form','No paper form read out at the desk.'],['keypad','Card terminals with physical keys','Nobody is asked to share a PIN.'],['animal','Staff briefed on assistance animals','No “let me check with my manager”.']];
-const TRUST=[['delete','We delete guest details at checkout',''],['nopartners','We never pass details on, not even to our restaurant',''],['contact','A named person answers data questions',''],['audit','Yearly outside security audit','Only if you really have one.']];
-const KEEPS=[['stay','Until checkout','Deleted when the guest leaves.'],['d30','30 days','For questions after the stay.'],['y1','One year','For returning guests and offers.']];
-const PT={transport:'Transport',hotel:'Hotel',restaurant:'Restaurant',venue:'Venue',insurer:'Insurer',taxi:'Taxi',pharmacy:'Pharmacy',spa:'Spa','trip planner app':'Trip planner','grocery delivery':'Groceries',tour:'Tour',museum:'Museum','work event':'Work event'};
-const CL={trip:'Trip dates',need:'Needs',diet:'Allergies and diet',card:'Disability card',health:'Health records',passport:'Passport',dob:'Date of birth',spend:'Spending',other:'Other records'};
+const TRUST=[['delete','We delete details when the visit is over',''],['nopartners','We never pass details on, not even to a sister business',''],['contact','A named person answers data questions',''],['audit','Yearly outside security audit','Only if you really have one.']];
+const KEEPS=[['stay','Until the visit is over','Deleted when the customer leaves.'],['d30','30 days','For questions afterwards.'],['y1','One year','For returning customers and offers.']];
+const PT={childcare:'Childcare',transport:'Transport',hotel:'Hotel',restaurant:'Restaurant',venue:'Venue',insurer:'Insurer',taxi:'Taxi',pharmacy:'Pharmacy',spa:'Spa','trip planner app':'Trip planner','grocery delivery':'Groceries',tour:'Tour',museum:'Museum','work event':'Work event'};
+const CL={trip:'Trip dates',need:'Needs',diet:'Allergies and diet',card:'Disability card',health:'Health records',passport:'Passport',dob:'Dates of birth',spend:'Spending',location:'Location',messages:'Chats and email',online:'Search history',photos:'Photos',activity:'Activity',other:'Other records'};
 function P(id){return D.people.find(p=>p.id===id)}
 async function boot(){
   D=await (await fetch('/static/trip.json',{cache:'no-store'})).json();
-  const st=await (await fetch('/api/state',{cache:'no-store'})).json();H=st.hotel;AI=st.ai;M=st.models;CATS=st.cats;renderCfg();stats(st.stats);
+  const st=await (await fetch('/api/state',{cache:'no-store'})).json();CFG=st.config;META=st.meta;AI=st.ai;M=st.models;CATS=st.cats;picker();renderCfg();stats(st.stats);
   const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
   try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
   connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
 }
+function picker(){
+  const ids=Object.keys(META).sort((a,b)=>META[a].order-META[b].order),core=['rail','hotel','bistro','venue','ins'];
+  const opt=id=>`<option value="${id}" ${id===BIZ?'selected':''}>${esc(META[id].bot)} · ${esc(META[id].type[0].toUpperCase()+META[id].type.slice(1))}</option>`;
+  $('bizpick').innerHTML=`<optgroup label="On every trip">${ids.filter(i=>core.includes(i)).map(opt).join('')}</optgroup><optgroup label="Extras">${ids.filter(i=>!core.includes(i)).map(opt).join('')}</optgroup>`;
+}
+$('bizpick').onchange=e=>{BIZ=e.target.value;renderCfg()};
 function renderCfg(){
-  $('asks').innerHTML=Object.entries(CATS).map(([c,l])=>`<label class="opt"><input type="checkbox" data-a="${c}" ${H.asks.includes(c)?'checked':''}><span>${esc(l)} ${SENS.includes(c)?'<span class="sens">Sensitive</span>':''}<small>${esc(CATD[c]||'')}</small></span></label>`).join('');
+  const m=META[BIZ],H=CFG[BIZ];
+  $('b-av').textContent=m.bot[0];$('b-names').textContent='Appears as '+m.names.join(', ');
+  $('h-asks').textContent=`1. What ${m.bot} asks for`;
+  $('asks').innerHTML=m.cats.map(c=>`<label class="opt"><input type="checkbox" data-a="${c}" ${H.asks.includes(c)?'checked':''}><span>${esc(CATS[c])} ${SENS.includes(c)?'<span class="sens">Sensitive</span>':''}<small>${esc(CATD[c]||'')}</small></span></label>`).join('');
   $('offers').innerHTML=OFFERS.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-o="${v}" ${(H.offers||[]).includes(v)?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
   $('trust').innerHTML=TRUST.map(([v,l,d])=>`<label class="opt"><input type="checkbox" data-t="${v}" ${(H.trust||[]).includes(v)?'checked':''}><span>${esc(l)}${d?`<small>${esc(d)}</small>`:''}</span></label>`).join('');
   $('keep').innerHTML=KEEPS.map(([v,l,d])=>`<label class="opt"><input type="radio" name="keep" value="${v}" ${H.keep===v?'checked':''}><span>${esc(l)}<small>${esc(d)}</small></span></label>`).join('');
-  $('review').checked=!!H.review;hint();
+  $('review').checked=!!H.review;
+  $('pushcard').hidden=!m.push;$('push').checked=!!H.push;
+  $('pushtxt').innerHTML=m.push?`${esc(m.bot)} comes back once when something is kept<small>${esc(m.push)}.</small>`:'';
+  hint();
 }
-function hint(){const h=[];
-  if(H.asks.includes('health'))h.push('Diagnoses: only guests with access needs have anything to tell you, so they carry the privacy cost. Ask for the need instead.');
-  if(H.asks.includes('spend'))h.push('Spending history isn’t needed for a stay.');
-  if(H.asks.includes('passport'))h.push('Passport before arrival: many Helmis will offer to show it at the desk.');
-  if((H.trust||[]).includes('delete')&&H.keep!=='stay')h.push('You promise to delete at checkout but keep data longer. That promise is broken.');
+function hint(){const H=CFG[BIZ],h=[];
+  if(H.asks.includes('health'))h.push('Health records: only people with access needs or conditions have anything to tell you, so they carry the privacy cost. Ask for the need instead.');
+  if(H.asks.includes('messages'))h.push('Chats and email: other people are in them, and almost nobody shares these.');
+  if(H.asks.includes('spend')||H.asks.includes('location'))h.push('Spending and location history: ask yourself whether you need them for this visit.');
+  if(H.asks.includes('passport'))h.push('Passport in advance: many Helmis offer to show it in person instead.');
+  if((H.trust||[]).includes('delete')&&H.keep!=='stay')h.push('You promise to delete when the visit is over but keep data longer. That promise is broken.');
   $('askhint').hidden=!h.length;$('askhint').textContent=h.join(' ')}
-document.addEventListener('change',e=>{const t=e.target;
-  if(t.dataset.a){H.asks=Object.keys(CATS).filter(c=>document.querySelector(`[data-a="${c}"]`).checked)}
+document.addEventListener('change',e=>{const t=e.target,H=CFG[BIZ];if(!H)return;
+  if(t.dataset.a){H.asks=META[BIZ].cats.filter(c=>document.querySelector(`[data-a="${c}"]`).checked)}
   else if(t.dataset.o){H.offers=OFFERS.map(o=>o[0]).filter(id=>document.querySelector(`[data-o="${id}"]`).checked)}
   else if(t.dataset.t){H.trust=TRUST.map(o=>o[0]).filter(id=>document.querySelector(`[data-t="${id}"]`).checked)}
-  else if(t.name==='keep'){H.keep=t.value}else if(t.id==='review'){H.review=t.checked}else return;
-  hint();clearTimeout(saveT);saveT=setTimeout(save,300)});
-async function save(){try{const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,hotel:H})});const j=await r.json();
-  $('cfgstat').textContent=j.ok?'Saved. Applies to the next trip.':(j.error||'Not saved')}catch(e){$('cfgstat').textContent='Not saved: no connection'}}
+  else if(t.name==='keep'){H.keep=t.value}else if(t.id==='review'){H.review=t.checked}else if(t.id==='push'){H.push=t.checked}else return;
+  hint();clearTimeout(saveT);const b=BIZ;saveT=setTimeout(()=>save(b),300)});
+async function save(b){try{const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,biz:b,settings:CFG[b]})});const j=await r.json();
+  $('cfgstat').textContent=j.ok?`Saved for ${META[b].bot}. Applies to the next trip.`:(j.error||'Not saved')}catch(e){$('cfgstat').textContent='Not saved: no connection'}}
 function connect(){
   const es=new EventSource('/events?role=stand');
   es.onopen=()=>{$('livek').textContent=AI?'Live · two AI models':'Live · scripted messages'};
   es.onerror=()=>{$('livek').textContent='Reconnecting…'};
-  es.addEventListener('config',e=>{const h=JSON.parse(e.data).hotel;if(JSON.stringify(h)!==JSON.stringify(H)){H=h;renderCfg()}});
+  es.addEventListener('config',e=>{const d=JSON.parse(e.data);if(JSON.stringify(d.settings)!==JSON.stringify(CFG[d.biz])){CFG[d.biz]=d.settings;if(d.biz===BIZ)renderCfg()}});
   es.addEventListener('stats',e=>stats(JSON.parse(e.data).stats));
   ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
 }

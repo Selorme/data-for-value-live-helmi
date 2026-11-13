@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Helmi Live</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/film.css">
 <style>
 /* Layout: one column phone flow. Person, trip, rules, live trip, result. */
 :root{
@@ -148,6 +149,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
 
   <p class="foot">Your rules are enforced by code. The AI only writes the messages.</p>
 </main>
+<script src="/static/film.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -218,11 +220,11 @@ $('go').onclick=async()=>{
 function err(t){let b=document.querySelector('#s-rules .err');if(!b){b=document.createElement('p');b.className='err';b.setAttribute('role','alert');$('go').before(b)}b.textContent=t}
 function typing(t){let x=$('typing');if(!x){x=document.createElement('p');x.id='typing';x.className='typing'}x.textContent=t;x.hidden=!t;$('chat').append(x)}
 function add(html){const d=document.createElement('div');d.innerHTML=html;const el=d.firstElementChild;$('chat').insertBefore(el,$('typing'));el.scrollIntoView({block:'end',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});return el}
-let PN={},BN={};
+let PN={},BN={},PTY={},OFF={n:0,yes:0},offerKeys={};
 function on(t,d){
   if(t==='queue'){typing(`The stand is busy. You are number ${d.pos} in the queue…`);return}
   if(t==='error'){typing('');add(`<p class="err">${esc(d.text)}</p>`);return}
-  if(t==='start'){PN={};BN={};d.places.forEach(([id,n,ty,bn])=>{PN[id]=n;BN[id]=bn||'Bot'});return}
+  if(t==='start'){PN={};BN={};PTY={};OFF={n:0,yes:0};offerKeys={};d.places.forEach(([id,n,ty,bn])=>{PN[id]=n;BN[id]=bn||'Bot';PTY[id]=ty});return}
   if(t==='place'){iPlace++;$('c-prog').textContent=`Place ${iPlace} of ${nPlaces}`;add(`<div class="sep"><span class="k">${esc(d.ptype)} · ${iPlace} of ${nPlaces}</span><b>${esc(d.pname)}</b><span class="small muted">Their bot: ${esc(d.bot||'')}</span></div>`);typing((d.bot||'The bot')+' from '+d.pname+' is writing…');return}
   if(t==='msg'){
     const bot=d.who==='bot';
@@ -236,13 +238,13 @@ function on(t,d){
     const el=add(`<div class="ping ${o?'offer':''}" role="group" aria-label="Helmi needs you"><p class="k">${o?'An offer':'Helmi needs you'}</p>
       <p>${o?`${esc(d.pname)} offers <b>${esc(o)}</b> if you share your <b>${esc(low(d.label))}</b>. You said no before. Change your mind?`:`<b>${esc(d.pname)}</b> wants your <b>${esc(low(d.label))}</b>.`}</p>
       <p class="small muted">Helmi would send: ${esc(d.value)}</p><div class="row"><button class="btn" data-ok="1">Share it</button><button class="btn alt" data-ok="0">${o?'Still no':'Don’t share'}</button></div><div class="bar"><i></i></div></div>`);
-    const key=d.place+'|'+d.k;pend[key]=el;const bar=el.querySelector('.bar i');requestAnimationFrame(()=>{bar.style.transitionDuration='45s';bar.style.width='0%'});
+    const key=d.place+'|'+d.k;pend[key]=el;if(o){OFF.n++;offerKeys[key]=1}const bar=el.querySelector('.bar i');requestAnimationFrame(()=>{bar.style.transitionDuration='45s';bar.style.width='0%'});
     el.querySelector('[data-ok="1"]').focus({preventScroll:true});
     el.onclick=async e=>{const b=e.target.closest('[data-ok]');if(!b)return;el.querySelectorAll('button').forEach(x=>x.disabled=true);
       await fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:d.place,k:d.k,ok:b.dataset.ok==='1'})}).catch(()=>{})};
     return}
   if(t==='stepin_done'||t==='stepin_timeout'){
-    const el=pend[d.place+'|'+d.k];
+    const el=pend[d.place+'|'+d.k];if(t==='stepin_done'&&d.ok&&offerKeys[d.place+'|'+d.k])OFF.yes++;
     if(el){el.querySelectorAll('button').forEach(x=>x.disabled=true);const p=document.createElement('p');p.className='small';
       p.textContent=t==='stepin_timeout'?'No answer in time, so Helmi keeps it. That’s the safe default.':d.ok?'You said yes.':'You said no. Helmi keeps it.';
       const bar=el.querySelector('.bar');if(bar)bar.replaceWith(p);else el.append(p)}
@@ -259,7 +261,31 @@ function on(t,d){
         ${r.kept.length?`<p class="small muted">Kept: ${esc(r.kept.map(k=>low(F(k).label)).join(', '))}</p>`:''}
         ${r.lost?`<p class="lost">Because you kept it: ${esc(r.lost)}</p>`:''}</div>`).join('')}
       <p class="small muted">Each place asked separately, even the restaurant owned by the hotel. Nothing went anywhere you didn’t allow.</p>`;
-    const b=document.createElement('button');b.className='btn';b.textContent='See the summary';b.onclick=()=>show('s-res');$('chat').append(b);return}
+    const fb=document.createElement('button');fb.className='btn';fb.textContent='▶ Watch the replay';fb.onclick=film;$('chat').append(fb);
+    const b=document.createElement('button');b.className='btn alt';b.textContent='See the summary';b.onclick=()=>show('s-res');$('chat').append(b);
+    const rb=document.createElement('button');rb.className='btn';rb.textContent='▶ Watch the replay';rb.onclick=film;$('res').append(rb);return}
+}
+
+function film(){
+  if(!window.LiveFilm||!results)return;
+  const pl=!!cur.plural, P=cur.pron, nm=cur.short, Nm=nm, has=pl?'have':'has';
+  const lab=k=>low(F(k).label), list=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+  let e=0,m=0;const stops=[];
+  Object.entries(results).forEach(([id,r])=>{
+    e+=r.shared.length;m+=r.kept.length;const n=r.shared.length+r.kept.length,bot=BN[id]||'The bot',pn=PN[id]||id;
+    const say=[`${bot} at ${pn} asked for ${n} thing${n===1?'':'s'}.`];
+    if(!r.kept.length)say.push(`${Nm} shared all of ${pl?'them':'them'}.`);
+    else if(!r.shared.length)say.push(`${Nm} kept everything, including ${P.pos} ${list(r.kept.slice(0,2).map(lab))}.`);
+    else say.push(`${Nm} shared ${r.shared.length}, and kept ${P.pos} ${list(r.kept.slice(0,2).map(lab))}${r.kept.length>2?' and more':''}.`);
+    if(r.lost)say.push(`Because of that, ${r.lost}.`);
+    stops.push({kind:'stop',id,per:cur.id,name:pn,when:(PTY[id]||'').replace(/^./,c=>c.toUpperCase()),ok:r.kept.length?(r.lost?false:null):true,
+      title:r.kept.length?`Shared ${r.shared.length}, kept ${r.kept.length}`:`Shared all ${r.shared.length}`,
+      text:(r.shared.length?'Shared: '+r.shared.map(lab).join(', ')+'. ':'Shared nothing. ')+(r.kept.length?'Kept: '+r.kept.map(lab).join(', ')+'.':'')+(r.lost?' Result: '+r.lost+'.':''),e,m,say});
+  });
+  const sh=e,kp=m;
+  window.LiveFilm.open({intro:`This is the story of ${nm}${pl?'’':'’s'} trip.`,sub:cur.who,stops,
+    outro:{rows:[[sh,'details shared'],[kp,'details kept'],[OFF.n?OFF.yes+' of '+OFF.n:'0','offers taken']],
+      sub:`${Nm} decided what went where. Nothing went anywhere ${P.sub} didn’t allow.`,say:'And then the trip is over. Here is how it went.'}});
 }
 $('again').onclick=()=>show('s-pick');
 $('redo').onclick=()=>{rules();show('s-rules')};
