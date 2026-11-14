@@ -136,6 +136,30 @@ body.inapp{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .drow:first-child{border-top:0;padding-top:0}
 .chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);margin:2px 4px 0 0}
 .chip.share{color:var(--share);border-color:var(--share)} .chip.ask{color:var(--ask);border-color:var(--ask)} .chip.never{color:var(--never);border-color:var(--never)}
+
+/* trip-mode layout: Trip, Helmi, My data, About me, Sharing */
+.nav{grid-template-columns:repeat(5,1fr)}
+.nav button{font-size:11px}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--helmi);transition:width .6s}
+.stop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:12px}
+.stop.on{border:2px solid var(--helmi)}
+.when{font:700 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--never)}
+.scene{font:500 17px/1.35 var(--display)}
+.req{background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.moms{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.moms li{display:flex;gap:10px;align-items:flex-start}
+.moms .mk{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:700 13px var(--body);flex:none;color:#fff;background:var(--share)}
+.moms li.bad .mk{background:var(--never)} .moms li.trade .mk{background:var(--offer)}
+.moms p{font-size:14px}
+.soon{gap:4px}
+.soon p{font-size:14px;color:var(--muted)}
+.linkbtn{background:none;border:0;color:var(--helmi);font:600 14px var(--body);padding:4px 0;cursor:pointer;text-align:left}
+.hnote{align-self:flex-start;max-width:92%;display:flex;gap:8px;align-items:flex-end}
+.hnote .b{background:var(--helmi-soft);padding:10px 12px;border-radius:14px;border-bottom-left-radius:4px}
+.me-h{display:flex;gap:12px;align-items:center}
+.me-h .av{width:52px;height:52px;font-size:22px}
+#a-body{display:flex;flex-direction:column;gap:12px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
@@ -179,8 +203,9 @@ body.inapp{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 </main>
 <nav class="nav" id="nav" hidden aria-label="Helmi">
   <button data-tab="trip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Trip<span class="badge" hidden></span></button>
-  <button data-tab="msgs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages<span class="badge" hidden></span></button>
+  <button data-tab="helmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Helmi<span class="badge" hidden></span></button>
   <button data-tab="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>My data<span class="badge" hidden></span></button>
+  <button data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>About me<span class="badge" hidden></span></button>
   <button data-tab="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Sharing<span class="badge" hidden></span></button>
 </nav>
 <div class="sheet" id="sheet" hidden></div>
@@ -244,105 +269,131 @@ document.querySelector('.presets').onclick=e=>{const b=e.target.closest('[data-p
 document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k||e.target.type!=='radio')return;pol[k]=e.target.value;pre=null;document.querySelectorAll('[data-pre]').forEach(b=>b.setAttribute('aria-pressed','false'));
   if(nid&&!finished){fetch('/api/policy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,nid,policy:{[k]:pol[k]}})}).catch(()=>{});toast('Rule changed. It applies to the places Helmi hasn’t reached yet.')}});
 
-/* ---------------------------------------------------------------- the live trip */
-let TH={},ORDER=[],TAB='msgs',OPEN=null,PEND=[],finished=false,SH={},OFF={n:0,yes:0},offerKeys={},queuePos=0,toastT;
+/* ---------------------------------------------------------------- the live trip: same tabs as trip mode (Trip, Helmi, My data, About me, Sharing) */
+let sheetKey='',TH={},ORDER=[],TAB='trip',PINGS={},PEND=[],NOTES=[],seenNotes=0,finished=false,SH={},OFF={n:0,yes:0},queuePos=0,toastT,EXP={},tripBadge=false;
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
     const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
-    nid=j.nid;TH={};ORDER=[];TAB='msgs';OPEN=null;PEND=[];finished=false;SH={};OFF={n:0,yes:0};offerKeys={};results=null;queuePos=0;
-    show('s-app');render();
+    nid=j.nid;TH={};ORDER=[];TAB='trip';PINGS={};PEND=[];NOTES=[];seenNotes=0;finished=false;SH={};OFF={n:0,yes:0};results=null;queuePos=0;EXP={};tripBadge=false;
+    sheetKey='';show('s-app');render();
     (EARLY[nid]||[]).forEach(([t,d])=>on(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
 };
 function err(t){let b=document.querySelector('#s-rules .err');if(!b){b=document.createElement('p');b.className='err';b.setAttribute('role','alert');$('go').before(b)}b.textContent=t}
-function toast(t,open){clearTimeout(toastT);const el=$('toast');el.textContent=t;el.hidden=false;el.onclick=()=>{el.hidden=true;if(open){TAB='msgs';OPEN=open;markRead(open);render(true)}};toastT=setTimeout(()=>el.hidden=true,4500)}
-function markRead(id){if(TH[id])TH[id].unread=0}
+function toast(t,tab){clearTimeout(toastT);const el=$('toast');el.textContent=t;el.hidden=false;el.onclick=()=>{el.hidden=true;if(tab){TAB=tab;render(true)}};toastT=setTimeout(()=>el.hidden=true,4500)}
+function placeOf(id){return (cur.places||[]).find(x=>x.id===id)||{}}
+function scene(id){const pl=placeOf(id),th=TH[id],ty=th.type,nm=th.name,h=+((/(\d\d):\d\d/.exec(pl.when||'')||[])[1]||19);
+  const S={'insurer':'Before you leave, you buy travel insurance.','trip planner app':'Before you leave, you plan the trip in an app.','transport':'You set off on your trip.',
+    'taxi':'You need a taxi from the station.','hotel':'You arrive at your hotel.','restaurant':h<16?'At lunchtime, you go out to eat.':'In the evening, you go out for dinner.',
+    'venue':/concert|music/i.test(nm)?'In the evening, you go to the concert.':/circus/i.test(nm)?'You take the family to the circus.':/arena/i.test(nm)?'You go to an event at the arena.':'You go to the show.',
+    'work event':'You pick up your badge at the work event.','pharmacy':'You stop at a pharmacy.','grocery delivery':'You order groceries to your room.','spa':'You book a visit to the spa.',
+    'museum':'You visit the museum.','tour':'You join a walking tour.','childcare':'You book a babysitter for the evening.','school':'You visit a school.','coworking space':'You work from a coworking space for the day.','course':'You start your course.'};
+  return S[ty]||`Next stop: ${nm}.`}
+function whenOf(id){return (placeOf(id).when||'').replace(', arrival',', on arrival')}
+function note(text,extra){NOTES.push({text,...(extra||{})})}
 function on(t,d){
   if(t==='queue'){queuePos=d.pos;render();return}
-  if(t==='error'){finished=true;toast(d.text);render();return}
-  if(t==='start'){queuePos=0;d.places.forEach(([id,n,ty,bn])=>{TH[id]={id,name:n,type:ty,bot:bn||'Bot',status:'waiting',items:[],unread:0,res:null};ORDER.push(id)});render();return}
+  if(t==='error'){finished=true;note(d.text);toast(d.text);render();return}
+  if(t==='start'){queuePos=0;d.places.forEach(([id,n,ty,bn])=>{TH[id]={id,name:n,type:ty,bot:bn||'Bot',status:'waiting',items:[],res:null,keys:[]};ORDER.push(id)});
+    note(`Hi, I’m Helmi. I’ll talk to the ${ORDER.length} places on your trip, one at a time, in the order you’ll meet them. I follow your rules, and I’ll buzz you when I need you.`);render();return}
   const th=TH[d.place];
-  if(t==='place'&&th){th.status='active';
-    const follow=TAB==='msgs'&&(!OPEN||(TH[OPEN]&&TH[OPEN].status==='done'));
-    if(follow){OPEN=d.place}else{th.unread++;toast(`New message from ${th.bot} · ${th.name}`,d.place)}
-    render(true);return}
-  if(t==='msg'&&th){th.items.push({k:'msg',...d});(d.shared||[]).forEach(k=>(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name));
-    if(!(TAB==='msgs'&&OPEN===d.place))th.unread++;render();return}
-  if(t==='stepin'&&th){const key=d.place+'|'+d.k;if(d.offer){OFF.n++;offerKeys[key]=1}
-    th.items.push({k:'ping',key,...d,state:'open'});PEND.push(key);try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}
-    if(!(TAB==='msgs'&&OPEN===d.place))th.unread++;render();return}
-  if((t==='stepin_done'||t==='stepin_timeout')&&th){const key=d.place+'|'+d.k,it=th.items.find(x=>x.k==='ping'&&x.key===key);
-    if(it)it.state=t==='stepin_timeout'?'timeout':d.ok?'yes':'no';if(t==='stepin_done'&&d.ok&&offerKeys[key])OFF.yes++;PEND=PEND.filter(x=>x!==key);render();return}
-  if(t==='place_done'&&th){th.status='done';th.res=d;render();return}
-  if(t==='done'){finished=true;results=d.results;$('nav').querySelector('[data-tab="trip"] .badge').hidden=false;$('nav').querySelector('[data-tab="trip"] .badge').textContent='1';
-    toast('Trip finished. Tap to see the summary and replay.');$('toast').onclick=()=>{$('toast').hidden=true;TAB='trip';OPEN=null;render(true)};render();return}
+  if(t==='place'&&th){th.status='active';th.keys=d.keys||[];
+    note(`Now I’m talking to ${th.bot} at ${th.name}. They ask for ${th.keys.length} thing${th.keys.length===1?'':'s'}.`);
+    render(false,true);return}
+  if(t==='msg'&&th){th.items.push({type:'msg',...d});(d.shared||[]).forEach(k=>(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name));
+    if(d.who==='helmi'&&(d.shared||[]).length)note(`I gave ${th.name}: ${(d.shared).map(k=>low(F(k).label)).join('; ')}.`);
+    if(d.who==='helmi'&&(d.kept||[]).length)note(`I kept these from ${th.name}: ${(d.kept).map(k=>low(F(k).label)).join('; ')}.`);
+    render();return}
+  if(t==='stepin'&&th){const key=d.place+'|'+d.k;if(d.offer)OFF.n++;
+    PINGS[key]={key,place:d.place,pname:d.pname,dk:d.k,label:d.label,value:d.value,offer:d.offer,bot:th.bot,state:'open'};
+    th.items.push({type:'ping',key});NOTES.push({type:'ping',key});PEND.push(key);
+    try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}render();return}
+  if((t==='stepin_done'||t==='stepin_timeout')&&th){const key=d.place+'|'+d.k,it=PINGS[key];
+    if(it){if(t==='stepin_timeout'){it.state='timeout';note(`You didn’t answer in time, so I kept your ${low(it.label)}.`)}else if(it.state!=='timeout'){it.state=d.ok?'yes':'no';if(d.ok&&it.offer)OFF.yes++}}
+    PEND=PEND.filter(x=>x!==key);render();return}
+  if(t==='place_done'&&th){th.status='done';th.res=d;
+    note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`);render();return}
+  if(t==='done'){finished=true;results=d.results;tripBadge=TAB!=='trip';note('Your trip is over. You can watch the replay in Trip.');
+    if(TAB!=='trip')toast('Trip finished. Tap to see your trip and the replay.','trip');render(true);return}
 }
-function answer(key,ok){const [place,k]=key.split('|');const th=TH[place];const it=th&&th.items.find(x=>x.k==='ping'&&x.key===key);if(it)it.state='sent';PEND=PEND.filter(x=>x!==key);render();
-  fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place,k,ok})}).catch(()=>{})}
+function answer(key,ok){const it=PINGS[key];if(!it||it.state!=='open')return;it.state='sent';PEND=PEND.filter(x=>x!==key);render();
+  fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:it.place,k:it.dk,ok})}).catch(()=>{})}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ans]');if(b){answer(b.dataset.key,b.dataset.ans==='1');return}
-  const o=e.target.closest('[data-open]');if(o){OPEN=o.dataset.open;markRead(OPEN);render(true);return}
-  if(e.target.closest('[data-back]')){OPEN=null;render(true);return}
+  const x=e.target.closest('[data-exp]');if(x){EXP[x.dataset.exp]=!EXP[x.dataset.exp];render();return}
+  const g=e.target.closest('[data-goto]');if(g){TAB=g.dataset.goto;render(true);return}
   if(e.target.closest('[data-replay]')){film();return}
   if(e.target.closest('[data-again]')){nid=null;show('s-pick');return}
   if(e.target.closest('[data-redo]')){nid=null;rules();show('s-rules');return}});
-$('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;TAB=b.dataset.tab;if(TAB==='trip')b.querySelector('.badge').hidden=true;if(TAB==='msgs'&&OPEN)markRead(OPEN);render(true)};
-function avatar(th){return `<div class="av bz" aria-hidden="true">${esc(th.bot[0])}</div>`}
-function last(th){const m=[...th.items].reverse().find(x=>x.k==='msg');return m?(m.who==='bot'?th.bot+': ':'Helmi: ')+m.text:th.status==='waiting'?'Not started yet':'…'}
-function stLabel(th){return th.status==='active'?'<span class="st on">Talking</span>':th.status==='done'?'<span class="st ok">Done</span>':'<span class="st">Waiting</span>'}
+$('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;TAB=b.dataset.tab;if(TAB==='trip')tripBadge=false;render(true)};
+const Y=s=>esc(s);
 function pingCard(it,inSheet){const o=it.offer,open=it.state==='open';
-  const head=`<p class="k">${o?'An offer':'Helmi needs you'}</p><p>${o?`${esc(it.pname)} offers <b>${esc(o)}</b> if you share your <b>${esc(low(it.label))}</b>. You said no before. Change your mind?`:`<b>${esc(it.pname)}</b> wants your <b>${esc(low(it.label))}</b>.`}</p><p class="small muted">Helmi would send: ${esc(it.value)}</p>`;
-  const tail=open?`<div class="row"><button class="btn" data-ans="1" data-key="${it.key}">Share it</button><button class="btn alt" data-ans="0" data-key="${it.key}">${o?'Still no':'Don’t share'}</button></div>${inSheet?'<p class="small muted">You have 45 seconds. If you don’t answer, Helmi keeps it.</p>':''}`
-    :`<p class="small">${{sent:'Sending your answer…',yes:'You said yes.',no:'You said no. Helmi keeps it.',timeout:'No answer in time, so Helmi keeps it. That’s the safe default.'}[it.state]}</p>`;
+  const head=`<p class="k">${o?'An offer':'Helmi needs you'}</p><p>${o?`${Y(it.pname)} offers <b>${Y(o)}</b> if you share your <b>${Y(low(it.label))}</b>. You said no before. Change your mind?`:`<b>${Y(it.bot)}</b> at <b>${Y(it.pname)}</b> wants your <b>${Y(low(it.label))}</b>. Your rule says: ask me.`}</p><p class="small muted">I would send: ${Y(it.value)}</p>`;
+  const tail=open?`<div class="row"><button class="btn" data-ans="1" data-key="${it.key}">Share it</button><button class="btn alt" data-ans="0" data-key="${it.key}">${o?'Still no':'Don’t share'}</button></div>${inSheet?'<p class="small muted">You have 45 seconds. If you don’t answer, I keep it.</p>':''}`
+    :`<p class="small"><b>${{sent:'Sending your answer…',yes:'You said yes. I shared it.',no:'You said no. I kept it.',timeout:'No answer in time, so I kept it. That’s the safe default.'}[it.state]}</b></p>`;
   return `<div class="ping ${o?'offer':''}" role="group" aria-label="${o?'An offer':'Helmi needs you'}">${head}${tail}</div>`}
 function msgHtml(th,x){const bot=x.who==='bot';
-  const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${esc(short(F(k).label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(short(F(k).label))}</span>`)].join('');
-  const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src);
-  return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?esc(th.bot[0]):'H'}</div><div class="b"><span class="who">${bot?esc(th.bot+' · '+th.name):'Your Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}
-function threadView(th){
-  const lastMsg=[...th.items].reverse().find(x=>x.k==='msg');
-  const typing=th.status==='active'&&!th.items.some(x=>x.k==='ping'&&(x.state==='open'||x.state==='sent'))?`<p class="typing">${lastMsg&&lastMsg.who==='bot'?'Helmi':th.bot} is writing…</p>`:'';
-  return `<div class="thead"><button class="back" data-back aria-label="Back to messages">‹ Messages</button>${avatar(th)}<div style="min-width:0"><b>${esc(th.bot)} · ${esc(th.name)}</b><p class="small muted">${esc(th.type)}${th.status==='done'?' · finished':''}</p></div></div>
-    <div class="chat" id="chat" aria-live="polite">${th.items.length?th.items.map(x=>x.k==='ping'?pingCard(x,false):msgHtml(th,x)).join(''):'<p class="typing">Waiting for this conversation to start.</p>'}${typing}
-    ${th.status==='done'?`<p class="small muted" style="text-align:center">${esc(th.name)}: ${th.res.shared.length} shared, ${th.res.kept.length} kept${th.res.lost?'. Because something was kept: '+esc(th.res.lost):''}.</p>`:''}</div>`}
-function inboxView(){
-  const qs=queuePos?`<p class="card small">The stand is busy. You are number ${queuePos} in the queue…</p>`:'';
-  const list=ORDER.map(id=>TH[id]).sort((a,b)=>({active:0,done:1,waiting:2}[a.status]-{active:0,done:1,waiting:2}[b.status]));
-  return qs+`<div class="inbox">${list.map(th=>`<button class="th ${th.unread?'unread':''}" data-open="${th.id}" ${th.status==='waiting'?'disabled':''}>${avatar(th)}<span class="tx"><b>${esc(th.bot)} · ${esc(th.name)}</b><span>${esc(last(th))}</span></span>${stLabel(th)}</button>`).join('')||'<p class="th">Getting ready…</p>'}</div>
-    <p class="small muted">Each business talks to Helmi in its own conversation. A new one opens when Helmi reaches that place.</p>`}
+  const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${Y(short(F(k).label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${Y(short(F(k).label))}</span>`)].join('');
+  const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+Y(x.src||'');
+  return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?Y(th.bot[0]):'H'}</div><div class="b"><span class="who">${bot?Y(th.bot+' · '+th.name):'Your Helmi'}</span>${Y(x.text||'')}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}
+function convo(th){const lastMsg=[...th.items].reverse().find(x=>x.type==='msg'),waiting=th.items.some(x=>x.type==='ping'&&PINGS[x.key]&&['open','sent'].includes(PINGS[x.key].state));
+  const typing=th.status==='active'?(waiting?'<p class="typing">Waiting for your answer…</p>':`<p class="typing">${lastMsg&&lastMsg.who==='bot'?'Helmi':Y(th.bot)} is writing…</p>`):'';
+  return `<div class="chat">${th.items.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):msgHtml(th,x)).join('')||'<p class="typing">'+Y(th.bot)+' is writing…</p>'}${th.items.length?typing:''}</div>`}
+function moments(id){const r=TH[id].res,g=r?r.shared:[];
+  return (placeOf(id).moments||[]).map(mo=>{const on=mo.dep.every(k=>g.includes(k))||(mo.alt&&[].concat(mo.alt).some(k=>g.includes(k)));
+    const cls=mo.trade?(on&&mo.neg?'bad':on?'trade':''):on?'':'bad',mk=cls==='bad'?'✗':cls==='trade'?'⇄':'✓';
+    return `<li class="${cls}"><span class="mk" aria-hidden="true">${mk}</span><p><b>${Y(mo.t)}.</b> ${Y(on?mo.b:mo.w)}</p></li>`}).join('')}
+function reqCard(th){const n=th.keys.length;return `<div class="req"><p><b>${Y(th.name)}</b> is asking for ${n} thing${n===1?'':'s'}</p><p class="small muted">${Y(th.type)} · their bot: ${Y(th.bot)}</p><p class="small">${Y(placeOf(th.id).why||'')}</p></div>`}
+function stopCard(th,i){
+  if(th.status==='active')return `<div class="stop on" id="live"><p class="when">${Y(whenOf(th.id))} · stop ${i+1} of ${ORDER.length}</p><p class="scene">${Y(scene(th.id))}</p>${reqCard(th)}${convo(th)}<span id="live-end"></span></div>`;
+  const r=th.res;
+  return `<div class="stop"><p class="when">${Y(whenOf(th.id))}</p><h3>${Y(th.name)}</h3><p class="small">${r.shared.length?'You shared '+r.shared.length+' of '+(r.shared.length+r.kept.length):'You shared nothing'}${r.kept.length?'. Kept: '+Y(r.kept.map(k=>low(F(k).label)).join('; ')):''}.</p>
+    <ul class="moms">${moments(th.id)}</ul><button class="linkbtn" data-exp="${th.id}" aria-expanded="${!!EXP[th.id]}">${EXP[th.id]?'Hide the conversation':'Show the conversation with '+Y(th.bot)}</button>${EXP[th.id]?convo(th):''}</div>`}
 function tripView(){
+  const n=ORDER.length,doneN=ORDER.filter(id=>TH[id].status==='done').length;
+  if(queuePos)return `<div class="card"><p>The stand is busy. You are number ${queuePos} in the queue. Your trip starts in a moment.</p></div>`;
+  if(!n)return `<div class="card"><p class="typing">Getting your trip ready…</p></div>`;
   let sh=0,kp=0;ORDER.forEach(id=>{const r=TH[id].res;if(r){sh+=r.shared.length;kp+=r.kept.length}});
-  const rows=ORDER.map((id,i)=>{const th=TH[id],r=th.res;return `<div class="pl ${th.status==='active'?'on':th.status==='done'?'ok':''}"><span class="n">${th.status==='done'?'✓':i+1}</span><span><b>${esc(th.name)}</b><small>${th.status==='done'?`Shared ${r.shared.length}, kept ${r.kept.length}${r.lost?'. '+esc(r.lost[0].toUpperCase()+r.lost.slice(1)):''}`:th.status==='active'?`${esc(th.bot)} is talking to Helmi now`:'Coming up'}</small></span></div>`}).join('');
-  if(!finished)return `<div class="places">${rows}</div>`;
-  return `<div class="card"><p class="k">Trip finished</p><h2>${esc(cur.short)} shared ${sh} of ${sh+kp} details the places asked for</h2>
-    <div class="nums"><div><b>${ORDER.length}</b><span>places</span></div><div><b>${sh}</b><span>shared</span></div><div><b>${kp}</b><span>kept</span></div></div>
-    <button class="btn" data-replay>▶ Watch the replay</button></div>
-    <div class="card">${ORDER.map(id=>{const th=TH[id],r=th.res||{shared:[],kept:[]};return `<div class="res-place"><b>${esc(th.name)}</b>
-      <p class="small">${r.shared.length?'Shared: '+esc(r.shared.map(k=>low(F(k).label)).join(', ')):'Shared nothing'}</p>
-      ${r.kept.length?`<p class="small muted">Kept: ${esc(r.kept.map(k=>low(F(k).label)).join(', '))}</p>`:''}${r.lost?`<p class="lost">Because you kept it: ${esc(r.lost)}</p>`:''}</div>`}).join('')}
-      <p class="small muted">Each place asked separately, even the restaurant owned by the hotel. Nothing went anywhere you didn’t allow.</p></div>
-    <button class="btn" data-replay>▶ Watch the replay</button><button class="btn" data-again>Try another person</button><button class="btn alt" data-redo>Same person, different rules</button>`}
+  const top=finished?`<div class="card"><p class="k">Home again</p><h2>You shared ${sh} of ${sh+kp} things the places asked for</h2>
+      <div class="nums"><div><b>${n}</b><span>places</span></div><div><b>${sh}</b><span>shared</span></div><div><b>${kp}</b><span>kept</span></div></div>
+      <p class="small muted">Each place asked separately, even the restaurant owned by the hotel. Nothing went anywhere you didn’t allow.</p>
+      <button class="btn" data-replay>▶ Watch your trip (replay)</button></div>`:`<div class="prog" aria-label="Stop ${Math.min(doneN+1,n)} of ${n}"><i style="width:${Math.round(doneN/n*100)}%"></i></div>`;
+  const done=ORDER.filter(id=>TH[id].status==='done'),act=ORDER.filter(id=>TH[id].status==='active'),soon=ORDER.filter(id=>TH[id].status==='waiting');
+  return top+(finished?done:done.concat(act)).map(id=>stopCard(TH[id],ORDER.indexOf(id))).join('')+
+    (soon.length?`<div class="card soon"><p class="k">Coming up</p>${soon.map(id=>`<p>${Y(whenOf(id))} · ${Y(TH[id].name)}</p>`).join('')}</div>`:'')+
+    (finished?`<button class="btn" data-replay>▶ Watch your trip (replay)</button><button class="btn" data-again>Try another person</button><button class="btn alt" data-redo>Same person, different rules</button>`:'')}
+function helmiView(){
+  return `<div class="chat">${NOTES.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):`<div class="hnote"><div class="av" aria-hidden="true">H</div><div class="b">${Y(x.text)}</div></div>`).join('')}</div>
+    ${finished?'<button class="btn" data-goto="trip">See your trip and the replay</button>':'<button class="btn alt" data-goto="trip">Watch the conversations in Trip</button>'}`}
 function dataView(){const m=keysAsked();
-  return `<div class="card"><p class="k">My data</p><p class="small">What this trip’s places asked for, your rule for each, and where it actually went.</p>${Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>{const f=F(k);const went=SH[k]||[];
-    return `<div class="drow"><b>${esc(f.label)}</b><p class="small">${esc(f.value)}</p><p><span class="chip ${pol[k]}">${{share:'Share',ask:'Ask me',never:'Never'}[pol[k]]}</span>${went.length?went.map(n=>`<span class="chip">→ ${esc(n)}</span>`).join(''):'<span class="small muted">Not shared with anyone yet</span>'}</p></div>`}).join('')}</div>`}
+  return `<div class="card"><p class="k">My data</p><p class="small">What the places on your trip asked for, your rule for each, and where it actually went.</p>${Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>{const f=F(k);const went=SH[k]||[];
+    return `<div class="drow"><b>${Y(f.label)}</b><p class="small">${Y(f.value)}</p><p><span class="chip ${pol[k]}">${{share:'Share',ask:'Ask me',never:'Never'}[pol[k]]}</span>${went.length?went.map(n=>`<span class="chip">→ ${Y(n)}</span>`).join(''):'<span class="small muted">Not shared with anyone yet</span>'}</p></div>`}).join('')}</div>`}
+function meView(){const ks=Object.keys(cur.fields).sort((a,b)=>order(a)-order(b));const grp=[['need','What you need'],['record','Records about you'],['bulk','Lots of data about you']];
+  return `<div class="card"><div class="me-h"><div class="av" aria-hidden="true">${Y(cur.short[0])}</div><div><h2>${Y(cur.name)}</h2><p class="small muted">${Y(cur.who)}</p></div></div>
+    <p class="small">Everything Helmi can reach about you. You told it once; Helmi only passes on a line when your rules allow it.</p></div>`+
+    grp.map(([g,l])=>{const xs=ks.filter(k=>cur.fields[k].kind===g);return xs.length?`<div class="card"><p class="k">${l}</p>${xs.map(k=>`<div class="drow"><b>${Y(cur.fields[k].label)}</b><p class="small">${Y(cur.fields[k].value)}</p></div>`).join('')}</div>`:''}).join('')}
 function shareView(){const m=keysAsked();
-  return `<div class="card"><p class="k">Sharing rules</p><p class="small">${finished?'Your rules for this trip.':'Change a rule and it applies to the places Helmi hasn’t reached yet.'}</p>${Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>ruleRow(k,m[k])).join('')}</div>`}
-function render(scrollTop){
+  const seen=ORDER.filter(id=>TH[id].res||TH[id].items.some(x=>x.shared&&x.shared.length)).map(id=>{const th=TH[id];const g=Object.keys(SH).filter(k=>SH[k].includes(th.name));
+    return `<div class="drow"><b>What ${Y(th.name)} sees</b><p class="small">${g.length?Y(g.map(k=>low(F(k).label)).join(', ')):'Nothing from you'}</p></div>`}).join('');
+  return (seen?`<div class="card"><p class="k">Who has what</p>${seen}</div>`:'')+
+    `<div class="card"><p class="k">Your rules</p><p class="small">${finished?'Your rules for this trip.':'Change a rule and it applies to the places Helmi hasn’t reached yet.'}</p>${Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>ruleRow(k,m[k])).join('')}</div>`}
+function render(scrollTop,toLive){
   if($('s-app').hidden)return;
   const n=ORDER.length,doneN=ORDER.filter(id=>TH[id].status==='done').length,act=ORDER.find(id=>TH[id].status==='active');
-  $('a-k').textContent=finished?'Trip finished':act?`Place ${doneN+1} of ${n}`:queuePos?'In the queue':'Starting';
-  $('a-title').textContent=cur.short+(cur.plural?'’':'’s')+' trip';
-  const chat=$('chat'),atBottom=chat?chat.scrollHeight-chat.scrollTop-chat.clientHeight<80||innerHeight+scrollY>=document.body.scrollHeight-120:true;
-  const body=TAB==='trip'?tripView():TAB==='data'?dataView():TAB==='share'?shareView():(OPEN&&TH[OPEN]?threadView(TH[OPEN]):inboxView());
-  $('a-body').innerHTML=body;
-  $('nav').querySelectorAll('[data-tab]').forEach(b=>{b.setAttribute('aria-current',b.dataset.tab===TAB?'page':'false');
-    if(b.dataset.tab==='msgs'){const u=ORDER.reduce((a,id)=>a+(TH[id].unread||0),0),bd=b.querySelector('.badge');bd.hidden=!u;bd.textContent=u}});
-  if(TAB==='msgs'&&OPEN)markRead(OPEN);
-  const sheetKey=PEND.find(k=>!(TAB==='msgs'&&OPEN===k.split('|')[0]));
-  if(sheetKey){const [pl]=sheetKey.split('|'),it=TH[pl].items.find(x=>x.key===sheetKey);$('sheet').innerHTML=pingCard(it,true);$('sheet').hidden=false}else{$('sheet').hidden=true;$('sheet').innerHTML=''}
-  if(scrollTop)scrollTo(0,0);else if(TAB==='msgs'&&OPEN&&atBottom)scrollTo({top:document.body.scrollHeight,behavior:RM?'auto':'smooth'});
+  $('a-k').textContent=finished?'Trip finished':act?`Stop ${doneN+1} of ${n} · ${TH[act].name}`:queuePos?'In the queue':'Starting';
+  $('a-title').textContent={trip:'Your trip',helmi:'Helmi',data:'My data',me:'About me',share:'Sharing'}[TAB];
+  const le=$('live-end'),near=TAB==='trip'&&le?le.getBoundingClientRect().top<innerHeight+160:false;
+  const hb=TAB==='helmi'&&(innerHeight+scrollY>=document.body.scrollHeight-160);
+  $('a-body').innerHTML=TAB==='trip'?tripView():TAB==='helmi'?helmiView():TAB==='data'?dataView():TAB==='me'?meView():shareView();
+  if(TAB==='helmi')seenNotes=NOTES.length;
+  $('nav').querySelectorAll('[data-tab]').forEach(b=>{const t=b.dataset.tab,bd=b.querySelector('.badge');b.setAttribute('aria-current',t===TAB?'page':'false');
+    let c=0;if(t==='helmi')c=PEND.length;if(t==='trip')c=tripBadge?1:0;bd.hidden=!c;bd.textContent=c});
+  const k=PEND[0],sk=k&&PINGS[k]?k+PINGS[k].state:'';if(sk!==sheetKey){sheetKey=sk;if(sk){$('sheet').innerHTML=pingCard(PINGS[k],true);$('sheet').hidden=false}else{$('sheet').hidden=true;$('sheet').innerHTML=''}}
+  if(scrollTop)scrollTo(0,0);
+  else if(TAB==='trip'&&(toLive||near)){const el=toLive?$('live'):$('live-end');if(el)el.scrollIntoView({block:toLive?'start':'end',behavior:RM?'auto':'smooth'})}
+  else if(hb)scrollTo({top:document.body.scrollHeight,behavior:RM?'auto':'smooth'});
 }
 function film(){ if(window.LiveFilm&&results) LiveFilm.trip(cur,results,{PN:Object.fromEntries(ORDER.map(id=>[id,TH[id].name])),BN:Object.fromEntries(ORDER.map(id=>[id,TH[id].bot])),PTY:Object.fromEntries(ORDER.map(id=>[id,TH[id].type])),OFF}); }
 boot().catch(()=>{$('conn').lastChild.textContent='Offline'});
