@@ -370,7 +370,7 @@ function tfOutro(st){ return (t,d)=>{ let s=R(-200,-200,2320,1480,C.teal); s+=Tx
 function tfBuild(data){ let at=0; const scenes=[], caps=[];
   const arr=x=>Array.isArray(x)?x.filter(Boolean):(x?[x]:[]);
   const add=(dur,draw,say)=>{ const L=arr(say); scenes.push({from:at,to:at+dur,draw,say:L}); if(L.length) caps.push({from:at+0.2,to:at+dur-0.1,text:L.join(' '),parts:L}); at+=dur; };
-  const one=s=>{ const v=(typeof TRIPVOX!=='undefined')&&TRIPVOX[s]; return v?v[1]+0.35:String(s||'').split(' ').length*0.42+0.9; };
+  const one=s=>{ const v=false; return v?v[1]+0.35:String(s||'').split(' ').length*0.42+0.9; };
   const dur=(base,say)=>{ const L=arr(say); if(!L.length) return base; return Math.max(base-0.8,L.reduce((a,s)=>a+one(s),0)+0.6); };
   add(dur(3.4,data.intro),(t)=>titleCard(['YOUR TRIP'],t,C.teal,'#fff',data.sub),data.intro);
   data.stops.forEach(st=>{ if(st.kind==='breach') add(dur(4.2,st.say),tfBreach(st),st.say); else if(st.kind==='accident') add(dur(5,st.say),tfAccident(st),st.say); else add(dur(4.0,st.say),tfStop(st),st.say); });
@@ -394,22 +394,22 @@ function tfTop(st){ return G('translate(40 18)',R(0,0,620,84,'rgba(255,248,236,.
 let tfF=null, tfPlaying=false, tfT=0, tfT0=0, tfS=0, tfRaf=null, tfVoice=true, tfLast=-1;
 let tfAu=null;
 let tfQ=[];
-let tfBusy=false, tfHoldStart=0;
+let tfBusy=false, tfHoldStart=0, tfCapNow='', tfCapScene=-1, tfSaidAt=0, tfDoneAt=0, tfDoneScene=-1;
 function tfSpeak(txt){ tfBusy=true;  if(Array.isArray(txt)){ tfQ=txt.slice(1); tfSpeak1(txt[0]); return; } tfQ=[]; tfSpeak1(txt); }
-function tfNextQ(){ if(tfPlaying&&tfQ.length){ const n=tfQ.shift(); setTimeout(()=>{ if(tfPlaying) tfSpeak1(n); },250); } else tfBusy=false; }
-function tfSpeak1(txt){ if(!tfVoice||!txt){ tfBusy=false; return; } const v=(typeof TRIPVOX!=='undefined')&&TRIPVOX[txt]; if(v){ try{ if(!tfAu){ tfAu=new Audio(); tfAu.onended=tfNextQ; } tfAu.pause(); tfAu.src='data:audio/mpeg;base64,'+v[0]; tfAu.currentTime=0; tfAu.play().catch(()=>{}); }catch(e){} return; }
-  try{ if(!window.speechSynthesis){ tfBusy=false; return; } speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='en-GB'; u.rate=1.05; const v=speechSynthesis.getVoices().find(v=>/^en(-|_)GB/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang)); if(v) u.voice=v; u.onend=tfNextQ; speechSynthesis.speak(u); }catch(e){} }
+function tfNextQ(){ const quick=performance.now()-tfSaidAt<300; if(tfPlaying&&tfQ.length){ const n=tfQ.shift(); setTimeout(()=>{ if(tfPlaying) tfSpeak1(n); },60); } else { tfBusy=false; tfDoneAt=quick?0:performance.now(); tfDoneScene=tfLast; } }
+function tfSpeak1(txt){ if(!tfVoice||!txt){ tfBusy=false; return; } tfCapNow=txt; tfCapScene=tfLast; tfSaidAt=performance.now(); const v=false; if(v){ try{ if(!tfAu){ tfAu=new Audio(); tfAu.onended=tfNextQ; } tfAu.pause(); tfAu.src='data:audio/mpeg;base64,'+v[0]; tfAu.currentTime=0; tfAu.play().catch(()=>{}); }catch(e){} return; }
+  try{ if(!window.speechSynthesis){ tfBusy=false; return; } speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang='en-GB'; u.rate=1.05; const v=speechSynthesis.getVoices().find(v=>/^en(-|_)GB/i.test(v.lang))||speechSynthesis.getVoices().find(v=>/^en/i.test(v.lang)); if(v) u.voice=v; u.onend=tfNextQ; u.onerror=()=>{ tfSaidAt=performance.now(); tfNextQ(); }; speechSynthesis.speak(u); }catch(e){} }
 function tfRender(t){ tfT=t; const i=Math.max(0,tfF.scenes.findIndex(s=>t>=s.from&&t<s.to)), sc=tfF.scenes[i<0?tfF.scenes.length-1:i];
   const lt=t-sc.from, wipe=lt<0.4?R(-10,-10,1940,1100,C.paper,0,`opacity="${(1-ease(lt/0.4)).toFixed(3)}"`):'';
   document.getElementById('tf-world').innerHTML=sc.draw(lt,sc.to-sc.from)+wipe;
-  const cap=tfF.caps.find(c=>t>=c.from&&t<c.to); document.getElementById('tf-cap').textContent=cap?cap.text:'';
+  const cap=tfF.caps.find(c=>t>=c.from&&t<c.to); let ct=''; if(cap){ if(tfVoice&&tfPlaying&&tfCapScene===i&&tfCapNow) ct=tfCapNow; else { const P=cap.parts||[cap.text], W=P.map(x=>x.split(' ').length), tot=W.reduce((a,b)=>a+b,0); let f=(t-cap.from)/(cap.to-cap.from)*tot, j=0; while(j<P.length-1&&f>W[j]){ f-=W[j]; j++; } ct=P[j]; } } document.getElementById('tf-cap').textContent=ct;
   if(i!==tfLast){ tfLast=i; if(tfPlaying&&sc.say) tfSpeak(sc.say); }
   const pr=document.getElementById('tf-prog'); if(pr) pr.value=t; }
 function tfLoop(){ if(!tfPlaying) return; let t=tfS+(performance.now()-tfT0)/1000;
-  { const sc=tfF.scenes[tfLast]; if(tfVoice&&tfBusy&&sc&&t>=sc.to-0.15){ if(!tfHoldStart) tfHoldStart=performance.now(); if(performance.now()-tfHoldStart<15000){ t=sc.to-0.15; tfS=t; tfT0=performance.now(); } } else tfHoldStart=0; } if(t>=tfF.duration){ t=tfF.duration-0.01; tfRender(t); tfPause(); return; } tfRender(Math.floor(t*24)/24); tfRaf=requestAnimationFrame(tfLoop); }
-function tfPlay(){ if(tfPlaying) return; if(tfT>=tfF.duration-0.05){ tfT=0; } tfPlaying=true; tfS=tfT; tfT0=performance.now(); tfLast=-1; document.getElementById('tf-pp').textContent='Pause'; tfLoop(); }
+  { const sc=tfF.scenes[tfLast]; if(tfVoice&&!tfBusy&&tfDoneAt&&tfDoneScene===tfLast&&sc&&tfLast<tfF.scenes.length-1&&performance.now()-tfDoneAt>700&&t>sc.from+2.6&&t<sc.to){ t=sc.to; tfS=t; tfT0=performance.now(); tfDoneAt=0; } if(tfVoice&&tfBusy&&sc&&t>=sc.to-0.15){ if(!tfHoldStart) tfHoldStart=performance.now(); if(performance.now()-tfHoldStart<40000){ t=sc.to-0.15; tfS=t; tfT0=performance.now(); } } else tfHoldStart=0; } if(t>=tfF.duration){ t=tfF.duration-0.01; tfRender(t); tfPause(); return; } tfRender(Math.floor(t*24)/24); tfRaf=requestAnimationFrame(tfLoop); }
+function tfPlay(){ if(tfPlaying) return; if(tfT>=tfF.duration-0.05){ tfT=0; } tfPlaying=true; tfS=tfT; tfT0=performance.now(); tfLast=-1; tfDoneAt=0; tfCapNow=''; document.getElementById('tf-pp').textContent='Pause'; tfLoop(); }
 function tfPause(){ tfPlaying=false; tfQ=[]; cancelAnimationFrame(tfRaf); try{ speechSynthesis.cancel(); }catch(e){} try{ if(tfAu) tfAu.pause(); }catch(e){} const b=document.getElementById('tf-pp'); if(b) b.textContent='Play'; }
-function tfOpen(data){ tfF=tfBuild(data); { const miss=tfF.caps.flatMap(c=>c.parts||[c.text]).filter(x=>!(typeof TRIPVOX!=='undefined'&&TRIPVOX[x])); if(miss.length) console.warn('TRIPVOX missing: '+JSON.stringify(miss)); } let el=document.getElementById('tfilm'); if(!el){ el=document.createElement('div'); el.id='tfilm'; el.setAttribute('role','dialog'); el.setAttribute('aria-label','Your trip, replayed'); document.body.appendChild(el); }
+function tfOpen(data){ tfF=tfBuild(data); {  } let el=document.getElementById('tfilm'); if(!el){ el=document.createElement('div'); el.id='tfilm'; el.setAttribute('role','dialog'); el.setAttribute('aria-label','Your trip, replayed'); document.body.appendChild(el); }
   el.innerHTML=`<div class="tf-box"><div class="tf-stage"><svg viewBox="0 0 1920 1080" aria-hidden="true"><defs><filter id="sh" x="-10%" y="-10%" width="130%" height="130%"><feDropShadow dx="5" dy="7" stdDeviation="3" flood-color="#3b2a1a" flood-opacity=".28"/></filter></defs><g id="tf-world"></g></svg></div>
    <p class="tf-cap" id="tf-cap" aria-live="polite"></p><input type="range" id="tf-prog" min="0" max="${tfF.duration.toFixed(2)}" step="0.05" value="0" aria-label="Position in the replay">
    <div class="tf-ctl"><button id="tf-pp">Pause</button><button id="tf-re">Restart</button><button id="tf-snd" aria-pressed="true">Voice on</button><button id="tf-fs" aria-label="Full screen">⛶ Full screen</button><button id="tf-x">Close</button></div><p class="tf-tip">Tap Full screen, or turn your phone sideways, for a bigger picture.</p></div>`;
@@ -434,7 +434,7 @@ function tfLead(ty,name,when,nm,pl){ const h=(/(\d\d):\d\d/.exec(when)||[])[1], 
    'childcare':`An evening with ${name}.`,'school':`A visit to ${name}.`,'coworking space':`A day at ${name}.`};
   return L[ty]||`Next, ${name}.`; }
 function trip(cur,results,info){
-  const {PN,BN,PTY,OFF}=info;
+  const {PN,BN,PTY,OFF,STORY}=info; const SENT=t=>(String(t||'').match(/[^.!?]+(?:[.!?]+["”’]?|$)/g)||[]).map(x=>x.trim()).filter(Boolean); const SAY=STORY?Object.fromEntries((STORY.stops||[]).map(x=>[x.id,SENT(x.text)])):{};
   const nm=cur.short;
   const stops=[];let e=0,m=0;
   Object.entries(results).forEach(([id,r])=>{
@@ -451,11 +451,11 @@ function trip(cur,results,info){
     const lead=tfLead(pl.type||PTY[id]||'',PN[id]||pl.name||id,pl.when||'',nm,cur.plural); if(lead) lines.unshift(lead);
     stops.push({kind:'stop',id,per:cur.id,name:PN[id]||id,when:(pl.when||PTY[id]||''),ok:bad?false:slow?null:true,
       title:picks[0]?picks[0].mo.t:(PN[id]||id),text:lines.join(' '),e,m,
-      say:lines.length?lines:[`${nm} ${cur.plural?'are':'is'} at ${PN[id]||id}.`]});
+      say:SAY[id]&&SAY[id].length?SAY[id]:lines.length?lines:[`${nm} ${cur.plural?'are':'is'} at ${PN[id]||id}.`]});
   });
-  LiveFilm_last=stops; tfOpen({intro:`This is the story of ${nm}${cur.plural?'’':'’s'} trip.`,sub:cur.who,stops,
+  LiveFilm_last=stops; tfOpen({intro:STORY&&STORY.intro?SENT(STORY.intro):`This is how your trip as ${nm} went.`,sub:cur.who,stops,
     outro:{rows:[[e,'details shared'],[m,'details kept'],[OFF.n?OFF.yes+' of '+OFF.n:'0','offers taken']],
-      sub:`${nm} decided what went where. Nothing went anywhere ${cur.pron.sub} didn’t allow.`,say:'And then the trip is over.'}});
+      sub:`You decided what went where. Nothing went anywhere you didn’t allow.`,say:STORY&&STORY.outro?SENT(STORY.outro):'And then you were home again.'}});
 }
 return {open:tfOpen,trip,last:()=>LiveFilm_last};
 })();

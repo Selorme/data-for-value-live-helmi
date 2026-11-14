@@ -6,8 +6,8 @@
 <title>Helmi Live Stand</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="/static/film.css?v=1114">
-<script src="/static/film.js?v=1114"></script>
+<link rel="stylesheet" href="/static/film.css?v=1114c">
+<script src="/static/film.js?v=1114c"></script>
 <style>
 /* Layout: projector screen in three columns. Left: how the hotel sets up its bot. Middle: the live negotiation. Right: scan to join, and what guests gave. */
 :root{
@@ -211,7 +211,7 @@ function ev(t,d){
   if(t==='stepin_done'&&d.ok&&n.offk[d.place+d.k])n.off.yes++;
   if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
   if(t==='place_done'){n.st[d.place]='done';n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
-  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;stats(d.stats)}
+  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;n.story=d.story;stats(d.stats)}
   if(t==='error'){n.done=true;n.items.push({k:'sys',place:'*',text:d.text})}
   if(d.nid===view)draw();else drawTabs();
 }
@@ -228,12 +228,13 @@ function draw(){
     if(x.k==='sys')return `<p class="sys">${esc(x.text)}</p>`;
     if(x.k==='replay')return `<button class="replay" data-replay="${view}">▶ Watch the replay of ${esc(p.short)}${p.plural?'’':'’s'} trip</button>`;
     const bot=x.who==='bot',F=p.fields,sh=l=>l.split(': ').pop();
+    if(x.who==='me')return `<div class="msg helmi"><div class="av h" aria-hidden="true">${esc(p.short[0])}</div><div class="b"><span class="who">${esc(p.short)}, writing directly</span>${esc(x.text)}</div></div>`;
     const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
     const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with a safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src);
     return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.bn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc((n.bn[x.place]||'Bot')+' · '+(n.pn[x.place]||'')):esc(p.short)+(p.plural?'’':'’s')+' Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
   $('chat').scrollTop=$('chat').scrollHeight;
 }
-$('chat').addEventListener('click',e=>{const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off})});
+$('chat').addEventListener('click',e=>{const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off,STORY:n.story})});
 $('biztabs').onclick=e=>{const b=e.target.closest('[data-b]');if(!b||b.disabled)return;NEG[view].sel=b.dataset.b;draw()};
 $('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};
 function bars(el,obj,names){const rows=Object.entries(obj||{}).filter(([,v])=>v.asked).sort((a,b)=>b[1].asked-a[1].asked);

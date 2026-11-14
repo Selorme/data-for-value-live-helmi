@@ -219,6 +219,7 @@ def reset_stats():
 reset_stats()
 
 CLIENTS, ACTIVE, WAIT, PENDING, TASKS, BYID = {}, {}, {}, {}, set(), {}
+NBYVID = {}  # vid -> the visitor's latest trip, kept after it ends so they can still ask Helmi about it
 LOG = {}  # vid -> the visitor's latest trip and its events, so a page refresh can pick the trip up again
 SEM = asyncio.Semaphore(2)
 QUEUE = deque()
@@ -261,10 +262,10 @@ def log_err(model, msg):
     print("LLM error", model, msg, flush=True)
 
 
-def _post(model, messages, extras=True):
-    body = {"model": model, "messages": messages, "temperature": 0.6, "max_tokens": 200}
+def _post(model, messages, extras=True, max_tokens=200):
+    body = {"model": model, "messages": messages, "temperature": 0.6, "max_tokens": max_tokens}
     if extras and "gpt-oss" in model:
-        body.update(reasoning_effort="low", max_tokens=500)  # its thinking counts against the limit
+        body.update(reasoning_effort="low", max_tokens=max_tokens + 300)  # its thinking counts against the limit
     if extras and "qwen3" in model:
         body.update(reasoning_effort="none")
     req = urllib.request.Request(LLM_URL + "/chat/completions", data=json.dumps(body).encode(),
@@ -327,6 +328,48 @@ async def write(role, system, user, fallback, forbidden=(), require=None):
                 break
     STATS["script"] += 1
     return fallback, "script", blocked
+
+
+async def write_long(role, system, user, max_tokens, check, budget=1500):
+    """A longer answer (a story, a JSON reply). check(raw) returns the parsed result or None. Returns (result, model) or (None, None)."""
+    if not AI_ON:
+        return None, None
+    for m in ([HELMI_MODEL] if role == "helmi" else [BOT_MODEL]) + [BACKUP_MODEL]:
+        if used(m) + budget > TPM:
+            continue
+        for extras in (True, False):
+            try:
+                txt, n = await asyncio.to_thread(_post, m, [{"role": "system", "content": system}, {"role": "user", "content": user}], extras, max_tokens)
+                note(m, n)
+                txt = re.sub(r"<think>.*?</think>", "", txt, flags=re.S).strip()
+                out = check(txt)
+                if out is None:
+                    log_err(m, "unusable reply: " + txt[:120])
+                    break
+                STATS["ai"] += 1
+                return out, m
+            except urllib.error.HTTPError as e:
+                log_err(m, f"HTTP {e.code}")
+                if e.code == 400 and extras:
+                    continue
+                if e.code == 429:
+                    note(m, TPM)
+                break
+            except Exception as e:
+                log_err(m, repr(e)[:300])
+                break
+    return None, None
+
+
+def as_json(txt):
+    """The first JSON object in a reply, or None."""
+    m = re.search(r"\{.*\}", txt, re.S)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except Exception:
+        return None
 
 
 BOTS = {  # each business's bot has a name and a manner
@@ -406,6 +449,7 @@ async def ask_person(n, place, k, offer=None):
         ok = await asyncio.wait_for(fut, STEPIN_TIMEOUT)
     except asyncio.TimeoutError:
         ok = False
+        n.setdefault("timeouts", set()).add((place["id"], k))
         push({"t": "stepin_timeout", "nid": n["nid"], "place": place["id"], "k": k}, n["vid"])
     WAIT.pop(key, None)
     push({"t": "stepin_done", "nid": n["nid"], "place": place["id"], "k": k, "ok": ok}, n["vid"])
@@ -454,6 +498,7 @@ async def negotiate_place(n, place, hotel_name):
     give = [k for k in keys if pol.get(k) == "share"]
     check = [k for k in keys if pol.get(k, "ask") == "ask"]
     keep = [k for k in keys if pol.get(k) == "never"]
+    n.setdefault("prog", {})[place["id"]] = {"name": place["name"], "type": place["type"], "bot": bot_name(place), "status": "talking", "shared": give, "kept": keep}
 
     def forbidden():
         shared = " ".join(F[k]["value"] for k in give).lower()
@@ -524,6 +569,7 @@ async def negotiate_place(n, place, hotel_name):
     if "alt" in base.get("by", {}).get(target, {}):
         rule.pop("offer", None)
     lost = None
+    offer_fact = None
     if target:
         if "offer" in rule:
             out = await write("bot", bot_sys(place, p),
@@ -532,23 +578,27 @@ async def negotiate_place(n, place, hotel_name):
                               f"Understood. If {name} {vb('shares','share')} {P['pos']} {lab(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. Without it, {rule['lose']}. Would {P['sub']} like to reconsider?")
             await say(n, "bot", out, place=place["id"])
             if pol.get(target) == "never":
+                offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "rule", "without": rule["lose"]}
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them, but say {poss} rule is never to share {lab(target)}, "
                                 f"so the answer stays no, whatever the offer. Do not offer it in any form.",
                                 f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {P['pos']} {lab(target)}, whatever the offer.", forbidden())
                 await say(n, "helmi", o, place=place["id"], kept=[target], rule=True)
                 lost = rule["lose"]
             elif await ask_person(n, place, target, offer=rule["offer"]):
+                offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": True, "by": "you"}
                 keep.remove(target)
                 give.append(target)
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} {vb('accepts','accept')} the offer of {rule['offer']}, and share: "
                                 f"{F[target]['label']}: {F[target]['value']}.", f"{name} {vb('accepts', 'accept')}. Here it is: {lab(target)}: {F[target]['value'].rstrip('.')}.", [])
                 await say(n, "helmi", o, place=place["id"], shared=[target])
             else:
+                offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "you", "without": rule["lose"]}
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} considered the offer and still {vb('says','say')} no to sharing "
                                 f"{lab(target)}. Do not offer it in any form.", f"{name} thought about it and still {vb('says', 'say')} no.", forbidden())
                 await say(n, "helmi", o, place=place["id"], kept=[target])
                 lost = rule["lose"]
         else:
+            offer_fact = {"detail": lab(target), "instead": rule["alt"]}
             out = await write("bot", bot_sys(place, p), f"Helmi did not share {poss} {lab(target)}. Accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
                               f"That's fine. Instead, {rule['alt']}.")
             await say(n, "bot", out, place=place["id"])
@@ -577,7 +627,10 @@ async def negotiate_place(n, place, hotel_name):
     s["asked"] += len(keys)
     s["shared"] += len(give)
     s["kept"] += len(keep)
-    res = {"shared": give, "kept": keep, "lost": lost}
+    to = n.get("timeouts", set())
+    why = {k: ("rule" if pol.get(k) == "never" else "timeout" if (place["id"], k) in to else "you") for k in keep}
+    res = {"shared": give, "kept": keep, "lost": lost, "why": why, "offer": offer_fact}
+    n["prog"][place["id"]]["status"] = "done"
     push({"t": "place_done", "nid": n["nid"], "place": place["id"], "pname": place["name"], **res}, n["vid"])
     return res
 
@@ -594,7 +647,83 @@ async def negotiate(n):
         if pl["id"] == "hotel":
             hotel_name = pl["name"]
     STATS["done"] += 1
-    push({"t": "done", "nid": n["nid"], "person": p["id"], "results": results, "stats": STATS}, n["vid"])
+    push({"t": "writing", "nid": n["nid"]}, n["vid"])
+    story = await write_story(n, places, results)
+    push({"t": "done", "nid": n["nid"], "person": p["id"], "results": results, "story": story, "stats": STATS}, n["vid"])
+
+
+def moment_facts(pl, shared):
+    """What happened at a place, from the trip's moments: each one either went well (the detail was shared) or not."""
+    out = []
+    for mo in pl.get("moments", []):
+        alt = mo.get("alt") or []
+        alt = alt if isinstance(alt, list) else [alt]
+        on = all(k in shared for k in mo["dep"]) or any(k in shared for k in alt)
+        out.append({"moment": mo["t"], "what_happened": mo["b"] if on else mo["w"], "because_shared": on, "trade_off": bool(mo.get("trade"))})
+    return out
+
+
+def story_fallback(n, places, results):
+    """A plain story when no model is free: the place, then what happened there."""
+    p = n["p"]
+    stops = []
+    for pl in places:
+        r = results[pl["id"]]
+        ms = [m for m in moment_facts(pl, r["shared"]) if not m["trade_off"]][:2]
+        lead = (f"Before the trip, you bought travel insurance from {pl['name']}." if pl["type"] == "insurer" else
+                f"Before the trip, you planned everything in {pl['name']}." if pl["type"] == "trip planner app" else
+                f"Then came {pl['name']}.")
+        how = (f" Helmi shared {len(r['shared'])} of the {len(r['shared']) + len(r['kept'])} things they asked for, following your rules." if r["shared"] else
+               " Following your rules, Helmi shared nothing with them.")
+        stops.append({"id": pl["id"], "text": lead + how + " " + " ".join(m["what_happened"] for m in ms)})
+    return {"intro": f"This is how your trip as {p['short']} went.", "stops": stops, "outro": "And then you were home again.", "by": "script"}
+
+
+async def write_story(n, places, results):
+    """The replay's story: second person, past tense, one short paragraph per place, written from what actually happened."""
+    p, F = n["p"], n["p"]["fields"]
+    facts = []
+    for pl in places:
+        r = results[pl["id"]]
+        lab = lambda k: F[k]["label"].split(": ")[-1]
+        facts.append({"id": pl["id"], "place": pl["name"], "kind_of_place": pl["type"], "when": pl.get("when", ""),
+                      "helmi_shared": [lab(k) for k in r["shared"]],
+                      "kept_from_them": [{"detail": lab(k), "why": {"rule": "your rule said never", "you": "you said no when Helmi asked",
+                                                                   "timeout": "you did not answer in time, so Helmi kept it"}[r.get("why", {}).get(k, "you")]} for k in r["kept"]],
+                      "offer": r.get("offer"), "because_something_was_kept": r.get("lost"),
+                      "what_happened": moment_facts(pl, r["shared"])})
+    plural = p.get("plural", False)
+    system = ("You write the narration for a short replay film of a trip. The listener is the traveller. Write in the second person ('you'), in the past tense, "
+              "as one flowing story that is pleasant to hear read aloud: plain English, short clear sentences, no lists, no headings, no emoji, no quotation marks. "
+              "Helmi is the traveller's personal AI assistant; mention Helmi by name where it acted. Use ONLY the facts given; never invent details, prices or places. "
+              + ("The traveller is a family, so 'you' means the whole family. " if plural else ""))
+    user = (f"The traveller: {p['name']}, {p['who']}.\nThe trip, in order, as JSON:\n{json.dumps(facts, ensure_ascii=False)}\n\n"
+            "Write: an opening sentence that starts 'This is how your trip as " + p["short"] + " went.'; then, for every place in the same order, one paragraph of 2 to 4 sentences "
+            "that names the place and links cause and effect: what Helmi shared or kept, following the traveller's rules or answers, and what happened there because of it "
+            "(pick the 2 or 3 most telling moments; include an offer and whether it was taken if there was one); then one closing sentence about coming home. "
+            "Open each paragraph with a time link where it helps (Before the trip, When you arrived, That evening, The next morning). "
+            'Reply with JSON only: {"intro": "...", "stops": [{"id": "<place id>", "text": "..."}], "outro": "..."}')
+    ids = [pl["id"] for pl in places]
+    def check(txt):
+        j = as_json(txt)
+        if not j or not isinstance(j.get("stops"), list):
+            return None
+        got = {s.get("id"): str(s.get("text", "")).strip() for s in j["stops"] if isinstance(s, dict)}
+        if any(not got.get(i) for i in ids):
+            return None
+        clean1 = lambda t: re.sub(r"[*_#`]+", "", re.sub(r"\s+", " ", t)).strip()
+        return {"intro": clean1(str(j.get("intro") or f"This is how your trip as {p['short']} went.")), "stops": [{"id": i, "text": clean1(got[i])} for i in ids],
+                "outro": clean1(str(j.get("outro") or "And then you were home again."))}
+    out = m = None
+    for attempt in range(2):
+        out, m = await write_long("helmi", system, user, 1400, check, budget=4500)
+        if out:
+            break
+        await asyncio.sleep(8)
+    if out:
+        out["by"] = m
+        return out
+    return story_fallback(n, places, results)
 
 
 async def run(n):
@@ -703,6 +832,7 @@ async def api_start(req: Request):
     STATS["n"] += 1
     PENDING[vid] = n["nid"]
     BYID[n["nid"]] = n
+    NBYVID[vid] = n
     LOG[vid] = {"nid": n["nid"], "person": pid, "places": places, "policy": pol, "events": []}
     while len(LOG) > 300:
         LOG.pop(next(iter(LOG)))
@@ -738,6 +868,107 @@ async def api_leave(req: Request):
     stop_trip(vid, "The traveller left the trip.")
     LOG.pop(vid, None)
     return JSONResponse({"ok": True})
+
+
+RULEWORD = {"share": "share", "ask": "ask me", "never": "never share"}
+
+
+async def api_ask(req: Request):
+    """The traveller types or speaks to Helmi. Helmi answers about their trip and data, and can change a rule when asked. The answer arrives as an event."""
+    b = await req.json()
+    vid = str(b.get("vid", ""))[:40]
+    n = NBYVID.get(vid)
+    q = str(b.get("text", "")).strip()[:300]
+    qid = str(b.get("qid", ""))[:20]
+    if not n or not q:
+        return JSONResponse({"ok": False}, status_code=404)
+    push({"t": "ask", "nid": n["nid"], "qid": qid, "q": q}, vid)
+    asyncio.create_task(answer_ask(n, q, qid))
+    return JSONResponse({"ok": True})
+
+
+async def answer_ask(n, q, qid):
+    try:
+        await _answer_ask(n, q, qid)
+    except Exception as e:
+        print("ask error", repr(e), flush=True)
+        push({"t": "ask_reply", "nid": n["nid"], "qid": qid, "a": "Sorry, something went wrong on my side. Try asking again.", "rules": {}, "src": "script"}, n["vid"])
+
+
+async def _answer_ask(n, q, qid):
+    p, F, pol = n["p"], n["p"]["fields"], n["policy"]
+    prog = n.get("prog", {})
+    places = [pl for pl in p["places"] if pl["id"] in n["places"]]
+    trip = []
+    for pl in places:
+        g = prog.get(pl["id"])
+        trip.append({"place": pl["name"], "type": pl["type"], "when": pl.get("when", ""), "bot": bot_name(pl),
+                     "status": g["status"] if g else "not reached yet", "you_shared": [F[k]["label"] for k in (g["shared"] if g else [])],
+                     "you_kept": [F[k]["label"] for k in (g["kept"] if g else [])]})
+    data = [{"key": k, "label": f["label"], "value": f["value"], "kind": f["kind"], "rule": RULEWORD.get(pol.get(k, "ask"), "ask me")} for k, f in F.items()]
+    system = (f"You are Helmi, the personal AI assistant of {p['name']} ({p['who']}). You are talking to {p['short']} directly, so call them 'you'. "
+              "Speak in the first person as Helmi. Answer in 1 to 3 short sentences, plain English, no lists, no markdown, no emoji. "
+              "Use only the facts given. You negotiate with each business on the trip, one at a time, and you follow the traveller's rules: "
+              "'share' means you share it when asked, 'ask me' means you ask the traveller first, 'never share' means you never share it. "
+              "If the traveller clearly asks you to change a rule (for example 'never share my diagnoses' or 'always share my diet'), change it and say so; "
+              "it applies to the places you have not reached yet. Never change a rule they did not ask for. "
+              "Reply with JSON only: {\"reply\": \"...\", \"rules\": {\"<key>\": \"share|ask|never\"}} (rules is empty when nothing changes).")
+    user = f"The trip so far:\n{json.dumps(trip, ensure_ascii=False)}\nTheir data and rules:\n{json.dumps(data, ensure_ascii=False)}\n\nThe traveller says: {q}"
+    def check(txt):
+        j = as_json(txt)
+        if not j or not str(j.get("reply", "")).strip():
+            return None
+        rules = {k: v for k, v in (j.get("rules") or {}).items() if k in F and v in ("share", "ask", "never")} if isinstance(j.get("rules"), dict) else {}
+        return {"reply": re.sub(r"[*_#`]+", "", str(j["reply"])).strip(), "rules": rules}
+    out, m = await write_long("helmi", system, user, 400, check, budget=3000)
+    if not out:
+        seen = [f"{t['place']} has {len(t['you_shared'])} thing{'s' if len(t['you_shared']) != 1 else ''}" for t in trip if t["status"] != "not reached yet"]
+        out = {"reply": ("Right now " + ", ".join(seen) + " from you. " if seen else "Nobody has anything from you yet. ") +
+               "I can’t think through other questions at the moment, but your rules are in About me and you can change them there.", "rules": {}}
+        m = "script"
+    if out["rules"]:
+        pol.update(out["rules"])
+    push({"t": "ask_reply", "nid": n["nid"], "qid": qid, "a": out["reply"], "rules": out["rules"], "src": m}, n["vid"])
+
+
+async def api_say(req: Request):
+    """The traveller writes to a business's bot themselves. The bot answers, knowing only what Helmi shared with it."""
+    b = await req.json()
+    vid = str(b.get("vid", ""))[:40]
+    n = NBYVID.get(vid)
+    text = str(b.get("text", "")).strip()[:300]
+    pid = b.get("place")
+    pl = next((x for x in (n["p"]["places"] if n else []) if x["id"] == pid), None)
+    if not n or not text or not pl or pid not in n.get("prog", {}):
+        return JSONResponse({"ok": False}, status_code=404)
+    push({"t": "msg", "nid": n["nid"], "who": "me", "text": text, "src": "you", "blocked": False, "place": pid}, vid)
+    asyncio.create_task(answer_say(n, pl, text))
+    return JSONResponse({"ok": True})
+
+
+async def answer_say(n, pl, text):
+    try:
+        await _answer_say(n, pl, text)
+    except Exception as e:
+        print("say error", repr(e), flush=True)
+
+
+async def _answer_say(n, pl, text):
+    p, F = n["p"], n["p"]["fields"]
+    g = n["prog"][pl["id"]]
+    hist = n.setdefault("chat", {}).setdefault(pl["id"], [])
+    nm, manner = BOTS.get(pl["id"], ("Botti", "polite"))
+    known = "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in g["shared"]) or "only the basic booking"
+    system = (f"You are {nm}, the bot of {pl['name']}, a {pl['type']}. Your manner: {manner}. The customer {p['name']} is now writing to you directly, not through Helmi. "
+              "Answer them as 'you' in 1 to 3 short sentences, plain English, no lists, no markdown, no emoji. Do not greet or introduce yourself again. "
+              f"What you know about them, because their assistant Helmi shared it: {known}. You know nothing else about them; never guess or invent personal details, prices or policies. "
+              "If they ask for something you cannot do or do not know, say a member of staff will follow up.")
+    convo = "\n".join(f"{'Customer' if w == 'me' else nm}: {t}" for w, t in hist[-6:])
+    user = (f"Earlier in this chat:\n{convo}\n\n" if convo else "") + f"The customer writes: {text}"
+    out = await write("bot", system, user, f"Thanks for your message. A member of our staff at {pl['name']} will get back to you shortly.")
+    hist.append(("me", text))
+    hist.append(("bot", out[0]))
+    push({"t": "msg", "nid": n["nid"], "who": "bot", "text": out[0], "src": out[1], "blocked": out[2], "place": pl["id"], "to": "me"}, n["vid"])
 
 
 async def api_policy(req: Request):
@@ -867,6 +1098,8 @@ app = Starlette(middleware=[Middleware(NoCache)], routes=[
     Route("/api/start", api_start, methods=["POST"]),
     Route("/api/answer", api_answer, methods=["POST"]),
     Route("/api/resume", api_resume),
+    Route("/api/ask", api_ask, methods=["POST"]),
+    Route("/api/say", api_say, methods=["POST"]),
     Route("/api/leave", api_leave, methods=["POST"]),
     Route("/api/policy", api_policy, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),

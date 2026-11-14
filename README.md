@@ -2,7 +2,7 @@
 
 Live negotiations between AI agents: **Helmi**, a personal assistant acting for a traveller, and the bots of every place on the trip: the airline or train, the hotel, the restaurant, the venue, the insurer and optional extras such as a taxi or pharmacy. Built for the Demola *Data for Value* project (Tampere University) and shown at a demo fair.
 
-Visitors play one of nine invented travellers (eight people and one family) on their phone, choose the places on their trip and set a rule for each detail. Helmi then negotiates with each place in turn. The visitor's phone buzzes when Helmi needs a decision, and some businesses come back with an offer (a discount, a free companion ticket) to see whether a benefit changes the answer. At the end, they can watch a replay film of their trip, narrated by the phone's voice. A stand screen shows the negotiations live, lets you pick any business and set up its bot, and charts what travellers shared by place and by kind of detail.
+Visitors play one of nine invented travellers (eight people and one family) on their phone, choose the places on their trip and set a rule for each detail. Helmi then negotiates with each place in turn. The visitor's phone buzzes when Helmi needs a decision, and some businesses come back with an offer (a discount, a free companion ticket) to see whether a benefit changes the answer. The phone works like the trip-mode demo, with tabs for Trip, Helmi, Messages, My data, About me and Sharing; visitors can type or speak to Helmi and write to any business's bot. At the end, Helmi writes the story of the trip and they can watch it as a replay film, narrated by the phone's voice. A stand screen shows the negotiations live, lets you pick any business and set up its bot, and charts what travellers shared by place and by kind of detail.
 
 All people, businesses and data in this project are invented.
 
@@ -29,6 +29,7 @@ Language models only phrase the messages. Every decision about data is made in c
 | `static/stand.html` | Stand screen: pick a business and set up its bot, watch negotiations live, see share rates by place and by detail |
 | `static/film.js`, `static/film.css` | The replay film at the end of a trip (the same animation engine as the trip-mode demo) |
 | `static/trip.json` | The nine invented travellers, the places on each trip, what each place asks for, and every detail's value |
+| `static/vault.json` | Each traveller's data sources and sample rows, for the phone's My data and About me tabs |
 | `requirements.txt`, `render.yaml`, `.python-version` | Deployment on Render |
 
 ## How it works
@@ -104,6 +105,10 @@ Add `GROQ_API_KEY` and `STAND_KEY` as environment variables in the Render dashbo
 | GET | `/api/requests?person=<id>` | | What each place on that person's trip asks for, with the current hotel settings |
 | POST | `/api/start` | `{vid, person, places:[ids], policy:{detail:"share"\|"ask"\|"never"}}` | Start a trip |
 | POST | `/api/answer` | `{nid, place, k, ok}` | Answer a step-in or an offer |
+| POST | `/api/ask` | `{vid, qid, text}` | The traveller asks Helmi something (typed or spoken). The answer arrives as an `ask_reply` event and can change a rule |
+| POST | `/api/say` | `{vid, place, text}` | The traveller writes to a business's bot directly. The bot only knows what Helmi shared |
+| GET | `/api/resume?vid=` | | The phone's latest trip and its events, so a refresh carries on where it was |
+| POST | `/api/leave` | `{vid}` | End the phone's trip on purpose |
 | POST | `/api/config` | `{key, biz, settings}` | Change one business's bot settings (`biz` is e.g. `hotel`, `ins`, `rail`) |
 | POST | `/api/reset` | `{key}` | Reset the stand's numbers |
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Helmi Live</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/film.css?v=1114">
+<link rel="stylesheet" href="/static/film.css?v=1114c">
 <style>
 /* Layout: one column phone flow. Person, trip, rules, live trip, result. */
 :root{
@@ -160,6 +160,37 @@ body.inapp{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 .me-h{display:flex;gap:12px;align-items:center}
 .me-h .av{width:52px;height:52px;font-size:22px}
 #a-body{display:flex;flex-direction:column;gap:12px}
+
+/* six tabs, as in trip mode plus Messages */
+.nav{grid-template-columns:repeat(6,1fr)!important}
+.nav button{font-size:10.5px;padding:6px 0}
+.msg.me{align-self:flex-end}
+.msg.me .b{background:var(--helmi);color:#fff;border-bottom-right-radius:4px}
+.msg.me .who{color:rgba(255,255,255,.8)}
+.askrow{display:flex;gap:6px;align-items:center}
+.askrow input{flex:1;min-width:0;font:inherit;font-size:16px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.ib{flex:none;min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 15px var(--body);cursor:pointer;padding:0 10px}
+.ib.txt{background:var(--helmi);color:#fff;border-color:var(--helmi)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips .chip{background:var(--card);color:var(--ink);cursor:pointer;font:500 13px var(--body);padding:6px 10px}
+.card.ask{gap:10px}
+.composer{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--bg);padding:8px 0;display:flex;flex-direction:column;gap:4px}
+.vh{margin-top:6px}
+ul.me,ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+ul.me li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
+ul.me .label{font-weight:600}
+ul.me .val{font-size:14px;background:var(--bg);border-radius:8px;padding:6px 9px}
+ul.plain li{font-size:14px}
+.big{font:600 17px var(--display)}
+.th .rows{flex:none;font:700 15px var(--display);text-align:right}
+.th .rows small{font:500 11px var(--body);color:var(--muted)}
+.tbl{overflow:auto;max-height:60vh;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.tbl table{border-collapse:collapse;font-size:12px;min-width:100%}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+.tbl th{position:sticky;top:0;background:var(--card)}
+.story p{font-size:15px;line-height:1.6}
+.thead b{font-family:var(--display)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
@@ -203,14 +234,15 @@ body.inapp{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 </main>
 <nav class="nav" id="nav" hidden aria-label="Helmi">
   <button data-tab="trip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Trip<span class="badge" hidden></span></button>
-  <button data-tab="helmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Helmi<span class="badge" hidden></span></button>
+  <button data-tab="helmi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M9 10h.01M15 10h.01M8.5 14.5c1 1 2.2 1.5 3.5 1.5s2.5-.5 3.5-1.5"/></svg>Helmi<span class="badge" hidden></span></button>
+  <button data-tab="msgs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Messages<span class="badge" hidden></span></button>
   <button data-tab="data"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>My data<span class="badge" hidden></span></button>
   <button data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4.5-6 8-6s7 2 8 6"/></svg>About me<span class="badge" hidden></span></button>
   <button data-tab="share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Sharing<span class="badge" hidden></span></button>
 </nav>
 <div class="sheet" id="sheet" hidden></div>
 <button class="toast" id="toast" hidden></button>
-<script src="/static/film.js?v=1114"></script>
+<script src="/static/film.js?v=1114c"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -235,6 +267,7 @@ async function boot(){
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
   $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(b)pick(b.dataset.p)};
   connect();
+  loadVault();
   if(await resume())return;
   const q=new URLSearchParams(location.search).get('p');if(q&&D.people.some(p=>p.id===q))pick(q);
 }
@@ -243,7 +276,7 @@ function connect(){
   es.onopen=()=>{$('conn').className='conn on';$('conn').lastChild.textContent='Live'};
   es.onerror=()=>{$('conn').className='conn';$('conn').lastChild.textContent='Reconnecting'};
   es.addEventListener('config',()=>{if(!cur)return;if(!$('s-rules').hidden)loadReq().then(rules);else if(!$('s-trip').hidden)loadReq().then(trip)});
-  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','queue','error'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)on(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
+  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)on(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
 }
 async function loadReq(){REQ=(await (await fetch('/api/requests?person='+cur.id)).json()).places}
 async function pick(id){cur=D.people.find(p=>p.id===id);pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id);trip();show('s-trip')}
@@ -270,25 +303,28 @@ document.querySelector('.presets').onclick=e=>{const b=e.target.closest('[data-p
 document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k||e.target.type!=='radio')return;pol[k]=e.target.value;pre=null;document.querySelectorAll('[data-pre]').forEach(b=>b.setAttribute('aria-pressed','false'));
   if(nid&&!finished){fetch('/api/policy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,nid,policy:{[k]:pol[k]}})}).catch(()=>{});toast('Rule changed. It applies to the places Helmi hasn’t reached yet.')}});
 
-/* ---------------------------------------------------------------- the live trip: same tabs as trip mode (Trip, Helmi, My data, About me, Sharing) */
-let sheetKey='',TH={},ORDER=[],TAB='trip',PINGS={},PEND=[],NOTES=[],seenNotes=0,finished=false,SH={},OFF={n:0,yes:0},queuePos=0,toastT,EXP={},tripBadge=false;
+/* ---------------------------------------------------------------- the live trip: trip mode's app (Trip, Helmi, Messages, My data, About me, Sharing), with live agents */
+let sheetKey='',TH={},ORDER=[],TAB='trip',OPEN=null,SRC=null,TBL=0,PINGS={},PEND=[],NOTES=[],ASKS={},HIST=[],finished=false,writing=false,STORY=null,SH={},OFF={n:0,yes:0},queuePos=0,toastT,tripBadge=false,endArm=false,REPLAY=false,VAULT=null,VAULTS=null,lastVoice='';
+const fmt=n=>Number(n).toLocaleString('en-GB');
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
     const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
-    fresh(j.nid);show('s-app');render();
+    await loadVault();fresh(j.nid);show('s-app');render();
     (EARLY[nid]||[]).forEach(([t,d])=>on(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
 };
-function fresh(id){nid=id;TH={};ORDER=[];TAB='trip';PINGS={};PEND=[];NOTES=[];seenNotes=0;finished=false;SH={};OFF={n:0,yes:0};results=null;queuePos=0;EXP={};tripBadge=false;sheetKey='';endArm=false}
-let REPLAY=false,endArm=false;
+function fresh(id){nid=id;TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
+  VAULT=VAULTS&&VAULTS[cur.id]||null}
+async function loadVault(){if(VAULTS)return;try{VAULTS=await (await fetch('/static/vault.json')).json()}catch(e){VAULTS={}}}
 /* a refresh picks the trip up where it was: the server keeps every event of this phone's latest trip */
 async function resume(){try{
   const r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json();if(!r.ok)return false;
   const p=D.people.find(x=>x.id===r.person);if(!p)return false;
-  cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();
+  cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();await loadVault();
   fresh(r.nid);show('s-app');REPLAY=true;let last=0;
   r.events.forEach(ev=>{last=Math.max(last,ev.at||0);on(ev.t,ev)});REPLAY=false;
   (EARLY[nid]||[]).forEach(([t,d])=>{if((d.at||0)>last)on(t,d)});EARLY={};
@@ -296,7 +332,7 @@ async function resume(){try{
   render(true);return true}catch(e){REPLAY=false;return false}}
 function leave(){if(nid)fetch('/api/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid})}).catch(()=>{});nid=null}
 function err(t){let b=document.querySelector('#s-rules .err');if(!b){b=document.createElement('p');b.className='err';b.setAttribute('role','alert');$('go').before(b)}b.textContent=t}
-function toast(t,tab){clearTimeout(toastT);const el=$('toast');el.textContent=t;el.hidden=false;el.onclick=()=>{el.hidden=true;if(tab){TAB=tab;render(true)}};toastT=setTimeout(()=>el.hidden=true,4500)}
+function toast(t,go){clearTimeout(toastT);const el=$('toast');el.textContent=t;el.hidden=false;el.onclick=()=>{el.hidden=true;if(go)go()};toastT=setTimeout(()=>el.hidden=true,4500)}
 function placeOf(id){return (cur.places||[]).find(x=>x.id===id)||{}}
 function scene(id){const pl=placeOf(id),th=TH[id],ty=th.type,nm=th.name,h=+((/(\d\d):\d\d/.exec(pl.when||'')||[])[1]||19);
   const S={'insurer':'Before you leave, you buy travel insurance.','trip planner app':'Before you leave, you plan the trip in an app.','transport':'You set off on your trip.',
@@ -306,20 +342,29 @@ function scene(id){const pl=placeOf(id),th=TH[id],ty=th.type,nm=th.name,h=+((/(\
     'museum':'You visit the museum.','tour':'You join a walking tour.','childcare':'You book a babysitter for the evening.','school':'You visit a school.','coworking space':'You work from a coworking space for the day.','course':'You start your course.'};
   return S[ty]||`Next stop: ${nm}.`}
 function whenOf(id){return (placeOf(id).when||'').replace(', arrival',', on arrival')}
-function note(text,extra){NOTES.push({text,...(extra||{})})}
+function note(text){NOTES.push({type:'note',text})}
+const labs=ks=>ks.map(k=>low(F(k).label)).join('; ');
 function on(t,d){
   if(t==='queue'){queuePos=d.pos;render();return}
-  if(t==='error'){finished=true;note(d.text);toast(d.text);render();return}
-  if(t==='start'){queuePos=0;d.places.forEach(([id,n,ty,bn])=>{TH[id]={id,name:n,type:ty,bot:bn||'Bot',status:'waiting',items:[],res:null,keys:[]};ORDER.push(id)});
-    note(`Hi, I’m Helmi. I’ll talk to the ${ORDER.length} places on your trip, one at a time, in the order you’ll meet them. I follow your rules, and I’ll buzz you when I need you.`);render();return}
+  if(t==='error'){finished=true;note(d.text);if(!REPLAY)toast(d.text);render();return}
+  if(t==='start'){queuePos=0;d.places.forEach(([id,n,ty,bn])=>{if(TH[id])return;TH[id]={id,name:n,type:ty,bot:bn||'Bot',status:'waiting',items:[],res:null,keys:[],unread:0};ORDER.push(id)});
+    note(`Hi, I’m Helmi. I’ll talk to the ${ORDER.length} places on your trip for you, one at a time, in the order you’ll meet them. I follow your rules, and I’ll buzz you when I need you. You can ask me anything here.`);render();return}
+  if(t==='ask'){const a=ASKS[d.qid]||(ASKS[d.qid]={q:d.q,a:null});if(!NOTES.some(x=>x.qid===d.qid))NOTES.push({type:'qa',qid:d.qid});render();return}
+  if(t==='ask_reply'){const a=ASKS[d.qid]||(ASKS[d.qid]={q:'',a:null});a.a=d.a;a.src=d.src;if(!NOTES.some(x=>x.qid===d.qid))NOTES.push({type:'qa',qid:d.qid});
+    const ch=Object.entries(d.rules||{});ch.forEach(([k,v])=>{pol[k]=v;HIST.push({place:'Helmi',text:`Rule changed: ${low(F(k).label)}: ${{share:'Share',ask:'Ask me',never:'Never'}[v]}`})});
+    if(!REPLAY){if(ch.length)toast('Helmi changed '+(ch.length===1?'a rule':ch.length+' rules')+' for you. See About me.');if(lastVoice===d.qid)speak(d.a)}render();return}
+  if(t==='writing'){writing=true;render();return}
   const th=TH[d.place];
   if(t==='place'&&th){th.status='active';th.keys=d.keys||[];
     note(`Now I’m talking to ${th.bot} at ${th.name}. They ask for ${th.keys.length} thing${th.keys.length===1?'':'s'}.`);
+    if(TAB==='msgs'&&(!OPEN||(TH[OPEN]&&TH[OPEN].status==='done')))OPEN=d.place;
     render(false,true);return}
-  if(t==='msg'&&th){th.items.push({type:'msg',...d});(d.shared||[]).forEach(k=>(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name));
-    if(d.who==='helmi'&&(d.shared||[]).length)note(`I gave ${th.name}: ${(d.shared).map(k=>low(F(k).label)).join('; ')}.`);
-    if(d.who==='helmi'&&(d.kept||[]).length)note(`I kept these from ${th.name}: ${(d.kept).map(k=>low(F(k).label)).join('; ')}.`);
-    render();return}
+  if(t==='msg'&&th){th.items.push({type:'msg',...d});
+    (d.shared||[]).forEach(k=>{(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name)});
+    if(d.who==='helmi'&&(d.shared||[]).length){note(`I gave ${th.name}: ${labs(d.shared)}.`);HIST.push({place:th.name,text:'Shared: '+labs(d.shared)})}
+    if(d.who==='helmi'&&(d.kept||[]).length){note(`I kept these from ${th.name}: ${labs(d.kept)}.`);HIST.push({place:th.name,text:'Kept: '+labs(d.kept)})}
+    if(d.to==='me'&&!(TAB==='msgs'&&OPEN===d.place)){if(!REPLAY)toast(`${th.bot} answered you`,()=>{TAB='msgs';OPEN=d.place;render(true)})}
+    if(!(TAB==='msgs'&&OPEN===d.place))th.unread++;render();return}
   if(t==='stepin'&&th){const key=d.place+'|'+d.k;if(d.offer)OFF.n++;
     PINGS[key]={key,place:d.place,pname:d.pname,dk:d.k,label:d.label,value:d.value,offer:d.offer,bot:th.bot,state:'open'};
     th.items.push({type:'ping',key});NOTES.push({type:'ping',key});PEND.push(key);
@@ -329,88 +374,155 @@ function on(t,d){
     PEND=PEND.filter(x=>x!==key);render();return}
   if(t==='place_done'&&th){th.status='done';th.res=d;
     note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`);render();return}
-  if(t==='done'){finished=true;results=d.results;tripBadge=TAB!=='trip';note('Your trip is over. You can watch the replay in Trip.');
-    if(TAB!=='trip')toast('Trip finished. Tap to see your trip and the replay.','trip');render(true);return}
+  if(t==='done'){finished=true;writing=false;results=d.results;STORY=d.story||null;tripBadge=TAB!=='trip';note('Your trip is over. Your trip story and the replay are in Trip.');
+    if(TAB!=='trip'&&!REPLAY)toast('Trip finished. Tap to see your trip story and the replay.',()=>{TAB='trip';tripBadge=false;render(true)});render(TAB==='trip');return}
 }
 function answer(key,ok){const it=PINGS[key];if(!it||it.state!=='open')return;it.state='sent';PEND=PEND.filter(x=>x!==key);render();
   fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:it.place,k:it.dk,ok})}).catch(()=>{})}
+function ask(q,voice){q=String(q||'').trim();if(!q)return;const qid=Math.random().toString(36).slice(2,9);ASKS[qid]={q,a:null};NOTES.push({type:'qa',qid});if(voice)lastVoice=qid;render();
+  fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,qid,text:q})}).then(r=>{if(!r.ok){ASKS[qid].a='I can’t reach the stand right now. Try again in a moment.';render()}}).catch(()=>{ASKS[qid].a='I can’t reach the stand right now.';render()})}
+function sayTo(place,text){text=String(text||'').trim();if(!text)return;
+  fetch('/api/say',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,place,text})}).catch(()=>toast('Message not sent. Check the connection.'))}
+function speak(t){try{if(!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='en-GB';speechSynthesis.speak(u)}catch(e){}}
+function listen(btn,done){if(!SR)return;if(window.__rec){try{window.__rec.stop()}catch(_){}return}
+  try{const r=new SR();window.__rec=r;r.lang='en-GB';r.interimResults=false;r.continuous=false;let got=false;btn.textContent='●';btn.setAttribute('aria-label','Listening. Tap to stop');
+    r.onresult=ev=>{if(got)return;const res=ev.results[ev.results.length-1];if(!res||res.isFinal===false)return;got=true;const q=(res[0].transcript||'').trim();try{r.stop()}catch(_){}if(q)done(q)};
+    r.onend=()=>{window.__rec=null;btn.textContent='🎤';btn.setAttribute('aria-label','Speak')};r.onerror=r.onend;r.start()}catch(e){window.__rec=null}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ans]');if(b){answer(b.dataset.key,b.dataset.ans==='1');return}
-  const x=e.target.closest('[data-exp]');if(x){EXP[x.dataset.exp]=!EXP[x.dataset.exp];render();return}
-  const g=e.target.closest('[data-goto]');if(g){TAB=g.dataset.goto;render(true);return}
+  const o=e.target.closest('[data-open]');if(o){TAB='msgs';OPEN=o.dataset.open;if(TH[OPEN])TH[OPEN].unread=0;render(true);return}
+  if(e.target.closest('[data-back]')){OPEN=null;SRC=null;render(true);return}
+  const sr=e.target.closest('[data-src]');if(sr){SRC=sr.dataset.src;TBL=0;render(true);return}
+  const tb=e.target.closest('[data-tbl]');if(tb){TBL=+tb.dataset.tbl;render();return}
+  const g=e.target.closest('[data-goto]');if(g){TAB=g.dataset.goto;OPEN=null;SRC=null;render(true);return}
+  const ex=e.target.closest('[data-ex]');if(ex){ask(ex.dataset.ex);return}
+  const mic=e.target.closest('[data-mic]');if(mic){const pl=mic.dataset.mic;listen(mic,q=>pl==='helmi'?ask(q,true):sayTo(pl,q));return}
   if(e.target.closest('[data-replay]')){film();return}
   if(e.target.closest('[data-again]')){leave();show('s-pick');return}
   if(e.target.closest('[data-redo]')){leave();rules();show('s-rules');return}
   if(e.target.closest('[data-end]')){if(!endArm){endArm=true;render();return}leave();show('s-pick');return}});
-$('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;TAB=b.dataset.tab;if(TAB==='trip')tripBadge=false;render(true)};
-const Y=s=>esc(s);
+document.addEventListener('submit',e=>{const f=e.target;if(!f.matches('[data-form]'))return;e.preventDefault();const i=f.querySelector('input');const v=i.value;i.value='';
+  if(f.dataset.form==='helmi')ask(v);else sayTo(f.dataset.form,v)});
+$('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;TAB=b.dataset.tab;OPEN=null;SRC=null;if(TAB==='trip')tripBadge=false;render(true)};
+const Y=s=>esc(s==null?'':s);
+const helmiB=h=>`<div class="hnote"><div class="av" aria-hidden="true">H</div><div class="b">${h}</div></div>`;
 function pingCard(it,inSheet){const o=it.offer,open=it.state==='open';
   const head=`<p class="k">${o?'An offer':'Helmi needs you'}</p><p>${o?`${Y(it.pname)} offers <b>${Y(o)}</b> if you share your <b>${Y(low(it.label))}</b>. You said no before. Change your mind?`:`<b>${Y(it.bot)}</b> at <b>${Y(it.pname)}</b> wants your <b>${Y(low(it.label))}</b>. Your rule says: ask me.`}</p><p class="small muted">I would send: ${Y(it.value)}</p>`;
   const tail=open?`<div class="row"><button class="btn" data-ans="1" data-key="${it.key}">Share it</button><button class="btn alt" data-ans="0" data-key="${it.key}">${o?'Still no':'Don’t share'}</button></div>${inSheet?'<p class="small muted">You have 45 seconds. If you don’t answer, I keep it.</p>':''}`
     :`<p class="small"><b>${{sent:'Sending your answer…',yes:'You said yes. I shared it.',no:'You said no. I kept it.',timeout:'No answer in time, so I kept it. That’s the safe default.'}[it.state]}</b></p>`;
   return `<div class="ping ${o?'offer':''}" role="group" aria-label="${o?'An offer':'Helmi needs you'}">${head}${tail}</div>`}
-function msgHtml(th,x){const bot=x.who==='bot';
+function msgHtml(th,x){
+  if(x.who==='me')return `<div class="msg me"><div class="b"><span class="who">You</span>${Y(x.text)}</div></div>`;
+  const bot=x.who==='bot';
   const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${Y(short(F(k).label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${Y(short(F(k).label))}</span>`)].join('');
-  const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+Y(x.src||'');
-  return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?Y(th.bot[0]):'H'}</div><div class="b"><span class="who">${bot?Y(th.bot+' · '+th.name):'Your Helmi'}</span>${Y(x.text||'')}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}
-function convo(th){const lastMsg=[...th.items].reverse().find(x=>x.type==='msg'),waiting=th.items.some(x=>x.type==='ping'&&PINGS[x.key]&&['open','sent'].includes(PINGS[x.key].state));
-  const typing=th.status==='active'?(waiting?'<p class="typing">Waiting for your answer…</p>':`<p class="typing">${lastMsg&&lastMsg.who==='bot'?'Helmi':Y(th.bot)} is writing…</p>`):'';
-  return `<div class="chat">${th.items.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):msgHtml(th,x)).join('')||'<p class="typing">'+Y(th.bot)+' is writing…</p>'}${th.items.length?typing:''}</div>`}
+  const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+Y(x.src);
+  return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?Y(th.bot[0]):'H'}</div><div class="b"><span class="who">${bot?Y(th.bot+' · '+th.name)+(x.to==='me'?' · to you':''):'Your Helmi'}</span>${Y(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}
+function compose(id,ph){return `<form class="askrow" data-form="${id}"><label class="sr" for="in-${id}">${Y(ph)}</label><input id="in-${id}" autocomplete="off" maxlength="300" placeholder="${Y(ph)}">${SR?`<button type="button" class="ib" data-mic="${id}" aria-label="Speak">🎤</button>`:''}<button type="submit" class="ib txt">Send</button></form>`}
+/* ---- Trip */
 function moments(id){const r=TH[id].res,g=r?r.shared:[];
   return (placeOf(id).moments||[]).map(mo=>{const on=mo.dep.every(k=>g.includes(k))||(mo.alt&&[].concat(mo.alt).some(k=>g.includes(k)));
     const cls=mo.trade?(on&&mo.neg?'bad':on?'trade':''):on?'':'bad',mk=cls==='bad'?'✗':cls==='trade'?'⇄':'✓';
     return `<li class="${cls}"><span class="mk" aria-hidden="true">${mk}</span><p><b>${Y(mo.t)}.</b> ${Y(on?mo.b:mo.w)}</p></li>`}).join('')}
-function reqCard(th){const n=th.keys.length;return `<div class="req"><p><b>${Y(th.name)}</b> is asking for ${n} thing${n===1?'':'s'}</p><p class="small muted">${Y(th.type)} · their bot: ${Y(th.bot)}</p><p class="small">${Y(placeOf(th.id).why||'')}</p></div>`}
 function stopCard(th,i){
-  if(th.status==='active')return `<div class="stop on" id="live"><p class="when">${Y(whenOf(th.id))} · stop ${i+1} of ${ORDER.length}</p><p class="scene">${Y(scene(th.id))}</p>${reqCard(th)}${convo(th)}<span id="live-end"></span></div>`;
-  const r=th.res;
-  return `<div class="stop"><p class="when">${Y(whenOf(th.id))}</p><h3>${Y(th.name)}</h3><p class="small">${r.shared.length?'You shared '+r.shared.length+' of '+(r.shared.length+r.kept.length):'You shared nothing'}${r.kept.length?'. Kept: '+Y(r.kept.map(k=>low(F(k).label)).join('; ')):''}.</p>
-    <ul class="moms">${moments(th.id)}</ul><button class="linkbtn" data-exp="${th.id}" aria-expanded="${!!EXP[th.id]}">${EXP[th.id]?'Hide the conversation':'Show the conversation with '+Y(th.bot)}</button>${EXP[th.id]?convo(th):''}</div>`}
+  if(th.status==='active'){const last=[...th.items].reverse().find(x=>x.type==='msg'),pend=PEND.filter(k=>PINGS[k].place===th.id);
+    return `<div class="stop on" id="live"><p class="when">${Y(whenOf(th.id))} · stop ${i+1} of ${ORDER.length}</p><p class="scene">${Y(scene(th.id))}</p>
+      <div class="req"><p><b>${Y(th.name)}</b> is asking for ${th.keys.length} thing${th.keys.length===1?'':'s'}</p><p class="small muted">${Y(th.type)}</p><p class="small">${Y(placeOf(th.id).why||'')}</p></div>
+      ${pend.map(k=>pingCard(PINGS[k],false)).join('')}
+      <p class="small">${pend.length?'Helmi is waiting for your answer.':`<b>Helmi is talking to ${Y(th.bot)} now.</b>${last?' Last: '+Y((last.who==='bot'?th.bot:last.who==='me'?'You':'Helmi')+': '+last.text.slice(0,90))+(last.text.length>90?'…':''):''}`}</p>
+      <button class="btn" data-open="${th.id}">Watch the conversation</button></div>`}
+  const r=th.res,tot=r.shared.length+r.kept.length;
+  return `<div class="stop"><p class="when">${Y(whenOf(th.id))}</p><h3>${Y(th.name)}</h3><p class="small">${r.shared.length?`You shared ${r.shared.length} of ${tot}`:'You shared nothing'}${r.kept.length?'. Kept: '+Y(labs(r.kept)):''}.</p>
+    <ul class="moms">${moments(th.id)}</ul><button class="linkbtn" data-open="${th.id}">Messages with ${Y(th.bot)} ›</button></div>`}
+function storyCard(){if(!STORY)return '';const P=x=>`<p>${Y(x)}</p>`;
+  return `<div class="card story"><p class="k">Your trip story</p>${P(STORY.intro)}${(STORY.stops||[]).map(s=>P(s.text)).join('')}${P(STORY.outro)}</div>`}
 function tripView(){
   const n=ORDER.length,doneN=ORDER.filter(id=>TH[id].status==='done').length;
   if(queuePos)return `<div class="card"><p>The stand is busy. You are number ${queuePos} in the queue. Your trip starts in a moment.</p></div>`;
   if(!n)return `<div class="card"><p class="typing">Getting your trip ready…</p></div>`;
   let sh=0,kp=0;ORDER.forEach(id=>{const r=TH[id].res;if(r){sh+=r.shared.length;kp+=r.kept.length}});
-  const top=finished?`<div class="card"><p class="k">Home again</p><h2>You shared ${sh} of ${sh+kp} things the places asked for</h2>
+  if(finished)return `<div class="card"><p class="k">Home again</p><h2>You shared ${sh} of ${sh+kp} things the places asked for</h2>
       <div class="nums"><div><b>${n}</b><span>places</span></div><div><b>${sh}</b><span>shared</span></div><div><b>${kp}</b><span>kept</span></div></div>
-      <p class="small muted">Each place asked separately, even the restaurant owned by the hotel. Nothing went anywhere you didn’t allow.</p>
-      <button class="btn" data-replay>▶ Watch your trip (replay)</button></div>`:`<div class="prog" aria-label="Stop ${Math.min(doneN+1,n)} of ${n}"><i style="width:${Math.round(doneN/n*100)}%"></i></div>`;
+      <button class="btn" data-replay>▶ Watch your trip</button></div>`+storyCard()+
+    ORDER.filter(id=>TH[id].res).map(id=>stopCard(TH[id],ORDER.indexOf(id))).join('')+
+    `<button class="btn" data-replay>▶ Watch your trip</button><button class="btn" data-again>Try another person</button><button class="btn alt" data-redo>Same person, different rules</button>`;
   const done=ORDER.filter(id=>TH[id].status==='done'),act=ORDER.filter(id=>TH[id].status==='active'),soon=ORDER.filter(id=>TH[id].status==='waiting');
-  return top+(finished?done:done.concat(act)).map(id=>stopCard(TH[id],ORDER.indexOf(id))).join('')+
+  return `<div class="prog" aria-label="Stop ${Math.min(doneN+1,n)} of ${n}"><i style="width:${Math.round(doneN/n*100)}%"></i></div>`+
+    done.concat(act).map(id=>stopCard(TH[id],ORDER.indexOf(id))).join('')+
+    (writing?`<div class="card">${helmiB('That was the last place. I’m writing your trip story…')}</div>`:'')+
     (soon.length?`<div class="card soon"><p class="k">Coming up</p>${soon.map(id=>`<p>${Y(whenOf(id))} · ${Y(TH[id].name)}</p>`).join('')}</div>`:'')+
-    (!finished?`<button class="btn alt" data-end>${endArm?'Tap again to end the trip and start over':'End this trip'}</button>`:'')+
-    (finished?`<button class="btn" data-replay>▶ Watch your trip (replay)</button><button class="btn" data-again>Try another person</button><button class="btn alt" data-redo>Same person, different rules</button>`:'')}
-function helmiView(){
-  return `<div class="chat">${NOTES.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):`<div class="hnote"><div class="av" aria-hidden="true">H</div><div class="b">${Y(x.text)}</div></div>`).join('')}</div>
-    ${finished?'<button class="btn" data-goto="trip">See your trip and the replay</button>':'<button class="btn alt" data-goto="trip">Watch the conversations in Trip</button>'}`}
-function dataView(){const m=keysAsked();
-  return `<div class="card"><p class="k">My data</p><p class="small">What the places on your trip asked for, your rule for each, and where it actually went.</p>${Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>{const f=F(k);const went=SH[k]||[];
-    return `<div class="drow"><b>${Y(f.label)}</b><p class="small">${Y(f.value)}</p><p><span class="chip ${pol[k]}">${{share:'Share',ask:'Ask me',never:'Never'}[pol[k]]}</span>${went.length?went.map(n=>`<span class="chip">→ ${Y(n)}</span>`).join(''):'<span class="small muted">Not shared with anyone yet</span>'}</p></div>`}).join('')}</div>`}
-function meView(){const ks=Object.keys(cur.fields).sort((a,b)=>order(a)-order(b));const grp=[['need','What you need'],['record','Records about you'],['bulk','Lots of data about you']];
-  return `<div class="card"><div class="me-h"><div class="av" aria-hidden="true">${Y(cur.short[0])}</div><div><h2>${Y(cur.name)}</h2><p class="small muted">${Y(cur.who)}</p></div></div>
-    <p class="small">Everything Helmi can reach about you. You told it once; Helmi only passes on a line when your rules allow it.</p></div>`+
-    grp.map(([g,l])=>{const xs=ks.filter(k=>cur.fields[k].kind===g);return xs.length?`<div class="card"><p class="k">${l}</p>${xs.map(k=>`<div class="drow"><b>${Y(cur.fields[k].label)}</b><p class="small">${Y(cur.fields[k].value)}</p></div>`).join('')}</div>`:''}).join('')}
-function shareView(){const m=keysAsked();
-  const seen=ORDER.filter(id=>TH[id].res||TH[id].items.some(x=>x.shared&&x.shared.length)).map(id=>{const th=TH[id];const g=Object.keys(SH).filter(k=>SH[k].includes(th.name));
-    return `<div class="drow"><b>What ${Y(th.name)} sees</b><p class="small">${g.length?Y(g.map(k=>low(F(k).label)).join(', ')):'Nothing from you'}</p></div>`}).join('');
-  return (seen?`<div class="card"><p class="k">Who has what</p>${seen}</div>`:'')+
-    `<div class="card"><p class="k">Your rules</p><p class="small">${finished?'Your rules for this trip.':'Change a rule and it applies to the places Helmi hasn’t reached yet.'}</p>${Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>ruleRow(k,m[k])).join('')}</div>`}
+    `<button class="btn alt" data-end>${endArm?'Tap again to end the trip and start over':'End this trip'}</button>`}
+/* ---- Helmi */
+function helmiView(){const pend=PEND.map(k=>PINGS[k]);
+  const feed=NOTES.slice().reverse().map(x=>{
+    if(x.type==='ping')return PINGS[x.key].state==='open'?'':pingCard(PINGS[x.key],false);
+    if(x.type==='qa'){const a=ASKS[x.qid];return `<div class="msg me"><div class="b"><span class="who">You</span>${Y(a.q)}</div></div>`+helmiB(a.a?Y(a.a):'<span class="muted">Thinking…</span>')}
+    return helmiB(Y(x.text))});
+  // newest first, but keep each question above its answer
+  return (pend.length?`<p class="k">Waiting for you (${pend.length})</p>`+pend.map(p=>pingCard(p,false)).join(''):'')+
+    `<div class="card ask"><h3>Ask Helmi</h3>${compose('helmi','Ask or tell me something')}
+     <div class="chips">${['Who can see my data?','What did '+(TH[ORDER[0]]?TH[ORDER[0]].name:'the insurer')+' get?','Never share my diagnoses'].map(q=>`<button class="chip" data-ex="${Y(q)}">${Y(q)}</button>`).join('')}</div>
+     <p class="small muted">Type or tap 🎤 to speak. I can answer questions and change a rule when you ask. Your answer comes from the live AI.</p></div>
+    <p class="k">What I’m doing</p><div class="chat">${feed.join('')}</div>`}
+/* ---- Messages */
+function last(th){const m=[...th.items].reverse().find(x=>x.type==='msg');return m?(m.who==='bot'?th.bot+': ':m.who==='me'?'You: ':'Helmi: ')+m.text:th.status==='waiting'?'Not started yet':'…'}
+function stLabel(th){return th.status==='active'?'<span class="st on">Talking</span>':th.status==='done'?'<span class="st ok">Done</span>':'<span class="st">Waiting</span>'}
+function inboxView(){const list=ORDER.map(id=>TH[id]).sort((a,b)=>({active:0,done:1,waiting:2}[a.status]-{active:0,done:1,waiting:2}[b.status]));
+  return helmiB('Each place talks to me in its own conversation. Open one to watch, or to write to them yourself.')+
+    `<div class="inbox">${list.map(th=>`<button class="th ${th.unread?'unread':''}" data-open="${th.id}" ${th.status==='waiting'?'disabled':''}><div class="av bz" aria-hidden="true">${Y(th.bot[0])}</div><span class="tx"><b>${Y(th.bot)} · ${Y(th.name)}</b><span>${Y(last(th))}</span></span>${stLabel(th)}</button>`).join('')||'<p class="th">Getting ready…</p>'}</div>`}
+function threadView(th){th.unread=0;const lastMsg=[...th.items].reverse().find(x=>x.type==='msg'),waiting=PEND.some(k=>PINGS[k].place===th.id);
+  const typing=th.status==='active'?(waiting?'<p class="typing">Waiting for your answer…</p>':`<p class="typing">${lastMsg&&lastMsg.who==='bot'?'Helmi':Y(th.bot)} is writing…</p>`):(lastMsg&&lastMsg.who==='me'?`<p class="typing">${Y(th.bot)} is writing…</p>`:'');
+  return `<div class="thead"><button class="back" data-back aria-label="Back to messages">‹ Messages</button><div class="av bz" aria-hidden="true">${Y(th.bot[0])}</div><div style="min-width:0"><b>${Y(th.bot)} · ${Y(th.name)}</b><p class="small muted">${Y(th.type)}${th.status==='done'?' · done':''}</p></div></div>
+    <div class="chat" id="chat" aria-live="polite">${th.items.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):msgHtml(th,x)).join('')||'<p class="typing">Waiting for this conversation to start.</p>'}${typing}</div>
+    ${th.status!=='waiting'?`<div class="composer">${compose(th.id,'Write to '+th.bot)}<p class="small muted">${Y(th.bot)} only knows what Helmi shared with ${Y(th.name)}, and what you write here.</p></div>`:''}`}
+/* ---- My data */
+function seenBy(k){return SH[k]||[]}
+function dataView(){
+  if(!VAULT)return helmiB('Loading your data…');
+  if(SRC){const s=VAULT.sources.find(x=>x.id===SRC);if(s)return sourceView(s)}
+  return helmiB(`This is everything about you, and where it’s kept: ${fmt(VAULT.total)} rows in ${VAULT.sources.length} places. I fetch a line only when your rules allow it. Nothing is copied to me.`)+
+    `<div class="inbox">${VAULT.sources.map(s=>{const ks=Object.keys(VAULT.fields).filter(k=>VAULT.fields[k].src===s.id&&seenBy(k).length);
+      return `<button class="th" data-src="${s.id}"><span class="tx"><b>${Y(s.name)}</b><span>${s.id==='vault'?'In this app':'Kept at '+Y(s.holder)}${ks.length?' · shared: '+ks.length+' line'+(ks.length>1?'s':''):''}</span></span><span class="rows">${fmt(s.rows)}<small> rows</small></span></button>`}).join('')}</div>`}
+function sourceView(s){const t=s.tables[TBL]||s.tables[0];const ks=Object.keys(VAULT.fields).filter(k=>VAULT.fields[k].src===s.id);const who={};ks.forEach(k=>seenBy(k).forEach(n=>(who[n]=who[n]||[]).push(low(VAULT.fields[k].label))));
+  return `<div class="thead"><button class="back" data-back aria-label="Back to My data">‹ My data</button><b>${Y(s.name)}</b></div>
+    <p class="small">${s.id==='vault'?'You wrote this once, in this app.':'Kept at <b>'+Y(s.holder)+'</b>. Fetched live just now, not copied.'}</p>
+    <div class="card"><p class="small"><b>Who can see this:</b> ${Object.keys(who).length?Object.entries(who).map(([n,l])=>Y(n)+' ('+Y(l.join(', '))+')').join('; '):'Nobody but you.'}</p></div>
+    ${s.tables.length>1?`<div class="presets" role="group">${s.tables.map((x,i)=>`<button data-tbl="${i}" aria-pressed="${i===TBL}">${Y(x.name)}</button>`).join('')}</div>`:''}
+    ${t?`<p class="small muted">Showing ${fmt(t.rows.length)} of ${fmt(Math.max(t.total,s.tables.length===1?s.rows:t.total))} rows</p>
+    <div class="tbl" tabindex="0" role="region" aria-label="${Y(t.name)}"><table><thead><tr>${t.cols.map(c=>`<th scope="col">${Y(c.replace(/_/g,' '))}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r=>`<tr>${r.map(c=>`<td>${Y(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}`}
+/* ---- About me */
+function seg(k){const v=pol[k]||'ask';return `<div class="seg" role="radiogroup" aria-label="${Y(F(k).label)}">${[['share','Share'],['ask','Ask me'],['never','Never']].map(([x,l])=>`<label class="${x}"><input type="radio" name="m-${k}" value="${x}" data-k="${k}" ${v===x?'checked':''}>${l}</label>`).join('')}</div>`}
+function meView(){const V=VAULT?VAULT.fields:{};const ks=Object.keys(cur.fields);const needs=ks.filter(k=>cur.fields[k].kind==='need'),other=ks.filter(k=>cur.fields[k].kind!=='need');
+  const row=k=>{const f=cur.fields[k],v=V[k]||{},u=seenBy(k);return `<li><span class="label">${Y(v.label||f.label)}</span><span class="val">${Y(v.value||f.value)}</span>${v.verified?`<span class="small muted">Checked by: ${Y(v.verified)}</span>`:''}${u.length?`<span class="small"><b>Shared with:</b> ${Y(u.join(', '))}</span>`:''}${seg(k)}</li>`};
+  return `<div class="card"><div class="me-h"><div class="av" aria-hidden="true">${Y(cur.short[0])}</div><div><h2>${Y(cur.name)}</h2><p class="small muted">${Y(cur.who)}</p></div></div></div>`+
+    helmiB(`You wrote this once. I share single lines, only when your rules allow. Set a rule on any line, and I’ll use it with the places I haven’t reached yet.`)+
+    `<h3 class="vh">What you need (${needs.length})</h3><ul class="me">${needs.map(row).join('')}</ul><h3 class="vh">Rules for your other data</h3><ul class="me">${other.map(row).join('')}</ul>`}
+/* ---- Sharing */
+function shareView(){const ids=ORDER.filter(id=>TH[id].status!=='waiting');
+  const cards=ids.map(id=>{const th=TH[id],g=Object.keys(SH).filter(k=>SH[k].includes(th.name)),asked=th.keys.length;
+    return `<div class="card"><p class="big"><b>${Y(th.name)}</b></p><p class="small muted">${th.status==='done'?`Sees ${g.length} of ${asked} things they asked for`:'Talking to Helmi now'}</p>
+      ${g.length?`<ul class="plain">${g.map(k=>`<li>${Y(F(k).label)}</li>`).join('')}</ul>`:'<p class="small">Sees nothing from you. To them you’re a customer with a booking.</p>'}
+      ${th.res&&th.res.kept.length?`<p class="small"><b>Can’t see:</b> ${Y(labs(th.res.kept))}</p>`:''}<button class="linkbtn" data-open="${id}">Messages with ${Y(th.bot)} ›</button></div>`}).join('');
+  const n=ids.filter(id=>Object.keys(SH).some(k=>SH[k].includes(TH[id].name))).length;
+  return helmiB(n?`${n} place${n>1?'s':''} can see some of your data. Each one only sees what it got itself, even the restaurant owned by the hotel.`:'Nobody can see your data yet. Only you, and me when you ask.')+cards+
+    (HIST.length?`<h3 class="vh">Sharing history</h3><div class="card"><ul class="plain">${HIST.map(h=>`<li><b>${Y(h.place)}</b>: ${Y(h.text)}</li>`).join('')}</ul></div>`:'')}
 function render(scrollTop,toLive){
   if($('s-app').hidden)return;
   const n=ORDER.length,doneN=ORDER.filter(id=>TH[id].status==='done').length,act=ORDER.find(id=>TH[id].status==='active');
-  $('a-k').textContent=finished?'Trip finished':act?`Stop ${doneN+1} of ${n} · ${TH[act].name}`:queuePos?'In the queue':'Starting';
-  $('a-title').textContent={trip:'Your trip',helmi:'Helmi',data:'My data',me:'About me',share:'Sharing'}[TAB];
-  const le=$('live-end'),near=TAB==='trip'&&le?le.getBoundingClientRect().top<innerHeight+160:false;
-  const hb=TAB==='helmi'&&(innerHeight+scrollY>=document.body.scrollHeight-160);
-  $('a-body').innerHTML=TAB==='trip'?tripView():TAB==='helmi'?helmiView():TAB==='data'?dataView():TAB==='me'?meView():shareView();
-  if(TAB==='helmi')seenNotes=NOTES.length;
+  $('a-k').textContent=finished?'Trip finished':act?`Stop ${doneN+1} of ${n} · ${TH[act].name}`:queuePos?'In the queue':writing?'Writing your story':'Starting';
+  $('a-title').textContent={trip:'Your trip',helmi:'Helmi',msgs:OPEN&&TH[OPEN]?'Messages':'Messages',data:'My data',me:'About me',share:'Sharing'}[TAB];
+  const ae=document.activeElement,keep=ae&&ae.tagName==='INPUT'&&ae.closest('[data-form]')?{id:ae.id,v:ae.value,s:ae.selectionStart}:null;
+  const le=$('live'),near=TAB==='trip'&&le?le.getBoundingClientRect().top<innerHeight:false;
+  const atBottom=TAB==='msgs'&&OPEN?(innerHeight+scrollY>=document.body.scrollHeight-160):false;
+  $('a-body').innerHTML=TAB==='trip'?tripView():TAB==='helmi'?helmiView():TAB==='msgs'?(OPEN&&TH[OPEN]?threadView(TH[OPEN]):inboxView()):TAB==='data'?dataView():TAB==='me'?meView():shareView();
+  if(keep){const i=$(keep.id);if(i){i.value=keep.v;i.focus({preventScroll:true});try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}}
   $('nav').querySelectorAll('[data-tab]').forEach(b=>{const t=b.dataset.tab,bd=b.querySelector('.badge');b.setAttribute('aria-current',t===TAB?'page':'false');
-    let c=0;if(t==='helmi')c=PEND.length;if(t==='trip')c=tripBadge?1:0;bd.hidden=!c;bd.textContent=c});
-  const k=PEND[0],sk=k&&PINGS[k]?k+PINGS[k].state:'';if(sk!==sheetKey){sheetKey=sk;if(sk){$('sheet').innerHTML=pingCard(PINGS[k],true);$('sheet').hidden=false}else{$('sheet').hidden=true;$('sheet').innerHTML=''}}
+    let c=0;if(t==='helmi')c=PEND.length;if(t==='trip')c=tripBadge?1:0;if(t==='msgs')c=TAB==='msgs'?0:ORDER.reduce((a,id)=>a+(TH[id].unread||0),0);bd.hidden=!c;bd.textContent=c>9?'9+':c});
+  const k=PEND.find(x=>!(TAB==='helmi'||(TAB==='msgs'&&OPEN===PINGS[x].place)||(TAB==='trip'&&TH[PINGS[x].place]&&TH[PINGS[x].place].status==='active'&&near)));
+  const sk=k?k+PINGS[k].state:'';if(sk!==sheetKey){sheetKey=sk;if(sk){$('sheet').innerHTML=pingCard(PINGS[k],true);$('sheet').hidden=false}else{$('sheet').hidden=true;$('sheet').innerHTML=''}}
   if(scrollTop)scrollTo(0,0);
-  else if(TAB==='trip'&&(toLive||near)){const el=toLive?$('live'):$('live-end');if(el)el.scrollIntoView({block:toLive?'start':'end',behavior:RM?'auto':'smooth'})}
-  else if(hb)scrollTo({top:document.body.scrollHeight,behavior:RM?'auto':'smooth'});
+  else if(TAB==='trip'&&toLive){const el=$('live');if(el)el.scrollIntoView({block:'start',behavior:RM?'auto':'smooth'})}
+  else if(atBottom)scrollTo({top:document.body.scrollHeight,behavior:'auto'});
 }
-function film(){ if(window.LiveFilm&&results) LiveFilm.trip(cur,results,{PN:Object.fromEntries(ORDER.map(id=>[id,TH[id].name])),BN:Object.fromEntries(ORDER.map(id=>[id,TH[id].bot])),PTY:Object.fromEntries(ORDER.map(id=>[id,TH[id].type])),OFF}); }
+function film(){ if(window.LiveFilm&&results) LiveFilm.trip(cur,results,{PN:Object.fromEntries(ORDER.map(id=>[id,TH[id].name])),BN:Object.fromEntries(ORDER.map(id=>[id,TH[id].bot])),PTY:Object.fromEntries(ORDER.map(id=>[id,TH[id].type])),OFF,STORY}); }
 boot().catch(()=>{$('conn').lastChild.textContent='Offline'});
 </script>
 </body>
