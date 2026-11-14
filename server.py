@@ -241,11 +241,11 @@ PUSH = {
 # When a business offers something for a detail the traveller kept, Helmi first proposes something smaller.
 # (place, key): what Helmi proposes, what is sent if the traveller agrees (None: nothing new is sent), whether the business accepts, and what it gives then.
 COUNTER = {
-    ("rail", "card"): ("a yes-or-no check that {pos} EU Disability Card is valid, without the card number or any medical details",
+    ("rail", "card"): ("a yes-or-no check of eligibility for the companion benefit, with no card number or medical details",
                        "Yes or no only: the EU Disability Card is valid. No card number, no medical details.", True, None),
-    ("venue", "card"): ("a yes-or-no check that {pos} EU Disability Card is valid, without the card number or any medical details",
+    ("venue", "card"): ("a yes-or-no check of eligibility for the companion benefit, with no card number or medical details",
                         "Yes or no only: the EU Disability Card is valid. No card number, no medical details.", True, None),
-    ("museum", "card"): ("a yes-or-no check that {pos} EU Disability Card is valid, without the card number or any medical details",
+    ("museum", "card"): ("a yes-or-no check of eligibility for the companion benefit, with no card number or medical details",
                          "Yes or no only: the EU Disability Card is valid. No card number, no medical details.", True, None),
     ("bistro", "bank.dining"): ("joining the loyalty club with a visit stamp only, without any spending history",
                                 "Loyalty club: a visit stamp only. No spending history.", True, "10% off the next visit, without the free dessert"),
@@ -485,10 +485,26 @@ def unknown(F, given):
     return out
 
 
-ARRANGE = {"ins": "travel insurance", "rail": "a booking for {pos} journey", "hotel": "a room for {pos} stay", "bistro": "a table for dinner", "venue": "tickets for the show",
+ARRANGE = {"ins": "travel insurance", "rail": "a seat on the journey", "hotel": "a room", "bistro": "a table for dinner", "venue": "tickets for the show",
            "taxi": "a ride", "pharmacy": "a medicine pickup", "tour": "a place on the tour", "spa": "a treatment", "work": "a place at the event",
            "grocery": "a grocery delivery", "museum": "tickets for a visit", "planner": "a plan for the trip", "cowork": "a desk", "babysit": "a babysitter",
            "school": "a visit to the school", "course": "a place on the course", "kidsclub": "places at the kids' club"}
+
+
+# What a business asks EVERY customer, by the kinds of detail set on the stand. Nothing here assumes anything about this customer:
+# only Helmi discloses needs, a disability, health or family.
+ASKQ = {"trip": "the dates of the visit", "need": "anything we should prepare for {pos} visit, such as access needs",
+        "diet": "any allergies or dietary needs", "card": "whether {sub} has an EU Disability Card, so a companion can come free",
+        "health": "{pos} health information", "passport": "{pos} passport number", "dob": "the dates of birth of everyone coming",
+        "spend": "{pos} spending history", "location": "{pos} location history", "messages": "{pos} messages and inbox",
+        "online": "{pos} search history", "photos": "permission to use photos", "activity": "{pos} activity data", "other": "anything else we should know"}
+TOPIC = {"need": "other needs", "card": "an EU Disability Card", "health": "health information", "diet": "diet",
+         "dob": "dates of birth", "photos": "photos"}
+
+
+def private(k, f):
+    """Details whose very existence says something (a need, a disability, health, children): a business never names them before Helmi does."""
+    return cat(k, f) in ("need", "card", "health", "diet") or k in ("id.kids_dob", "photos.kids")
 
 
 def forbidden_all(F):
@@ -662,10 +678,16 @@ async def negotiate_place(n, place, hotel_name):
                       f"Hello, I'm Helmi, {poss} assistant. {name} would like {wants} for {P['pos']} upcoming trip. What do you need to arrange it?", forbidden_all(F))
     await say(n, "helmi", out, place=place["id"], opens=True)
     blab = lambda k: low1(bot_label(F[k]["label"]))
-    why = bot_why(place, keys, F)
-    ctx = (f"Helmi has just asked you to arrange {wants} for {name}. Reply: say you'd be glad to, then ask for these details and say briefly why: {jn(blab(k) for k in keys)}. Your general reason: {why}. "
-           "You do not know anything about the customer yet: do not guess or mention any personal details, names of family members, allergies, needs or numbers.")
-    fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Happy to arrange that. Could you share {P['pos']} {jn(blab(k) for k in keys)}? We ask {why}."
+    topic = lambda k: (TOPIC.get("dob" if k == "id.kids_dob" else "photos" if k == "photos.kids" else cat(k, F[k]), "other details") if private(k, F[k]) else f"{P['pos']} {blab(k)}")
+    shares = vb("shares", "share")
+    cond = lambda k: (f"if {name} {vb('has','have')} an EU Disability Card and {shares} it" if cat(k, F[k]) == "card" else f"if {name} {shares} {topic(k)}")
+    qs = jn(dict.fromkeys(ASKQ[c].format(pos=P["pos"], sub=P["sub"]) for c in CATS if c in C["asks"]))
+    why = ("to price the travel insurance policy" if place["type"] == "insurer" else "to build the travel plan automatically" if place["type"] == "trip planner app"
+           else "; ".join(list(dict.fromkeys(PURPOSE[c] for c in CATS if c in C["asks"]))[:3]))  # the business's own reasons, the same for everyone
+    ctx = (f"Helmi has just asked you to arrange {wants} for {name}. Reply: say you'd be glad to, then ask the questions you ask every customer, and say briefly why: {qs}. Your general reason: {why}. "
+           "You know nothing about this customer: do not assume or hint that they have any need, disability, health condition, diet, family or children. "
+           "Ask in neutral words, as you would ask anyone, and do not mention any personal details or numbers.")
+    fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Happy to arrange that. To prepare, we ask every customer for {qs}. We ask {why}."
     ctx += f" Say you keep customers' details {KEEP[C['keep']]}."
     fb += f" We keep customers' details {KEEP[C['keep']]}."
     if C["offers"]:
@@ -677,7 +699,7 @@ async def negotiate_place(n, place, hotel_name):
         fb += " " + cap(jn(TRUST[t] for t in C["trust"])) + "."
     if place["id"] == "bistro" and hotel_name:
         ctx += f" First ask whether you may simply reuse what {name} already shared with {hotel_name}, which has the same owner as you."
-        fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Happy to arrange that. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, could you share {P['pos']} {jn(blab(k) for k in keys)}?"
+        fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Happy to arrange that. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, we ask every customer for {qs}."
     await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb, unknown(F, [])), place=place["id"], asks=keys)
 
     # 2. the code decides each detail from the visitor's rules
@@ -721,12 +743,20 @@ async def negotiate_place(n, place, hotel_name):
             lines.append("Share these details, in your own words but keeping the facts: " + "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in new_give) + ".")
             fbp.append("Here is what " + name + vb(" shares: ", " share: ") + "; ".join(f"{lab(k)}: {F[k]['value'].rstrip('.')}" for k in new_give) + ".")
         if checking:
-            lines.append(f"Say you are checking with {name} about: {jn(lab(k) for k in checking)}.")
-            fbp.append(f"I'm checking with {name} about {P['pos']} {jn(lab(k) for k in checking)}.")
+            named = [lab(k) for k in checking if not private(k, F[k])]
+            what = jn(named + ([("a few other things" if named else "a few things")] if len(named) < len(checking) else []))
+            lines.append(f"Say you are checking with {name} about {what}. Do not name or hint at anything else.")
+            fbp.append(f"I'm checking with {name} about {what}.")
         if refuse:
-            lines.append("Say clearly that these will NOT be shared, and do not offer them in any form: " +
-                         "; ".join(f"{lab(k)} (reason or alternative: {alt(k)})" for k in refuse) + ".")
-            fbp.append(f"{cap(jn(lab(k) for k in refuse))} stays with {name}: " + "; ".join(alt(k) for k in refuse) + ".")
+            pub = [k for k in refuse if not private(k, F[k])]
+            prv = list(dict.fromkeys(topic(k) for k in refuse if private(k, F[k])))
+            if pub:
+                lines.append("Say clearly that these will NOT be shared, and do not offer them in any form: " +
+                             "; ".join(f"{lab(k)} (reason or alternative: {alt(k)})" for k in pub) + ".")
+                fbp.append(f"{cap(jn(lab(k) for k in pub))} stays with {name}: " + "; ".join(alt(k) for k in pub) + ".")
+            if prv:
+                lines.append(f"Also say there is nothing more to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind.")
+                fbp.append(f"There's nothing more to share on {jn(prv)}.")
         if not lines:
             return
         def mentions_shared(txt):
@@ -782,27 +812,27 @@ async def negotiate_place(n, place, hotel_name):
     if target:
         if "offer" in rule:
             out = await write("bot", bot_sys(place, p),
-                              f"Helmi did not share {poss} {blab(target)}. Make one friendly offer: if {name} {vb('shares','share')} it, {P['sub']} {vb('gets','get')} {rule['offer']}. "
+                              f"Helmi shared nothing on {topic(target)}. Without assuming {name} {vb('has','have')} it, make one friendly offer: {cond(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. "
                               f"Without it, {P['sub']} {vb('gets','get')} {rule['lose']}. Ask once.",
-                              f"Understood. If {name} {vb('shares','share')} {P['pos']} {blab(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. Without it, {rule['lose']}. Would {P['sub']} like to reconsider?",
+                              f"Understood. {cap(cond(target))}, {P['sub']} {vb('gets','get')} {rule['offer']}. Without it, {rule['lose']}. Would {P['sub']} like to reconsider?",
                               unknown(F, give))
             await say(n, "bot", out, place=place["id"])
             if pol.get(target) == "never":
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "rule", "without": rule["lose"]}
-                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them, but say {poss} rule is never to share {lab(target)}, "
+                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them, but say {poss} rule is never to share {topic(target)}, "
                                 f"so the answer stays no, whatever the offer. Do not offer it in any form.",
-                                f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {P['pos']} {lab(target)}, whatever the offer.", forbidden())
+                                f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {topic(target)}, whatever the offer.", forbidden())
                 await say(n, "helmi", o, place=place["id"], kept=[target], rule=True)
                 lost = rule["lose"]
             elif (ctr := COUNTER.get((place["id"], target))):
                 prop = ctr[0].format(n=name, pos=P["pos"])
                 gives = ctr[3] or rule["offer"]
-                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, which offered {rule['offer']} if {name} {vb('shares','share')} {P['pos']} {lab(target)}. "
-                                f"Do not share it. Propose something smaller instead and ask if that would earn the offer: {prop}. Do not include any details yet.",
-                                f"{name} would rather keep {P['pos']} {lab(target)}. Would {prop} work instead?", forbidden())
+                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, which offered {rule['offer']} {cond(target)}. "
+                                f"Do not share it, and do not say whether {name} {vb('has','have')} it. Propose something smaller instead and ask if that would earn the offer: {prop}. Do not include any details yet.",
+                                f"{name} would rather not share {topic(target)}. Would {prop} work instead?", forbidden())
                 await say(n, "helmi", o, place=place["id"], counter=True)
                 if ctr[2]:
-                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of {poss} {blab(target)}: {prop}. Accept it warmly and say that then {P['sub']} {vb('gets','get')} {gives}.",
+                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {topic(target)}: {prop}. Accept it warmly and say that then {P['sub']} {vb('gets','get')} {gives}.",
                                       f"Yes, that works for us. Then {name} {vb('gets','get')} {gives}.", unknown(F, give))
                     await say(n, "bot", out, place=place["id"])
                     if ctr[1] is None:  # nothing new leaves the vault, so Helmi can take the deal itself
@@ -820,13 +850,13 @@ async def negotiate_place(n, place, hotel_name):
                         await say(n, "helmi", o, place=place["id"], kept=[target])
                         lost = rule["lose"]
                 else:
-                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of {poss} {blab(target)}: {prop}. Politely decline: the offer of {rule['offer']} needs the {blab(target)} itself. "
+                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {topic(target)}: {prop}. Politely decline: the offer of {rule['offer']} needs {topic(target)} itself. "
                                       f"Say that without it {P['sub']} {vb('gets','get')} {rule['lose']}, and that everything else still goes ahead.",
-                                      f"I'm sorry, {rule['offer']} needs the {blab(target)} itself. Without it, {name} {vb('gets','get')} {rule['lose']}. Everything else goes ahead as planned.", unknown(F, give))
+                                      f"I'm sorry, {rule['offer']} needs {topic(target)} itself. Without it, {name} {vb('gets','get')} {rule['lose']}. Everything else goes ahead as planned.", unknown(F, give))
                     await say(n, "bot", out, place=place["id"])
                     offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "business", "without": rule["lose"], "via": prop}
-                    o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say that's fine: {name} {vb('keeps','keep')} {P['pos']} {lab(target)} and {vb('takes','take')} {rule['lose']}. "
-                                    "Do not offer it in any form.", f"That's fine. {name} {vb('keeps','keep')} {P['pos']} {lab(target)} and {vb('takes','take')} {rule['lose']}.", forbidden())
+                    o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say that's fine: {name} {vb('takes','take')} {rule['lose']}. "
+                                    "Do not offer it in any form.", f"That's fine. {name} {vb('takes','take')} {rule['lose']}.", forbidden())
                     await say(n, "helmi", o, place=place["id"], kept=[target])
                     lost = rule["lose"]
             elif await ask_person(n, place, target, offer=rule["offer"]):
@@ -839,21 +869,24 @@ async def negotiate_place(n, place, hotel_name):
             else:
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "you", "without": rule["lose"]}
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} considered the offer and still {vb('says','say')} no to sharing "
-                                f"{lab(target)}. Do not offer it in any form.", f"{name} thought about it and still {vb('says', 'say')} no.", forbidden())
+                                f"{topic(target)}. Do not offer it in any form.", f"{name} thought about it and still {vb('says', 'say')} no.", forbidden())
                 await say(n, "helmi", o, place=place["id"], kept=[target])
                 lost = rule["lose"]
         else:
             offer_fact = {"detail": lab(target), "instead": rule["alt"]}
-            out = await write("bot", bot_sys(place, p), f"Helmi did not share {poss} {blab(target)}. Accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
+            out = await write("bot", bot_sys(place, p), f"Helmi shared nothing on {topic(target)}. Without assuming anything about {name}, accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
                               f"That's fine. Instead, {rule['alt']}.", unknown(F, give))
             await say(n, "bot", out, place=place["id"])
 
     # 5. the business confirms: what it does with each detail and for how long (its own settings), and how it manages without what was kept
     prepared = [F[k]["value"] for k in give if F[k]["kind"] == "need"][:4]
     extra = (" A member of staff double-checks the arrangements." if C["review"] and prepared else "")
-    uses = "; ".join(f"{lab(k)}: {PURPOSE[cat(k, F[k])]}" for k in give[:5])
+    by_use = {}
+    for k in give[:6]:
+        by_use.setdefault(PURPOSE[cat(k, F[k])], []).append(lab(k))
+    uses = "; ".join(f"{jn(v)}: {u}" for u, v in by_use.items())
     chk = n.get("checks", {}).get(place["id"], {})
-    kept_alt = [k for k in keep if k != target or not offer_fact]
+    kept_alt = [k for k in keep if (k != target or not offer_fact) and not private(k, F[k])]
     keepw = KEEP[C["keep"]]
     promise = (" " + cap(jn(TRUST[t] for t in C["trust"])) + ".") if C["trust"] else ""
     ctx5 = (f"Confirm what you will do for {name}. This message may be up to 4 sentences and 80 words. "
@@ -1337,7 +1370,7 @@ async def _answer_say(n, pl, text):
     C = CONFIG.get(pl["id"], {})
     O = offers_for(pl["id"])
     chk = n.get("checks", {}).get(pl["id"], {})
-    kept = [F[k]["label"] for k in g.get("kept", [])]
+    kept = [F[k]["label"] for k in g.get("kept", []) if not private(k, F[k])]
     facts = (f"What {pl['name']} offers every customer: {'; '.join(O[o][2] for o in C.get('offers', []) if o in O) or 'nothing special listed'}. "
              f"What it does not offer: {'; '.join(v[2] for o, v in O.items() if o not in C.get('offers', [])) or 'nothing to note'}. "
              f"You keep customers' details {KEEP.get(C.get('keep'), 'until the visit is over')}, then delete them. "
