@@ -364,7 +364,7 @@ function tfAccident(st){ return (t,d)=>{ let s=room('#3a2f4a','#5c3b2a')+steps(-
   s+=G(t>0.8&&t<1.4?`rotate(${Math.sin(t*30)*3} ${x} ${FLOOR})`:'',tfChar(st.per,x,t>0.8?'sad':'smile',t,false));
   if(t>1.4) s+=tfBand(st.ok?C.green:C.red,st.ok?'✓':'✗',st.title,st.text,ease(prog(t,1.4,1.9)));
   return s; }; }
-function tfOutro(st){ return (t,d)=>{ let s=R(-200,-200,2320,1480,C.teal); s+=Tx(960,250,72,'YOUR TRIP','#fff',900);
+function tfOutro(st){ return (t,d)=>{ let s=R(-200,-200,2320,1480,C.teal); s+=Tx(960,250,72,esc(st.head||'YOUR TRIP'),'#fff',900);
   st.rows.forEach(([n,l],i)=>{ const u=ease(prog(t,0.4+i*0.35,1+i*0.35)); s+=G(`translate(${300+i*460} 380)`,R(0,0,400,300,C.cream,24,'filter="url(#sh)"')+Tx(200,150,96,esc(String(n)),C.ink,900)+Tx(200,220,30,esc(l),C.ink,600),`opacity="${u}"`); });
   s+=Tx(960,820,40,esc(st.sub),'#fff',600,'middle',`opacity="${ease(prog(t,1.6,2.2))}"`); return s; }; }
 function tfBuild(data){ let at=0; const scenes=[], caps=[];
@@ -372,7 +372,7 @@ function tfBuild(data){ let at=0; const scenes=[], caps=[];
   const add=(dur,draw,say)=>{ const L=arr(say); scenes.push({from:at,to:at+dur,draw,say:L}); if(L.length) caps.push({from:at+0.2,to:at+dur-0.1,text:L.join(' '),parts:L}); at+=dur; };
   const one=s=>{ const v=false; return v?v[1]+0.35:String(s||'').split(' ').length*0.42+0.9; };
   const dur=(base,say)=>{ const L=arr(say); if(!L.length) return base; return Math.max(base-0.8,L.reduce((a,s)=>a+one(s),0)+0.6); };
-  add(dur(3.4,data.intro),(t)=>titleCard(['YOUR TRIP'],t,C.teal,'#fff',data.sub),data.intro);
+  add(dur(3.4,data.intro),(t)=>titleCard([data.head||'YOUR TRIP'],t,C.teal,'#fff',data.sub),data.intro);
   data.stops.forEach(st=>{ if(st.kind==='breach') add(dur(4.2,st.say),tfBreach(st),st.say); else if(st.kind==='accident') add(dur(5,st.say),tfAccident(st),st.say); else add(dur(4.0,st.say),tfStop(st),st.say); });
   add(dur(5,data.outro.say),tfOutro(data.outro),data.outro.say);
   return {scenes,caps,duration:at}; }
@@ -388,7 +388,7 @@ function tfChar(per,x,face,t,moving){ const walk=moving?t*9:0;
   return tfChar0(per,x,face,t,moving); }
 function tfBg(st){ return tfBg0(st.per==='okafor'?Object.assign({},st,{per:'elina'}):st); }
 function tfTop(st){ return G('translate(40 18)',R(0,0,620,84,'rgba(255,248,236,.94)',18,'filter="url(#sh)"')+Tx(28,36,26,esc(st.when.toUpperCase()),C.coral,800,'start')+Tx(28,70,30,esc(st.name),C.ink,800,'start'))+
-  G('translate(1440 18)',R(0,0,440,66,'rgba(42,36,32,.88)',16)+Tx(70,42,32,String(st.e),'#fff',800)+Tx(105,42,18,'details shared','#e8dccb',600,'start')+Tx(285,42,32,String(st.m),'#fff',800)+Tx(320,42,18,'kept','#e8dccb',600,'start')); }
+  G('translate(1440 18)',R(0,0,440,66,'rgba(42,36,32,.88)',16)+Tx(70,42,32,String(st.e),'#fff',800)+Tx(105,42,18,(st.lbl||['details shared'])[0],'#e8dccb',600,'start')+Tx(285,42,32,String(st.m),'#fff',800)+Tx(320,42,18,(st.lbl||[0,'kept'])[1],'#e8dccb',600,'start')); }
 
 /* ---------- trip replay: player ---------- */
 let tfF=null, tfPlaying=false, tfT=0, tfT0=0, tfS=0, tfRaf=null, tfVoice=true, tfLast=-1;
@@ -457,5 +457,19 @@ function trip(cur,results,info){
     outro:{rows:[[e,'details shared'],[m,'details kept'],[OFF.n?OFF.yes+' of '+OFF.n:'0','offers taken']],
       sub:`You decided what went where. Nothing went anywhere you didn’t allow.`,say:STORY&&STORY.outro?SENT(STORY.outro):'And then you were home again.'}});
 }
-return {open:tfOpen,trip,last:()=>LiveFilm_last};
+/* the business's replay: the same place, told to the business */
+function biz(cur,pid,res,story,info){
+  const SENT=t=>(String(t||'').match(/[^.!?]+(?:[.!?]+["”’]?|$)/g)||[]).map(x=>x.trim()).filter(Boolean);
+  const pl=(cur.places||[]).find(x=>x.id===pid)||{}, nm=info.name||pl.name||pid, g=res.shared||[];
+  const ms=(pl.moments||[]).map(mo=>{const on=mo.dep.every(k=>g.includes(k))||(mo.alt&&[].concat(mo.alt).some(k=>g.includes(k)));return {on,mo}}).filter(x=>!x.mo.trade);
+  const okN=ms.filter(x=>x.on).length;
+  const parts=story.parts||[];
+  const stops=parts.map((p,i)=>({kind:'stop',id:pid,per:cur.id,name:nm,when:p.title||'',lbl:['details received','not given'],e:g.length,m:(res.kept||[]).length,
+    ok:i===2?(okN===ms.length?true:okN?null:false):i===1?((res.kept||[]).length?null:true):true,title:p.title||'',text:p.text||'',say:SENT(p.text)}));
+  LiveFilm_last=stops;
+  tfOpen({head:'YOUR BUSINESS',intro:SENT(story.intro),sub:nm,stops,
+    outro:{head:'HOW YOU DID',rows:[[g.length+' of '+(g.length+(res.kept||[]).length),'details received'],[okN+' of '+ms.length,'services ready'],[(res.kept||[]).length,'records you never had to hold']],
+      sub:'Every detail you got came with the traveller’s consent.',say:SENT(story.outro||'Every detail you got came with the traveller’s consent.')}});
+}
+return {open:tfOpen,trip,biz,last:()=>LiveFilm_last};
 })();

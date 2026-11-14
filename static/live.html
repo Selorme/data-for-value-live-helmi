@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Helmi Live</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/film.css?v=1114c">
+<link rel="stylesheet" href="/static/film.css?v=1114d">
 <style>
 /* Layout: one column phone flow. Person, trip, rules, live trip, result. */
 :root{
@@ -242,7 +242,7 @@ ul.plain li{font-size:14px}
 </nav>
 <div class="sheet" id="sheet" hidden></div>
 <button class="toast" id="toast" hidden></button>
-<script src="/static/film.js?v=1114c"></script>
+<script src="/static/film.js?v=1114d"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -273,10 +273,19 @@ async function boot(){
 }
 function connect(){
   const es=new EventSource('/events?vid='+vid);
-  es.onopen=()=>{$('conn').className='conn on';$('conn').lastChild.textContent='Live'};
-  es.onerror=()=>{$('conn').className='conn';$('conn').lastChild.textContent='Reconnecting'};
+  let lost=false;
+  es.onopen=()=>{$('conn').className='conn on';$('conn').lastChild.textContent='Live';if(lost){lost=false;catchUp()}};
+  es.onerror=()=>{lost=true;$('conn').className='conn';$('conn').lastChild.textContent='Reconnecting'};
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')catchUp()});
   es.addEventListener('config',()=>{if(!cur)return;if(!$('s-rules').hidden)loadReq().then(rules);else if(!$('s-trip').hidden)loadReq().then(trip)});
-  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)on(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
+  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)feed(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
+}
+/* every event of a trip is numbered: skip what we already have, and fetch anything missed while the phone was offline or asleep */
+let SEQ=-1;
+function feed(t,d){if(d.seq!=null){if(d.seq<=SEQ)return;if(d.seq>SEQ+1){catchUp();return}SEQ=d.seq}on(t,d)}
+let catching=false;
+async function catchUp(){if(!nid||catching)return;catching=true;try{const r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json();
+  if(r.ok&&r.nid===nid){const miss=r.events.filter(ev=>ev.seq>SEQ);REPLAY=true;miss.forEach(ev=>{SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;if(miss.length)render()}}catch(e){REPLAY=false}finally{catching=false}
 }
 async function loadReq(){REQ=(await (await fetch('/api/requests?person='+cur.id)).json()).places}
 async function pick(id){cur=D.people.find(p=>p.id===id);pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id);trip();show('s-trip')}
@@ -313,11 +322,11 @@ $('go').onclick=async()=>{
     const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
     await loadVault();fresh(j.nid);show('s-app');render();
-    (EARLY[nid]||[]).forEach(([t,d])=>on(t,d));EARLY={};
+    (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
 };
-function fresh(id){nid=id;TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
+function fresh(id){nid=id;SEQ=-1;TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
   VAULT=VAULTS&&VAULTS[cur.id]||null}
 async function loadVault(){if(VAULTS)return;try{VAULTS=await (await fetch('/static/vault.json')).json()}catch(e){VAULTS={}}}
 /* a refresh picks the trip up where it was: the server keeps every event of this phone's latest trip */
@@ -326,8 +335,8 @@ async function resume(){try{
   const p=D.people.find(x=>x.id===r.person);if(!p)return false;
   cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();await loadVault();
   fresh(r.nid);show('s-app');REPLAY=true;let last=0;
-  r.events.forEach(ev=>{last=Math.max(last,ev.at||0);on(ev.t,ev)});REPLAY=false;
-  (EARLY[nid]||[]).forEach(([t,d])=>{if((d.at||0)>last)on(t,d)});EARLY={};
+  r.events.forEach(ev=>{last=Math.max(last,ev.at||0);SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;
+  (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
   if(!r.running&&!finished){finished=true;note('This trip stopped before the end.')}
   render(true);return true}catch(e){REPLAY=false;return false}}
 function leave(){if(nid)fetch('/api/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid})}).catch(()=>{});nid=null}

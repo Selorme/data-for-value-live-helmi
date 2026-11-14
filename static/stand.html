@@ -6,8 +6,8 @@
 <title>Helmi Live Stand</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="/static/film.css?v=1114c">
-<script src="/static/film.js?v=1114c"></script>
+<link rel="stylesheet" href="/static/film.css?v=1114d">
+<script src="/static/film.js?v=1114d"></script>
 <style>
 /* Layout: projector screen in three columns. Left: how the hotel sets up its bot. Middle: the live negotiation. Right: scan to join, and what guests gave. */
 :root{
@@ -88,6 +88,11 @@ p{margin:0}
 button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-offset:2px}
 .reset{font:600 12px var(--body);background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:4px 8px;cursor:pointer;align-self:flex-start}
 .pick{font:600 15px var(--body);padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.replays{align-self:stretch;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0}
+.replays p{margin:0;font:600 13px var(--body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.bizrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.replay.biz{font-size:15px;padding:9px 14px;background:var(--card,#fff);color:inherit;border:2px solid var(--helmi)}
+.replay.biz.mine{background:var(--helmi);color:#fff}
 .replay{align-self:center;font:600 18px var(--body);background:var(--helmi);color:#fff;border:0;border-radius:12px;padding:12px 20px;cursor:pointer}
 .biztabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;flex:none}
 .biztabs button{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;font:500 14px var(--body);border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:left}
@@ -226,7 +231,7 @@ function draw(){
     if(x.k==='sep')return `<div class="sep"><b>${esc(x.text)}</b><span>${esc(x.sub)}</span></div>`;
     if(x.k==='wait')return `<p class="wait ${x.offer?'offer':''}">${esc(x.text)}</p>`;
     if(x.k==='sys')return `<p class="sys">${esc(x.text)}</p>`;
-    if(x.k==='replay')return `<button class="replay" data-replay="${view}">▶ Watch the replay of ${esc(p.short)}${p.plural?'’':'’s'} trip</button>`;
+    if(x.k==='replay')return `<div class="replays"><button class="replay" data-replay="${view}">▶ ${esc(p.short)}${p.plural?'’':'’s'} trip</button><p>How each business did</p><div class="bizrow">${Object.keys(n.pn).sort((a,b)=>(b===BIZ)-(a===BIZ)).map(id=>`<button class="replay biz ${id===BIZ?'mine':''}" data-bizreplay="${view}|${id}">▶ ${esc(n.pn[id])}</button>`).join('')}</div></div>`;
     const bot=x.who==='bot',F=p.fields,sh=l=>l.split(': ').pop();
     if(x.who==='me')return `<div class="msg helmi"><div class="av h" aria-hidden="true">${esc(p.short[0])}</div><div class="b"><span class="who">${esc(p.short)}, writing directly</span>${esc(x.text)}</div></div>`;
     const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
@@ -234,7 +239,11 @@ function draw(){
     return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.bn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc((n.bn[x.place]||'Bot')+' · '+(n.pn[x.place]||'')):esc(p.short)+(p.plural?'’':'’s')+' Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
   $('chat').scrollTop=$('chat').scrollHeight;
 }
-$('chat').addEventListener('click',e=>{const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off,STORY:n.story})});
+$('chat').addEventListener('click',async e=>{const z=e.target.closest('[data-bizreplay]');if(z){const [nid,pid]=z.dataset.bizreplay.split('|'),n=NEG[nid];if(!n||!window.LiveFilm)return;
+    const was=z.textContent;z.disabled=true;z.textContent='Writing the story…';
+    try{const j=await (await fetch('/api/bizstory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:pid})})).json();if(j.ok)LiveFilm.biz(P(n.person),pid,j.res,j.story,{name:n.pn[pid]})}catch(_){}
+    z.disabled=false;z.textContent=was;return}
+  const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off,STORY:n.story})});
 $('biztabs').onclick=e=>{const b=e.target.closest('[data-b]');if(!b||b.disabled)return;NEG[view].sel=b.dataset.b;draw()};
 $('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};
 function bars(el,obj,names){const rows=Object.entries(obj||{}).filter(([,v])=>v.asked).sort((a,b)=>b[1].asked-a[1].asked);
