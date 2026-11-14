@@ -256,7 +256,8 @@ function preset(name,k,f){
   if(f.kind==='need'||k==='trip'||k==='diet'||k==='allergy')return 'share';
   if(k==='id.dob'||bulk)return 'never'; return 'ask';
 }
-function show(id){['s-pick','s-trip','s-rules','s-app'].forEach(s=>$(s).hidden=s!==id);const inapp=id==='s-app';$('nav').hidden=!inapp;document.body.classList.toggle('inapp',inapp);$('foot').hidden=inapp;if(!inapp){$('sheet').hidden=true;$('toast').hidden=true}scrollTo(0,0)}
+function show(id){showRaw(id);if(!NAVING&&id!=='s-app')pushNav()}
+function showRaw(id){['s-pick','s-trip','s-rules','s-app'].forEach(s=>$(s).hidden=s!==id);const inapp=id==='s-app';$('nav').hidden=!inapp;document.body.classList.toggle('inapp',inapp);$('foot').hidden=inapp;if(!inapp){$('sheet').hidden=true;$('toast').hidden=true}scrollTo(0,0)}
 function F(k){return cur.fields[k]}
 function short(l){return l.split(': ').pop()}
 function low(l){const s=short(l),w=s.split(' ')[0];return (s.slice(0,2)===s.slice(0,2).toUpperCase()||/[A-Z]/.test(w.slice(1))||/['’]/.test(w))?s:s[0].toLowerCase()+s.slice(1)}
@@ -267,6 +268,7 @@ async function boot(){
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
   $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(b)pick(b.dataset.p)};
   connect();
+  try{history.replaceState({scr:'s-pick'},'')}catch(e){}
   loadVault();
   if(await resume())return;
   const q=new URLSearchParams(location.search).get('p');if(q&&D.people.some(p=>p.id===q))pick(q);
@@ -295,8 +297,8 @@ function trip(){
 }
 $('t-places').addEventListener('change',e=>{const k=e.target.dataset.pl;if(!k)return;chosen=REQ.map(p=>p.id).filter(id=>document.querySelector(`[data-pl="${id}"]`).checked);$('t-next').disabled=!chosen.length});
 $('t-next').onclick=()=>{rules();show('s-rules')};
-$('t-back').onclick=()=>show('s-pick');
-$('r-back').onclick=()=>{trip();show('s-trip')};
+$('t-back').onclick=()=>{if(history.state&&history.state.scr==='s-trip')history.back();else show('s-pick')};
+$('r-back').onclick=()=>{if(history.state&&history.state.scr==='s-rules')history.back();else{trip();show('s-trip')}};
 function keysAsked(){const m={};REQ.filter(p=>chosen.includes(p.id)).forEach(p=>p.keys.forEach(k=>(m[k]=m[k]||[]).push(p.name)));return m}
 const order=k=>({need:0,record:1,bulk:2}[F(k).kind]??1);
 function ruleRow(k,by){const f=F(k);return `<div class="rule"><div class="lab"><b>${esc(f.label)}</b><span class="kind ${f.kind}">${f.kind==='need'?'What you need':f.kind==='record'?'Record':'Lots of data'}</span></div>
@@ -321,7 +323,7 @@ $('go').onclick=async()=>{
   try{
     const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
-    await loadVault();fresh(j.nid);show('s-app');render();
+    await loadVault();fresh(j.nid);show('s-app');enterApp();render();
     (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
@@ -341,7 +343,7 @@ async function resume(){try{
     if(!L||!L.nid||!L.events||!L.events.length)return false;r={ok:true,nid:L.nid,person:L.person,places:L.places,policy:L.policy,events:L.events,running:false,local:true}}
   const p=D.people.find(x=>x.id===r.person);if(!p)return false;
   cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();await loadVault();
-  fresh(r.nid);show('s-app');REPLAY=true;let last=0;
+  fresh(r.nid);show('s-app');enterApp();REPLAY=true;let last=0;
   LOCALEV=r.events.slice();r.events.forEach(ev=>{last=Math.max(last,ev.at||0);if(ev.seq!=null)SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;saveLocal();
   (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
   if(!r.running&&!finished){finished=true;note(r.local?'The stand restarted, so this trip stopped here. Everything up to this point is still on your phone.':'This trip stopped before the end.')}
@@ -406,7 +408,7 @@ function listen(btn,done){if(!SR)return;if(window.__rec){try{window.__rec.stop()
     r.onend=()=>{window.__rec=null;btn.textContent='🎤';btn.setAttribute('aria-label','Speak')};r.onerror=r.onend;r.start()}catch(e){window.__rec=null}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-ans]');if(b){answer(b.dataset.key,b.dataset.ans==='1');return}
   const o=e.target.closest('[data-open]');if(o){TAB='msgs';OPEN=o.dataset.open;if(TH[OPEN])TH[OPEN].unread=0;render(true);return}
-  if(e.target.closest('[data-back]')){OPEN=null;SRC=null;render(true);return}
+  if(e.target.closest('[data-back]')){if(history.state&&(history.state.open||history.state.src)){history.back();return}OPEN=null;SRC=null;render(true);return}
   const sr=e.target.closest('[data-src]');if(sr){SRC=sr.dataset.src;TBL=0;render(true);return}
   const tb=e.target.closest('[data-tbl]');if(tb){TBL=+tb.dataset.tbl;render();return}
   const g=e.target.closest('[data-goto]');if(g){TAB=g.dataset.goto;OPEN=null;SRC=null;render(true);return}
@@ -538,7 +540,32 @@ function render(scrollTop,toLive){
   else if(TAB==='trip'&&toLive){const el=$('live');if(el)el.scrollIntoView({block:'start',behavior:RM?'auto':'smooth'})}
   else if(atBottom)scrollTo({top:document.body.scrollHeight,behavior:'auto'});
 }
-function film(){ if(window.LiveFilm&&results) LiveFilm.trip(cur,results,{PN:Object.fromEntries(ORDER.map(id=>[id,TH[id].name])),BN:Object.fromEntries(ORDER.map(id=>[id,TH[id].bot])),PTY:Object.fromEntries(ORDER.map(id=>[id,TH[id].type])),OFF,STORY}); }
+function film(){ if(!window.LiveFilm||!results)return; try{history.pushState(Object.assign(snap(),{film:1}),'')}catch(e){} LiveFilm.trip(cur,results,{PN:Object.fromEntries(ORDER.map(id=>[id,TH[id].name])),BN:Object.fromEntries(ORDER.map(id=>[id,TH[id].bot])),PTY:Object.fromEntries(ORDER.map(id=>[id,TH[id].type])),OFF,STORY}); }
+
+/* ---------------------------------------------------------------- the phone's back button
+   Every screen, tab, conversation and the replay is an entry in the browser history, so Back goes to what was on screen before.
+   During a trip, Back never leaves the trip: that takes "End this trip" or the buttons at the end. */
+let NAVING=false;
+function curScr(){return ['s-pick','s-trip','s-rules','s-app'].find(x=>!$(x).hidden)||'s-pick'}
+function snap(){const x={scr:curScr()};if(cur)x.p=cur.id;if(x.scr==='s-app'){x.tab=TAB;x.open=OPEN||null;x.src=SRC||null}return x}
+function same(a,b){return !!a&&!!b&&a.scr===b.scr&&(a.tab||null)===(b.tab||null)&&(a.open||null)===(b.open||null)&&(a.src||null)===(b.src||null)&&!a.film===!b.film&&!a.guard===!b.guard}
+function pushNav(){if(NAVING)return;const x=snap();if(same(x,history.state))return;try{history.pushState(x,'')}catch(e){}}
+function enterApp(){try{history.replaceState(Object.assign(snap(),{tab:'trip',open:null,src:null,guard:1}),'');history.pushState(snap(),'')}catch(e){}}
+function filmOpen(){const f=document.getElementById('tfilm');return !!f&&!f.hidden}
+window.addEventListener('popstate',async e=>{const x=e.state||{scr:'s-pick'};NAVING=true;try{
+  if(filmOpen()&&!x.film){const b=document.getElementById('tf-x');if(b)b.click()}
+  if(x.film){return}
+  if(x.guard){if(nid&&curScr()==='s-app'){toast(finished?'Use “Try another person” to start again.':'Your trip is still running. To leave it, use “End this trip” on the Trip tab.');TAB='trip';OPEN=null;SRC=null;render(true);history.pushState(snap(),'');return}
+    x.scr='s-pick'}
+  if(x.scr==='s-app'){if(!nid){showRaw('s-pick');history.replaceState({scr:'s-pick'},'');return}
+    TAB=x.tab||'trip';OPEN=x.open||null;SRC=x.src||null;if(TAB==='trip')tripBadge=false;showRaw('s-app');render(true);return}
+  if(nid&&!finished&&curScr()==='s-app'){toast('Your trip is still running. To leave it, use “End this trip” on the Trip tab.');history.pushState(snap(),'');return}
+  if(x.p&&(!cur||cur.id!==x.p)){cur=D.people.find(p=>p.id===x.p);if(cur){pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id)}}
+  if(!cur&&x.scr!=='s-pick')x.scr='s-pick';
+  if(x.scr==='s-trip')trip();if(x.scr==='s-rules')rules();
+  showRaw(x.scr)}finally{NAVING=false}});
+document.addEventListener('click',e=>{if(e.target.closest('#tf-x')&&history.state&&history.state.film){setTimeout(()=>history.back(),0);return}
+  if(e.target.closest('#nav,[data-open],[data-src],[data-goto],#toast'))setTimeout(pushNav,0)});
 boot().catch(()=>{$('conn').lastChild.textContent='Offline'});
 </script>
 </body>

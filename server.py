@@ -149,6 +149,35 @@ CONFIG = {}  # business id -> {"asks", "offers", "trust", "keep", "review", "pus
 META = {}    # business id -> {"type", "bot", "cats", "names", "push"}
 
 
+PURPOSE = {"trip": "to have everything ready for the arrival", "need": "to prepare what the customer needs for the visit",
+           "diet": "to tell the kitchen about any allergies and diet", "card": "to apply disability benefits such as a companion ticket",
+           "health": "to understand any health needs", "passport": "to check identity in advance", "dob": "to check ages and fares",
+           "spend": "to make personalised offers", "location": "to personalise the service", "messages": "to set things up automatically",
+           "online": "to personalise prices and offers", "photos": "to make a photo package", "activity": "to personalise the service",
+           "other": "to prepare for the visit"}
+
+
+def bot_why(place, keys, F):
+    """Why a business asks, in its own general words. The business's bot knows nothing about the customer yet, so no details go in here."""
+    if place["type"] == "insurer":
+        return "to price the travel insurance policy"
+    if place["type"] == "trip planner app":
+        return "to build the travel plan automatically"
+    out = []
+    for k in keys:
+        w = PURPOSE[cat(k, F[k])]
+        if w not in out:
+            out.append(w)
+    return "; ".join(out[:3])
+
+
+def bot_label(lbl):
+    """A detail's name as a business would ask for it: no names of people it hasn't been told about."""
+    head, _, rest = lbl.rpartition(": ")
+    s = f"{rest} ({head.lower()})" if head else rest
+    return re.sub(r"\b(?!Children|Child)[A-Z][a-z]+['’]s\s", "the child's ", s)
+
+
 def cat(k, f):
     if k == "trip": return "trip"
     if k in ("allergy", "diet"): return "diet"
@@ -407,6 +436,24 @@ BOTS = {  # each business's bot has a name and a manner
 }
 
 
+def low1(s):
+    w = s.split(" ")[0]
+    return s if (s[:2].isupper() or any(c.isupper() for c in w[1:])) else s[:1].lower() + s[1:]
+
+
+def unknown(F, given):
+    """Pieces of every detail not given to a business: if its bot's message contains one, the message is replaced."""
+    shared = " ".join(F[k]["value"] for k in given).lower()
+    out = []
+    for k, f in F.items():
+        if k in given:
+            continue
+        frag = f["value"][:16].strip()
+        if len(frag) >= 10 and frag.lower() not in shared:
+            out.append(frag)
+    return out
+
+
 def bot_name(place):
     return BOTS.get(place["id"], ("Botti", "polite"))[0]
 
@@ -492,8 +539,11 @@ async def negotiate_place(n, place, hotel_name):
           "labels": {k: F[k]["label"] for k in keys}}, n["vid"])
 
     # 1. the business's bot opens
-    ctx = f"Ask Helmi for these details about {name} and say briefly why: {jn(lab(k) for k in keys)}. Your reason: {place['why']}"
-    fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. To prepare for {name}, could you share {P['pos']} {jn(lab(k) for k in keys)}? {place['why']}"
+    blab = lambda k: low1(bot_label(F[k]["label"]))
+    why = bot_why(place, keys, F)
+    ctx = (f"Ask Helmi for these details about {name} and say briefly why: {jn(blab(k) for k in keys)}. Your general reason: {why}. "
+           "You do not know anything about the customer yet: do not guess or mention any personal details, names of family members, allergies, needs or numbers.")
+    fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Could you share {P['pos']} {jn(blab(k) for k in keys)}? We ask {why}."
     ctx += f" Say you keep customers' details {KEEP[C['keep']]}."
     fb += f" We keep customers' details {KEEP[C['keep']]}."
     if C["offers"]:
@@ -505,8 +555,8 @@ async def negotiate_place(n, place, hotel_name):
         fb += " " + cap(jn(TRUST[t] for t in C["trust"])) + "."
     if place["id"] == "bistro" and hotel_name:
         ctx += f" First ask whether you may simply reuse what {name} already shared with {hotel_name}, which has the same owner as you."
-        fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, could you share {P['pos']} {jn(lab(k) for k in keys)}?"
-    await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb), place=place["id"], asks=keys)
+        fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, could you share {P['pos']} {jn(blab(k) for k in keys)}?"
+    await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb, unknown(F, [])), place=place["id"], asks=keys)
 
     # 2. the code decides each detail from the visitor's rules
     give = [k for k in keys if pol.get(k) == "share"]
@@ -590,9 +640,10 @@ async def negotiate_place(n, place, hotel_name):
     if target:
         if "offer" in rule:
             out = await write("bot", bot_sys(place, p),
-                              f"Helmi did not share {poss} {lab(target)}. Make one friendly offer: if {name} {vb('shares','share')} it, {P['sub']} {vb('gets','get')} {rule['offer']}. "
+                              f"Helmi did not share {poss} {blab(target)}. Make one friendly offer: if {name} {vb('shares','share')} it, {P['sub']} {vb('gets','get')} {rule['offer']}. "
                               f"Without it, {P['sub']} {vb('gets','get')} {rule['lose']}. Ask once.",
-                              f"Understood. If {name} {vb('shares','share')} {P['pos']} {lab(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. Without it, {rule['lose']}. Would {P['sub']} like to reconsider?")
+                              f"Understood. If {name} {vb('shares','share')} {P['pos']} {blab(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. Without it, {rule['lose']}. Would {P['sub']} like to reconsider?",
+                              unknown(F, give))
             await say(n, "bot", out, place=place["id"])
             if pol.get(target) == "never":
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "rule", "without": rule["lose"]}
@@ -616,8 +667,8 @@ async def negotiate_place(n, place, hotel_name):
                 lost = rule["lose"]
         else:
             offer_fact = {"detail": lab(target), "instead": rule["alt"]}
-            out = await write("bot", bot_sys(place, p), f"Helmi did not share {poss} {lab(target)}. Accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
-                              f"That's fine. Instead, {rule['alt']}.")
+            out = await write("bot", bot_sys(place, p), f"Helmi did not share {poss} {blab(target)}. Accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
+                              f"That's fine. Instead, {rule['alt']}.", unknown(F, give))
             await say(n, "bot", out, place=place["id"])
 
     # 5. the business confirms
@@ -626,7 +677,8 @@ async def negotiate_place(n, place, hotel_name):
     out = await write("bot", bot_sys(place, p),
                       f"Confirm what you will do for {name}, using only these details: {'; '.join(prepared) or 'only the basic booking'}."
                       + (f" Also say that {name} {vb('gets','get')} {lost}." if lost else "") + extra,
-                      f"Thank you. Everything is set for {name}" + (": " + "; ".join(prepared).rstrip(".") + "." if prepared else ".") + (f" Note: {lost}." if lost else "") + extra)
+                      f"Thank you. Everything is set for {name}" + (": " + "; ".join(prepared).rstrip(".") + "." if prepared else ".") + (f" Note: {lost}." if lost else "") + extra,
+                      unknown(F, give))
     await say(n, "bot", out, place=place["id"])
 
     # 6. Helmi says thank you
@@ -1001,7 +1053,7 @@ async def _answer_say(n, pl, text):
               "If they ask for something you cannot do or do not know, say a member of staff will follow up.")
     convo = "\n".join(f"{'Customer' if w == 'me' else nm}: {t}" for w, t in hist[-6:])
     user = (f"Earlier in this chat:\n{convo}\n\n" if convo else "") + f"The customer writes: {text}"
-    out = await write("bot", system, user, f"Thanks for your message. A member of our staff at {pl['name']} will get back to you shortly.")
+    out = await write("bot", system, user, f"Thanks for your message. A member of our staff at {pl['name']} will get back to you shortly.", unknown(F, list(g["shared"])))
     hist.append(("me", text))
     hist.append(("bot", out[0]))
     push({"t": "msg", "nid": n["nid"], "who": "bot", "text": out[0], "src": out[1], "blocked": out[2], "place": pl["id"], "to": "me"}, n["vid"])
@@ -1028,7 +1080,7 @@ async def api_bizstory(req: Request):
     lab = lambda k: F[k]["label"].split(": ")[-1]
     O = offers_for(pid)
     facts = {"business": pl["name"], "kind": pl["type"], "your_bot": bot_name(pl), "customer": p["short"], "customer_is": p["who"],
-             "your_bot_asked_for": [lab(k) for k in r["asked"]], "why_you_asked": pl["why"],
+             "your_bot_asked_for": [lab(k) for k in r["asked"]], "why_you_asked": bot_why(pl, r["asked"], F),
              "your_settings": {"accessible_options_offered": [O[o][2] for o in C.get("offers", []) if o in O], "promises": [TRUST[t] for t in C.get("trust", []) if t in TRUST],
                                "you_keep_details": KEEP.get(C.get("keep"), ""), "staff_double_check": bool(C.get("review"))},
              "helmi_gave_you": [{"detail": lab(k), "value": F[k]["value"]} for k in r["shared"]],
@@ -1062,7 +1114,7 @@ async def api_bizstory(req: Request):
         good = [x["what_happened"] for x in ms if x["because_shared"] and not x["trade_off"]][:2]
         bad = [x["what_happened"] for x in ms if not x["because_shared"] and not x["trade_off"]][:1]
         out = {"intro": f"This is how {pl['name']} did with {p['short']}'s Helmi.",
-               "parts": [{"title": "What you asked", "text": f"Your bot {bot_name(pl)} asked for {len(r['asked'])} things. {pl['why']}"},
+               "parts": [{"title": "What you asked", "text": f"Your bot {bot_name(pl)} asked for {len(r['asked'])} things, {bot_why(pl, r['asked'], F)}."},
                          {"title": "What you got", "text": f"Helmi gave you {len(r['shared'])} of them and kept {len(r['kept'])}, following the traveller's rules."},
                          {"title": "What it let you do", "text": " ".join(good + bad) or "You prepared the basic booking."},
                          {"title": "What you hold now", "text": f"You keep what you got {KEEP.get(C.get('keep'), 'for now')}. Everything Helmi kept, you never had to store or protect."}],
