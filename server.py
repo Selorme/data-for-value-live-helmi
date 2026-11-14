@@ -13,6 +13,8 @@ from collections import deque
 from pathlib import Path
 
 from starlette.applications import Starlette
+from starlette.middleware import Middleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, StreamingResponse
 from starlette.routing import Mount, Route
@@ -300,7 +302,7 @@ async def write(role, system, user, fallback, forbidden=(), require=None):
                 if len(txt) < 8:
                     log_err(m, "empty reply")
                     break
-                if require and not re.search(require, txt, re.I):
+                if require and not (require(txt) if callable(require) else re.search(require, txt, re.I)):
                     log_err(m, "reply did not say what it had to: " + txt[:80])
                     break
                 STATS["ai"] += 1
@@ -473,7 +475,18 @@ async def negotiate_place(n, place, hotel_name):
             fbp.append(f"{cap(jn(lab(k) for k in refuse))} stays with {name}: " + "; ".join(ALT.get(k, "not needed") for k in refuse) + ".")
         if not lines:
             return
-        out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden())
+        def mentions_shared(txt):
+            """Helmi's message must actually contain what it shares: at least half the shared details, by a distinctive word."""
+            if not new_give:
+                return True
+            low = txt.lower()
+            hits = 0
+            for k in new_give:
+                words = [w for w in re.findall(r"[a-zA-Z\u00c0-\u017f]{5,}", F[k]["value"].lower()) if w not in ("needs", "should", "would", "their", "there", "which", "about")]
+                if not words or any(w in low for w in words):
+                    hits += 1
+            return hits * 2 >= len(new_give)
+        out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden(), require=mentions_shared)
         await say(n, "helmi", out, place=place["id"], shared=new_give, kept=refuse)
 
     reuse = place["id"] == "bistro" and bool(hotel_name)
@@ -745,7 +758,40 @@ async def api_diag(req: Request):
     return JSONResponse(out)
 
 
+def trip_order(p):
+    """Sort a person's places in the order the trip happens: things done before the trip first, then by day and time."""
+    rail = next((pl.get("when", "") for pl in p["places"] if pl["id"] == "rail"), "")
+    def key(pl):
+        w = pl.get("when", "") or ""
+        if w.lower().startswith("before"):
+            return (0, 0, 0)
+        m = re.search(r"(\d{1,2}) \w{3}", w)
+        day = int(m.group(1)) if m else 99
+        t = re.search(r"(\d{1,2}):(\d{2})", w)
+        if t:
+            mins = int(t.group(1)) * 60 + int(t.group(2))
+        elif "arrival" in w.lower():  # the hotel: after the journey there
+            rt = re.search(r"(\d{1,2}) \w{3}, (\d{1,2}):(\d{2})", rail)
+            mins = (int(rt.group(2)) * 60 + int(rt.group(3)) + 120) if rt and int(rt.group(1)) == day else 12 * 60
+        else:
+            mins = 12 * 60
+        return (1, day, mins)
+    p["places"].sort(key=key)
+
+
+class NoCache(BaseHTTPMiddleware):
+    """Phones must always load the latest pages and data, so browsers never reuse an old copy (films are fine to cache)."""
+    async def dispatch(self, request, call_next):
+        resp = await call_next(request)
+        path = request.url.path
+        if not path.startswith("/static/films/") and path != "/events":
+            resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return resp
+
+
 def setup():
+    for p in DATA["people"]:
+        trip_order(p)
     order = ["rail", "hotel", "bistro", "venue", "ins", "kidsclub", "taxi", "pharmacy", "spa", "grocery", "museum", "tour", "work", "planner",
              "cowork", "babysit", "school", "course"]
     for p in DATA["people"]:
@@ -773,7 +819,7 @@ setup()
 
 
 page = lambda f: (lambda req: FileResponse(STATIC / f))
-app = Starlette(routes=[
+app = Starlette(middleware=[Middleware(NoCache)], routes=[
     Route("/", page("live.html")),
     Route("/stand", page("stand.html")),
     Route("/intro", page("intro.html")),
