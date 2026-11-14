@@ -79,11 +79,99 @@ def record(kind, n=None, **kw):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     except OSError:
         pass
+    return r
+
+
+TRIP_COLS = ["started", "ended", "status", "trip", "visitor", "traveller", "places", "preset", "when_not_sure", "not_connected", "rules_at_start",
+             "always_share", "ask_me", "never_share", "phone_answers", "rule_changes", "asked_helmi", "messages_to_businesses",
+             "results_by_place", "shared_total", "kept_total", "offers", "yes_or_no_checks"]
+BIZ_COLS = ["time", "business", "asks_for", "keeps_details", "offers_for_access", "promises", "staff_double_check", "makes_offers_for_kept_details"]
+SUMMARY = {"Trips": deque(maxlen=5000), "Businesses": deque(maxlen=5000)}
+SUMMED = set()
+SUMMARY_FILE = RECORDS_FILE.with_name(RECORDS_FILE.stem + "-summary.jsonl")
+try:
+    for _l in SUMMARY_FILE.read_text(encoding="utf-8").splitlines():
+        _j = json.loads(_l)
+        SUMMARY[_j["sheet"]].append(_j["row"])
+        if _j["sheet"] == "Trips":
+            SUMMED.add(_j["row"].get("trip"))
+except (OSError, ValueError, KeyError):
+    pass
+
+
+def to_sheet(sheet, row):
+    """One summary row: kept for the download, and sent to the Google Sheet (tab named by `sheet`) if RECORD_WEBHOOK is set."""
+    SUMMARY[sheet].append(row)
+    try:
+        with SUMMARY_FILE.open("a", encoding="utf-8") as f:
+            f.write(json.dumps({"sheet": sheet, "row": row}, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
     if RECORD_WEBHOOK:
         try:
-            asyncio.get_running_loop().run_in_executor(None, _post_record, r)
+            asyncio.get_running_loop().run_in_executor(None, _post_record, {"sheet": sheet, "cols": TRIP_COLS if sheet == "Trips" else BIZ_COLS, "row": row})
         except RuntimeError:
             pass
+
+
+def trip_summary(n, status):
+    """Everything one visitor decided on one trip, as one row, built from that trip's detailed records."""
+    if n["nid"] in SUMMED:
+        return
+    SUMMED.add(n["nid"])
+    rows = [r for r in RECORDS if r.get("trip") == n["nid"]]
+    k = lambda kind: [r for r in rows if r["kind"] == kind]
+    st = (k("trip_start") or [{}])[0]
+    rules = k("rule_at_start")
+    by = lambda d: "; ".join(r["detail"] for r in rules if r["decision"] == d)
+    res = k("result")
+    places = []
+    for b in dict.fromkeys(r["business"] for r in res):
+        sh = [r["detail"] + (" (" + r["how"] + ")" if r.get("how") else "") for r in res if r["business"] == b and r["decision"] == "shared"]
+        kp = [r["detail"] for r in res if r["business"] == b and r["decision"] != "shared"]
+        places.append(f"{b}: shared {len(sh)} [{'; '.join(sh)}], kept {len(kp)} [{'; '.join(kp)}]")
+    import datetime
+    now = datetime.datetime.now(_TZ) if _TZ else datetime.datetime.utcnow()
+    to_sheet("Trips", {
+        "started": st.get("time", ""), "ended": now.strftime("%Y-%m-%d %H:%M:%S"), "status": status, "trip": n["nid"], "visitor": anon(n["vid"]),
+        "traveller": n["p"]["short"], "places": st.get("business", ""), "preset": st.get("decision", ""), "when_not_sure": st.get("how", ""),
+        "not_connected": st.get("text", "").replace("Not connected: ", ""),
+        "rules_at_start": f"{sum(r['decision'] == 'Always share' for r in rules)} always share, {sum(r['decision'] == 'Ask me' for r in rules)} ask me, {sum(r['decision'] == 'Never share' for r in rules)} never share",
+        "always_share": by("Always share"), "ask_me": by("Ask me"), "never_share": by("Never share"),
+        "phone_answers": "; ".join(f"{r['business']} · {r['detail']}{' (offer: ' + r['offer'] + ')' if r.get('offer') else ''}: {r['decision']}"
+                                   f"{' (no answer in time)' if r.get('how') == 'no answer in time' else ' (answered later)' if r.get('how') == 'answered later' else ''}"
+                                   f"{', ' + str(r['seconds']) + ' s' if r.get('seconds') not in (None, '') and r.get('how') == 'answered' else ''}" for r in k("ping")),
+        "rule_changes": "; ".join(f"{r['detail']} → {r['decision']} ({r['how']})" for r in k("rule_change")),
+        "asked_helmi": " | ".join(r["text"] for r in k("ask_helmi")),
+        "messages_to_businesses": " | ".join(f"{r['business']}: {r['text']}" for r in k("message_to_business")),
+        "results_by_place": " || ".join(places),
+        "shared_total": sum(r["decision"] == "shared" for r in res), "kept_total": sum(r["decision"] != "shared" for r in res),
+        "offers": "; ".join(f"{r['business']}: {r['offer']} for {r['detail']}: {r['decision']}{' (' + r['text'] + ')' if r.get('text') else ''}" for r in k("offer")),
+        "yes_or_no_checks": "; ".join(f"{r['business']}: {r['text']}" for r in res if r["decision"] == "yes-or-no check only")})
+
+
+BIZ_TIMERS = {}
+
+
+def business_summary(biz, C):
+    """A business's setup goes to the sheet once nobody has changed it for a minute, so ticking boxes doesn't make a row per click."""
+    old = BIZ_TIMERS.pop(biz, None)
+    if old:
+        old.cancel()
+    async def later():
+        await asyncio.sleep(60)
+        BIZ_TIMERS.pop(biz, None)
+        import datetime
+        now = datetime.datetime.now(_TZ) if _TZ else datetime.datetime.utcnow()
+        O = offers_for(biz)
+        to_sheet("Businesses", {"time": now.strftime("%Y-%m-%d %H:%M:%S"), "business": f"{biz} ({META[biz]['type']})",
+                                "asks_for": ", ".join(CATS.get(c, c) for c in C["asks"]), "keeps_details": KEEP[C["keep"]],
+                                "offers_for_access": "; ".join(O[o][2] for o in C["offers"] if o in O), "promises": "; ".join(TRUST[t] for t in C["trust"]),
+                                "staff_double_check": "yes" if C["review"] else "no", "makes_offers_for_kept_details": "yes" if C["push"] else "no"})
+    try:
+        BIZ_TIMERS[biz] = asyncio.get_running_loop().create_task(later())
+    except RuntimeError:
+        pass
 LOCAL_LLM = any(h in LLM_URL for h in ("localhost", "127.0.0.1", "0.0.0.0"))
 AI_ON = bool(LLM_KEY) or LOCAL_LLM
 PACE = float(os.getenv("PACE_SECONDS", "1.0"))    # fixed pause after every message
@@ -389,8 +477,8 @@ def log_err(model, msg):
     print("LLM error", model, msg, flush=True)
 
 
-def _post(model, messages, extras=True, max_tokens=200):
-    body = {"model": model, "messages": messages, "temperature": 0.6, "max_tokens": max_tokens}
+def _post(model, messages, extras=True, max_tokens=200, temperature=0.6):
+    body = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if extras and "gpt-oss" in model:
         body.update(reasoning_effort="low", max_tokens=max_tokens + 300)  # its thinking counts against the limit
     if extras and "qwen3" in model:
@@ -423,7 +511,7 @@ async def write(role, system, user, fallback, forbidden=(), require=None):
             continue
         for extras in (True, False):
             try:
-                txt, n = await asyncio.to_thread(_post, m, [{"role": "system", "content": system}, {"role": "user", "content": user}], extras)
+                txt, n = await asyncio.to_thread(_post, m, [{"role": "system", "content": system}, {"role": "user", "content": user}], extras, 200, 0.3 if role == "helmi" else 0.6)
                 note(m, n)
                 txt = clean(txt)
                 low = txt.lower()
@@ -589,7 +677,7 @@ def helmi_sys(p, first=False):
             f"Speak as yourself, in the first person: 'I' means you, Helmi. Never call yourself Helmi and never write about yourself in the third person. "
             f"Speak about {p['short']} by name or as {P['sub']}/{P['obj']}/{P['pos']}; never write as if you were {p['short']}. "
             "Write ONE chat message: 2 or 3 sentences, at most 60 words, warm but firm, plain English, no lists, no markdown, no emoji. "
-            "Your instructions list exactly what to say. Say only that. Never offer, hint at or promise anything you were told not to share. "
+            "Your instructions list exactly what to say. Say only that, and nothing more: never invent requests, questions, needs, plans or wishes for anyone; a short instruction means a short message. Never offer, hint at or promise anything you were told not to share. "
             "Never mention any other personal detail. You only send messages: you never do anything in person yourself. "
             f"Anything done in person (showing a passport or card, arriving, paying) is done by {p['short']}, so say '{p['short']} will show it', never 'I will show it'.")
 
@@ -839,7 +927,7 @@ async def negotiate_place(n, place, hotel_name):
                 if not words or any(w in low for w in words):
                     hits += 1
             return hits * 2 >= len(new_give)
-        lines.append(f"Write about {name} in the third person ('{name} needs…', '{P['sub']} would like…'). 'I' is only ever you, Helmi: never write 'I need' or 'my' for {poss} things.")
+        lines.append(f"Refer to {name} in the third person; 'I' is only ever you, Helmi. Add nothing that is not in these instructions: no requests, questions, needs, plans or wishes of your own.")
         def ok(txt):
             if re.search(r"\b(I need|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip)\b", txt, re.I):
                 return False
@@ -933,7 +1021,7 @@ async def negotiate_place(n, place, hotel_name):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "helmi", "via": prop}
                     elif await ask_person(n, place, target, offer=gives, send=ctr[1]):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "you", "via": prop}
-                        o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} {vb('agrees','agree')}, and give exactly this and nothing more: {ctr[1]}",
+                        o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. In one or two short sentences: say {name} {vb('agrees','agree')} to the yes-or-no check, and give its answer: {ctr[1]} Say nothing else.",
                                         f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden())
                         await say(n, "helmi", o, place=place["id"], checked=[target], check=ctr[1], basis={target: "offer"})
                         n.setdefault("checks", {}).setdefault(place["id"], {})[target] = ctr[1]
@@ -1043,8 +1131,8 @@ async def negotiate_place(n, place, hotel_name):
         record("result", n, business=place["name"], detail=F[k]["label"], decision="yes-or-no check only" if k in res.get("checks", {}) else "kept",
                how="not connected" if k in locked else "rule: Never share" if pol.get(k) == "never" else "said no or no answer",
                text=res["checks"].get(k, "") if k in res.get("checks", {}) else "")
-    if offer_fact:
-        record("offer", n, business=place["name"], detail=offer_fact["detail"], decision="taken" if offer_fact["took"] else "not taken", how=offer_fact.get("by", ""),
+    if offer_fact and "offer" in offer_fact:
+        record("offer", n, business=place["name"], detail=offer_fact["detail"], decision="taken" if offer_fact.get("took") else "not taken", how=offer_fact.get("by", ""),
                offer=offer_fact["offer"], text=("Helmi proposed instead: " + offer_fact["via"]) if offer_fact.get("via") else "")
     return res
 
@@ -1085,6 +1173,7 @@ async def negotiate(n):
     story = await write_story(n, places, results)
     push({"t": "done", "nid": n["nid"], "person": p["id"], "results": results, "story": story, "stats": STATS}, n["vid"])
     record("trip_done", n, decision=f"{sum(len(r['shared']) for r in results.values())} shared, {sum(len(r['kept']) for r in results.values())} kept")
+    trip_summary(n, "finished")
 
 
 def moment_facts(pl, shared):
@@ -1269,6 +1358,7 @@ async def api_config(req: Request):
            how=KEEP[C["keep"]], offer=", ".join(O[o][2] for o in C["offers"] if o in O),
            text=("promises: " + ", ".join(TRUST[t] for t in C["trust"]) + ". " if C["trust"] else "") + ("staff double-check. " if C["review"] else "") + ("makes offers for kept details." if C["push"] else "no offers for kept details."),
            extra=dict(C, biz=biz))
+    business_summary(biz, C)
     for c in list(CLIENTS.values()):
         try:
             c["q"].put_nowait({"t": "config", "biz": biz, "settings": C, "at": time.time()})
@@ -1333,6 +1423,7 @@ def stop_trip(vid, why):
     old = BYID.get(PENDING.get(vid))
     if old and old.get("task") and not old["task"].done():
         old["task"].cancel()
+        trip_summary(old, "stopped: " + why)
         push({"t": "error", "nid": old["nid"], "text": why}, None)
     PENDING.pop(vid, None)
 
@@ -1723,13 +1814,14 @@ async def api_records(req: Request):
     """The fair record, to download: CSV for a spreadsheet (default) or JSON."""
     if STAND_KEY and req.query_params.get("key") != STAND_KEY:
         return JSONResponse({"ok": False, "error": "Wrong stand key"}, status_code=403)
-    rows = list(RECORDS)
-    stamp = time.strftime("%Y%m%d-%H%M")
+    view = req.query_params.get("view", "trips")
+    rows, cols = {"trips": (list(SUMMARY["Trips"]), TRIP_COLS), "businesses": (list(SUMMARY["Businesses"]), BIZ_COLS)}.get(view, (list(RECORDS), RECORD_COLS))
+    stamp = time.strftime("%Y%m%d-%H%M") + "-" + view
     if req.query_params.get("format") == "json":
         return Response(json.dumps(rows, ensure_ascii=False, indent=1), media_type="application/json",
                         headers={"Content-Disposition": f'attachment; filename="helmi-fair-{stamp}.json"'})
     buf = io.StringIO()
-    w = csv.DictWriter(buf, fieldnames=RECORD_COLS, extrasaction="ignore")
+    w = csv.DictWriter(buf, fieldnames=cols, extrasaction="ignore")
     w.writeheader()
     w.writerows(rows)
     return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",  # the BOM makes Excel read ä and ö correctly

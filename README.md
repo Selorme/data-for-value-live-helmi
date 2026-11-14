@@ -126,30 +126,35 @@ Made by Ruth, Dora, Towhidul and Rui for the Demola Data for Value challenge, 20
 
 ## The fair record
 
-The server keeps an anonymous record of what visitors decide:
+The server keeps an anonymous record of what visitors decide; a visitor is a random code, never a name.
 
-- **As travellers:** the persona, the places, the preset, every starting rule, the "When Helmi isn't sure" choice and any data sources left unconnected.
-- **During the trip:** each ping and its answer (with seconds taken), every rule change, questions to Ask Helmi, and messages to a business.
-- **Results:** what each place got or didn't, and why ("rule: Always share", "said yes" and so on), plus offers and counter-offers.
-- **As businesses:** every change made on the stand.
+- **Trips:** one row per trip, written when it ends or is stopped. Each row has the traveller, the places, the preset, every starting rule, the "When Helmi isn't sure" choice and any unconnected sources. It also has every answer on the phone (with seconds taken), rule changes, questions to Helmi, messages to businesses, what each place got or didn't and why, offers and yes-or-no checks.
+- **Businesses:** one row per business setup, written once nobody has changed that business's settings for a minute.
+- **Every step, in detail:** one row per event, for deeper analysis. Download only; this isn't sent to the sheet.
 
-A visitor is a random code, never a name.
+**Download:** use the three links at the bottom of the stand page, or open `/api/records?view=trips`, `?view=businesses` or `?view=all` (add `&format=json` for JSON). If `STAND_KEY` is set, add `&key=...`.
 
-**Download it:** on the stand page, use *Download the fair record (spreadsheet)* at the bottom. You can also open `/api/records` (CSV, opens in Excel) or `/api/records?format=json`. If `STAND_KEY` is set, add `?key=...`.
+**Google Sheet, live:** a free Render server forgets everything on a restart, redeploy or sleep. To keep a copy that can't be lost, the Trips and Businesses rows can go to a Google Sheet as they happen, each on its own tab.
 
-**Important:** a free Render server forgets everything when it restarts, redeploys or falls asleep (15 minutes with nobody connected). Keeping the stand page open keeps it awake. Download the record before you close the stand page. For a copy that can't be lost, send every line to a Google Sheet as it happens:
+1. Make a Google Sheet. Open *Extensions → Apps Script*, replace the code with the code below, and save.
+2. Click *Deploy → New deployment → Web app*. Set *Execute as: Me* and *Who has access: Anyone*, deploy, and copy the web app URL.
+3. In Render, set the environment variable `RECORD_WEBHOOK` to that URL.
 
-1. Make a new Google Sheet. Open *Extensions → Apps Script*, replace the code with the code below, and save.
-2. Click *Deploy → New deployment → Web app*. Set *Execute as: Me* and *Who has access: Anyone*, then deploy and copy the web app URL.
-3. In Render, add the environment variable `RECORD_WEBHOOK` with that URL, and redeploy.
+To change the script later and keep the same URL: *Deploy → Manage deployments → ✏️ (edit) → Version: New version → Deploy*.
 
 ```javascript
-const COLS = ["time","kind","trip","visitor","traveller","business","detail","decision","how","offer","seconds","text","extra"];
 function doPost(e) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
-  if (sh.getLastRow() === 0) sh.appendRow(COLS);
-  const r = JSON.parse(e.postData.contents);
-  sh.appendRow(COLS.map(c => r[c] === undefined ? "" : r[c]));
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);  // two trips ending at once must not overwrite each other
+  try {
+    const d = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName(d.sheet) || ss.insertSheet(d.sheet);
+    if (sh.getLastRow() === 0) { sh.appendRow(d.cols); sh.setFrozenRows(1); }
+    sh.appendRow(d.cols.map(c => d.row[c] === undefined ? "" : d.row[c]));
+  } finally {
+    lock.releaseLock();
+  }
   return ContentService.createTextOutput("ok");
 }
 ```

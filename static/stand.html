@@ -143,14 +143,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
     <div class="card"><p class="k">Shared, by kind of detail</p><div class="bars" id="bars-c"><p class="small muted">Fills in as travellers negotiate.</p></div></div>
     <div class="card"><p class="k">From our workshop</p><p class="small">Four tech-confident students shared <b>82%</b> of what an event asked for and <b>68%</b> for a hotel, but only <b>14%</b> for an insurer. Nobody let a business read their chats or email.</p></div>
     <button class="reset" id="reset">Reset today’s numbers</button>
-    <p class="small"><a id="records" href="/api/records" download>Download the fair record (spreadsheet)</a>. Anonymous: what travellers chose and how businesses were set up.</p>
+    <p class="small">Fair record (anonymous, opens in Excel): <a class="rec" data-view="trips" href="/api/records?view=trips" download>trips, one row each</a> · <a class="rec" data-view="businesses" href="/api/records?view=businesses" download>business setups</a> · <a class="rec" data-view="all" href="/api/records?view=all" download>every step, in detail</a></p>
   </section>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY=new URLSearchParams(location.search).get('key')||'';
-addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('records');if(r&&KEY)r.href='/api/records?key='+encodeURIComponent(KEY)});
+addEventListener('DOMContentLoaded',()=>{if(KEY)document.querySelectorAll('a.rec').forEach(a=>a.href='/api/records?view='+a.dataset.view+'&key='+encodeURIComponent(KEY))});
 let D,CFG={},META={},BIZ='hotel',AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
 const CATD={trip:'Travel and arrival times',need:'What the person needs: room, seat, route, service',diet:'Allergies and food',card:'Proof of disability',health:'Diagnoses, health records, device records',passport:'To check identity in advance',dob:'For offers, or checking ages',spend:'Bank transactions and spending',location:'Where the person has been',messages:'Private conversations, with other people in them',online:'What the person has searched for',photos:'Photos, often of other people too',activity:'Steps, sleep and fitness',other:'Grades and other records'};
 const SENS=['card','health','passport','dob','spend','location','messages','online','photos','activity'];
