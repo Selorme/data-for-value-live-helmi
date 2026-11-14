@@ -25,7 +25,9 @@ Language models only phrase the messages. Every decision about data is made in c
 | Path | What it is |
 |---|---|
 | `server.py` | The negotiation server (Starlette). Runs the agents, enforces the rules, streams events |
-| `static/live.html` | Phone page for visitors: pick a traveller and places, set Helmi's rules, follow the trip |
+| `static/trip_live.html` | Phone page for visitors (`/`): the trip-mode demo itself, with the businesses' bots and Helmi's messages to them written live by AI. Built by `tools/build_trip_live.py` |
+| `tools/build_trip_live.py`, `tools/live_adapter.js` | Build the phone page from trip mode: a short list of patches plus the live layer, so trip mode and the fair stay the same |
+| `static/live.html` | The earlier fair phone page (`/v2`), kept for reference |
 | `static/stand.html` | Stand screen: pick a business and set up its bot, watch negotiations live, see share rates by place and by detail |
 | `static/film.js`, `static/film.css` | The replay film at the end of a trip (the same animation engine as the trip-mode demo) |
 | `static/trip.json` | The nine invented travellers, the places on each trip, what each place asks for, and every detail's value |
@@ -104,6 +106,9 @@ Add `GROQ_API_KEY` and `STAND_KEY` as environment variables in the Render dashbo
 | GET | `/api/state` | | Hotel settings, stats, models, active trips |
 | GET | `/api/requests?person=<id>` | | What each place on that person's trip asks for, with the current hotel settings |
 | POST | `/api/start` | `{vid, person, places:[ids], policy:{detail:"share"\|"ask"\|"never"}}` | Start a trip |
+| POST | `/api/go` | `{vid, nid, place}` | Trip mode reached a place: its bot opens, and the phone gets the request as the stand has set it up |
+| POST | `/api/decide` | `{vid, nid, place, shares, why, dur}` | The visitor's answer on trip mode's request card; Helmi passes it on |
+| POST | `/api/revoke` | `{vid, nid, place, stop, shares}` | Stop sharing with a place, or share again |
 | POST | `/api/answer` | `{nid, place, k, ok}` | Answer a step-in or an offer |
 | POST | `/api/ask` | `{vid, qid, text}` | The traveller asks Helmi something (typed or spoken). The answer arrives as an `ask_reply` event and can change a rule |
 | POST | `/api/say` | `{vid, place, text}` | The traveller writes to a business's bot directly. The bot only knows what Helmi shared |

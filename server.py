@@ -15,6 +15,7 @@ from pathlib import Path
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
 from starlette.responses import FileResponse, JSONResponse, StreamingResponse
 from starlette.routing import Mount, Route
@@ -195,9 +196,12 @@ def cat(k, f):
     return "other"
 
 
-def request(p, place):
-    """What this business asks this person for, with the business's current settings."""
+def request(p, place, phone=None):
+    """What this business asks this person for, with the business's current settings.
+    In a phone-driven trip (trip mode on the phone), the phone's request is the starting point, filtered by the stand's settings."""
     F, asks = p["fields"], CONFIG[place["id"]]["asks"]
+    if phone is not None:
+        return [k for k in phone if k in F and cat(k, F[k]) in asks]
     keys = [k for k in place["fields"] if cat(k, F[k]) in asks]
     if place["id"] != "hotel":
         return keys
@@ -521,6 +525,48 @@ async def ask_person(n, place, k, offer=None):
     return ok
 
 
+REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", "90"))
+
+
+def unsure_pick(n, place, keys, preset):
+    """No answer in time: what the traveller told Helmi to do then."""
+    u, F = n["setup"]["uns"], n["p"]["fields"]
+    if u == "min":
+        return [k for k in keys if F[k]["kind"] == "need" and k in place.get("core", keys)] or [k for k in keys if F[k]["kind"] == "need"][:1]
+    if u == "guess":
+        return [k for k in keys if preset.get(k)]
+    return []
+
+
+async def ask_request(n, place, keys, preset):
+    """Like trip mode: the phone shows the whole request, with switches set by the rules (or Helmi's suggestion). Returns what to share."""
+    p, F = n["p"], n["p"]["fields"]
+    fut = asyncio.get_running_loop().create_future()
+    key = (n["nid"], place["id"], "*")
+    early = n.setdefault("early", {}).pop(place["id"], None)
+    if early is not None:
+        fut.set_result(early)
+    WAIT[key] = fut
+    STATS["stepins"] += 1
+    push({"t": "request", "nid": n["nid"], "place": place["id"], "pname": place["name"], "keys": keys, "preset": preset,
+          "mode": n["setup"]["auto"], "why": place["why"], "timeout": REQUEST_TIMEOUT}, n["vid"])
+    timed_out = False
+    try:
+        ans = await asyncio.wait_for(fut, 900 if n.get("driven") else REQUEST_TIMEOUT)
+        yes = [k for k in ans if k in keys] if isinstance(ans, list) else ([k for k in keys if preset.get(k)] if ans else [])
+    except asyncio.TimeoutError:
+        timed_out = True
+        yes = unsure_pick(n, place, keys, preset)
+        for k in keys:
+            if k not in yes:
+                n.setdefault("timeouts", set()).add((place["id"], k))
+    WAIT.pop(key, None)
+    push({"t": "request_done", "nid": n["nid"], "place": place["id"], "shared": yes, "timeout": timed_out, "uns": n["setup"]["uns"]}, n["vid"])
+    if yes:
+        STATS["stepin_yes"] += 1
+    return yes
+
+
 async def negotiate_place(n, place, hotel_name):
     p, F, pol = n["p"], n["p"]["fields"], n["policy"]
     P, name = p["pron"], p["short"]
@@ -528,7 +574,8 @@ async def negotiate_place(n, place, hotel_name):
     vb = lambda s, plural: plural if pl else s
     poss = name + ("'" if pl else "'s")
     C = CONFIG[place["id"]]
-    keys = request(p, place)
+    keys = request(p, place, n.get("fields", {}).get(place["id"])) if n.get("driven") else request(p, place)
+    n.setdefault("keys", {})[place["id"]] = keys
     if not keys:
         return {"shared": [], "kept": []}
     def lab(k):
@@ -559,9 +606,22 @@ async def negotiate_place(n, place, hotel_name):
     await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb, unknown(F, [])), place=place["id"], asks=keys)
 
     # 2. the code decides each detail from the visitor's rules
-    give = [k for k in keys if pol.get(k) == "share"]
-    check = [k for k in keys if pol.get(k, "ask") == "ask"]
-    keep = [k for k in keys if pol.get(k) == "never"]
+    setup, locked = n.get("setup", {"auto": "auto"}), set(n.get("locked", []))
+    mode = setup["auto"]
+    if n.get("driven"):  # trip mode on the phone: the request card there decides, with the rules and the connections
+        give = []
+        check = [k for k in keys if k not in locked]
+        keep = [k for k in keys if k in locked]
+    elif mode == "auto":  # follow my rules: Helmi answers what the rules cover, and asks about the rest
+        give = [k for k in keys if pol.get(k) == "share" and k not in locked]
+        check = [k for k in keys if pol.get(k, "ask") == "ask" and k not in locked]
+        keep = [k for k in keys if pol.get(k) == "never" or k in locked]
+    else:  # ask me every time, or suggest: the whole request goes to the traveller
+        give = []
+        check = [k for k in keys if k not in locked]
+        keep = [k for k in keys if k in locked]
+    core = place.get("core") or []
+    preset = {k: (pol.get(k) == "share") if mode == "ask" else (k in core and pol.get(k) != "never") if mode == "suggest" else False for k in check}
     n.setdefault("prog", {})[place["id"]] = {"name": place["name"], "type": place["type"], "bot": bot_name(place), "status": "talking", "shared": give, "kept": keep}
 
     def forbidden():
@@ -576,6 +636,8 @@ async def negotiate_place(n, place, hotel_name):
         return out
 
     def alt(k):
+        if k in locked:
+            return f"{name} will sort this out in person"
         return ALT.get(k, "not needed").format(n=name, pos=P["pos"])
 
     async def helmi(new_give, refuse, checking, first=False):
@@ -618,10 +680,9 @@ async def negotiate_place(n, place, hotel_name):
         await say(n, "helmi", out, place=place["id"], reuse=True)
     await helmi(give, keep, check, not reuse)
 
-    # 3. "ask me" details: the visitor's phone buzzes
-    yes, no = [], []
-    for k in check:
-        (yes if await ask_person(n, place, k) else no).append(k)
+    # 3. the visitor's phone buzzes with the request
+    yes = await ask_request(n, place, check, preset) if check else []
+    no = [k for k in check if k not in yes]
     give += yes
     keep += no
     if check:
@@ -697,12 +758,28 @@ async def negotiate_place(n, place, hotel_name):
     s["shared"] += len(give)
     s["kept"] += len(keep)
     to = n.get("timeouts", set())
-    why = {k: ("rule" if pol.get(k) == "never" else "timeout" if (place["id"], k) in to else "you") for k in keep}
+    pw = n.get("why", {}).get(place["id"], {})
+    why = {k: (pw[k] if pw.get(k) in ("noconn", "rule", "you", "timeout") else "noconn" if k in locked else "rule" if pol.get(k) == "never" and mode == "auto" else "timeout" if (place["id"], k) in to else "you") for k in keep}
     res = {"shared": give, "kept": keep, "lost": lost, "why": why, "offer": offer_fact}
     n["prog"][place["id"]]["status"] = "done"
     n.setdefault("res", {})[place["id"]] = dict(res, asked=keys, config={k: (list(v) if isinstance(v, list) else v) for k, v in C.items()})
     push({"t": "place_done", "nid": n["nid"], "place": place["id"], "pname": place["name"], **res}, n["vid"])
     return res
+
+
+def go_future(n, pid):
+    f = n.setdefault("go", {}).get(pid)
+    if f is None:
+        f = n["go"][pid] = asyncio.get_running_loop().create_future()
+    return f
+
+
+async def wait_go(n, pid):
+    """A phone-driven trip waits until the visitor reaches this place on their phone."""
+    try:
+        await asyncio.wait_for(asyncio.shield(go_future(n, pid)), 1800)
+    except asyncio.TimeoutError:
+        pass
 
 
 async def negotiate(n):
@@ -712,7 +789,12 @@ async def negotiate(n):
           "models": {"helmi": HELMI_MODEL, "bot": BOT_MODEL} if AI_ON else None}, n["vid"])
     hotel_name = None
     results = {}
+    if n.get("driven"):
+        order = {x: i for i, x in enumerate(n["places"])}
+        places.sort(key=lambda pl: order.get(pl["id"], 99))
     for pl in places:
+        if n.get("driven"):
+            await wait_go(n, pl["id"])
         results[pl["id"]] = await negotiate_place(n, pl, hotel_name)
         if pl["id"] == "hotel":
             hotel_name = pl["name"]
@@ -758,7 +840,7 @@ async def write_story(n, places, results):
         lab = lambda k: F[k]["label"].split(": ")[-1]
         facts.append({"id": pl["id"], "place": pl["name"], "kind_of_place": pl["type"], "when": pl.get("when", ""),
                       "helmi_shared": [lab(k) for k in r["shared"]],
-                      "kept_from_them": [{"detail": lab(k), "why": {"rule": "your rule said never", "you": "you said no when Helmi asked",
+                      "kept_from_them": [{"detail": lab(k), "why": {"rule": "your rule said never", "you": "you said no when Helmi asked", "noconn": "you had not connected Helmi to where it is kept, so you sorted it out yourself",
                                                                    "timeout": "you did not answer in time, so Helmi kept it"}[r.get("why", {}).get(k, "you")]} for k in r["kept"]],
                       "offer": r.get("offer"), "because_something_was_kept": r.get("lost"),
                       "what_happened": moment_facts(pl, r["shared"])})
@@ -799,6 +881,17 @@ async def write_story(n, places, results):
 async def run(n):
     QUEUE.append(n["nid"])
     try:
+        if n.get("driven"):
+            QUEUE.remove(n["nid"])
+            ACTIVE[n["nid"]] = n
+            try:
+                await negotiate(n)
+            except Exception as e:
+                push({"t": "error", "nid": n["nid"], "text": "Something went wrong. Please try again."}, n["vid"])
+                print("negotiation error", repr(e), flush=True)
+            finally:
+                ACTIVE.pop(n["nid"], None)
+            return
         while QUEUE.index(n["nid"]) >= 2 and SEM.locked():
             push({"t": "queue", "nid": n["nid"], "pos": QUEUE.index(n["nid"])}, n["vid"])
             await asyncio.sleep(3)
@@ -916,12 +1009,19 @@ async def api_start(req: Request):
     if not places:
         return JSONResponse({"ok": False, "error": "Choose at least one place"}, status_code=400)
     pol = {k: v for k, v in (b.get("policy") or {}).items() if k in p["fields"] and v in ("share", "ask", "never")}
-    n = {"nid": uuid.uuid4().hex[:10], "vid": vid, "person": pid, "p": p, "places": places, "policy": pol}
+    su = b.get("setup") or {}
+    setup = {"auto": su.get("auto") if su.get("auto") in ("ask", "suggest", "auto") else "auto",
+             "advice": bool(su.get("advice")), "msg": su.get("msg") if su.get("msg") in ("no", "draft", "send") else "no",
+             "uns": su.get("uns") if su.get("uns") in ("wait", "min", "no", "guess") else "no"}
+    locked = [k for k in (b.get("locked") or []) if k in p["fields"]]  # details from places the traveller didn't connect Helmi to
+    driven = bool(b.get("driven"))
+    n = {"nid": uuid.uuid4().hex[:10], "vid": vid, "person": pid, "p": p, "places": places, "policy": pol, "setup": setup, "locked": locked, "driven": driven,
+         "fields": {k: [x for x in v if x in p["fields"]] for k, v in (b.get("fields") or {}).items() if isinstance(v, list)} if driven else {}}
     STATS["n"] += 1
     PENDING[vid] = n["nid"]
     BYID[n["nid"]] = n
     NBYVID[vid] = n
-    LOG[vid] = {"nid": n["nid"], "person": pid, "places": places, "policy": pol, "events": []}
+    LOG[vid] = {"nid": n["nid"], "person": pid, "places": places, "policy": pol, "setup": setup, "locked": locked, "conn": su.get("conn") or [], "events": []}
     while len(LOG) > 300:
         LOG.pop(next(iter(LOG)))
     t = asyncio.create_task(run(n))
@@ -1027,9 +1127,14 @@ async def api_say(req: Request):
     text = str(b.get("text", "")).strip()[:300]
     pid = b.get("place")
     pl = next((x for x in (n["p"]["places"] if n else []) if x["id"] == pid), None)
-    if not n or not text or not pl or pid not in n.get("prog", {}):
+    if not n or not text or not pl or (pid not in n.get("prog", {}) and not (n.get("driven") and pid in n["places"])):
         return JSONResponse({"ok": False}, status_code=404)
-    push({"t": "msg", "nid": n["nid"], "who": "me", "text": text, "src": "you", "blocked": False, "place": pid}, vid)
+    if b.get("echo"):  # a message the business sent in trip mode's own script (for example asking for a passport photo): shown on the stand too
+        push({"t": "msg", "nid": n["nid"], "who": "bot", "text": text, "src": "script", "blocked": False, "place": pid, "to": "me", "echo": True}, vid)
+        n.setdefault("chat", {}).setdefault(pid, []).append(("bot", text))
+        return JSONResponse({"ok": True})
+    by = "helmi" if b.get("by") == "helmi" else "you"
+    push({"t": "msg", "nid": n["nid"], "who": "me", "text": text, "src": by, "blocked": False, "place": pid, "by": by}, vid)
     asyncio.create_task(answer_say(n, pl, text))
     return JSONResponse({"ok": True})
 
@@ -1043,7 +1148,7 @@ async def answer_say(n, pl, text):
 
 async def _answer_say(n, pl, text):
     p, F = n["p"], n["p"]["fields"]
-    g = n["prog"][pl["id"]]
+    g = n.get("prog", {}).get(pl["id"]) or {"shared": []}
     hist = n.setdefault("chat", {}).setdefault(pl["id"], [])
     nm, manner = BOTS.get(pl["id"], ("Botti", "polite"))
     known = "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in g["shared"]) or "only the basic booking"
@@ -1084,7 +1189,7 @@ async def api_bizstory(req: Request):
              "your_settings": {"accessible_options_offered": [O[o][2] for o in C.get("offers", []) if o in O], "promises": [TRUST[t] for t in C.get("trust", []) if t in TRUST],
                                "you_keep_details": KEEP.get(C.get("keep"), ""), "staff_double_check": bool(C.get("review"))},
              "helmi_gave_you": [{"detail": lab(k), "value": F[k]["value"]} for k in r["shared"]],
-             "helmi_kept": [{"detail": lab(k), "kind": F[k]["kind"], "why": {"rule": "the traveller's rule says never", "you": "the traveller said no",
+             "helmi_kept": [{"detail": lab(k), "kind": F[k]["kind"], "why": {"rule": "the traveller's rule says never", "you": "the traveller said no", "noconn": "the traveller had not connected Helmi to it",
                                                                          "timeout": "the traveller did not answer in time"}[r.get("why", {}).get(k, "you")]} for k in r["kept"]],
              "offer": r.get("offer"), "because_something_was_kept": r.get("lost"),
              "what_your_staff_could_do": moment_facts(pl, r["shared"])}
@@ -1125,6 +1230,107 @@ async def api_bizstory(req: Request):
     return JSONResponse({"ok": True, "story": out, "res": r})
 
 
+def driven_trip(b):
+    n = BYID.get(b.get("nid"))
+    return n if n and n["vid"] == str(b.get("vid", "")) and n.get("driven") else None
+
+
+async def api_go(req: Request):
+    """Trip mode on the phone reached a place: its bot opens, and the phone gets the request as the stand has set it up."""
+    b = await req.json()
+    n = driven_trip(b)
+    pid = b.get("place")
+    pl = next((x for x in (n["p"]["places"] if n else []) if x["id"] == pid), None)
+    if not n or not pl:
+        return JSONResponse({"ok": False}, status_code=404)
+    f = go_future(n, pid)
+    if not f.done():
+        f.set_result(True)
+    return JSONResponse({"ok": True, "keys": request(n["p"], pl, n["fields"].get(pid)), "bot": bot_name(pl)})
+
+
+async def api_decide(req: Request):
+    """The visitor sent their answer on trip mode's request card (or their rules did). Helmi passes it on, live."""
+    b = await req.json()
+    n = driven_trip(b)
+    pid = b.get("place")
+    if not n or pid not in n["places"]:
+        return JSONResponse({"ok": False}, status_code=404)
+    shares = [str(x) for x in (b.get("shares") or [])]
+    n.setdefault("why", {})[pid] = {str(k): str(v) for k, v in (b.get("why") or {}).items()}
+    n.setdefault("dur", {})[pid] = str(b.get("dur") or "trip")
+    prog = n.get("prog", {}).get(pid)
+    fut = WAIT.get((n["nid"], pid, "*"))
+    if prog and prog.get("status") == "done":
+        asyncio.create_task(safe(update_place(n, pid, shares, "change")))
+    elif fut and not fut.done():
+        fut.set_result(shares)
+    else:
+        n.setdefault("early", {})[pid] = shares
+    return JSONResponse({"ok": True})
+
+
+async def api_revoke(req: Request):
+    """The visitor stopped sharing with a place, or shared again."""
+    b = await req.json()
+    n = driven_trip(b)
+    pid = b.get("place")
+    if not n or pid not in n.get("prog", {}):
+        return JSONResponse({"ok": False}, status_code=404)
+    asyncio.create_task(safe(update_place(n, pid, [str(x) for x in (b.get("shares") or [])], "stop" if b.get("stop") else "again")))
+    return JSONResponse({"ok": True})
+
+
+async def safe(coro):
+    try:
+        await coro
+    except Exception as e:
+        print("update error", repr(e), flush=True)
+
+
+async def update_place(n, pid, shares, how):
+    """After a place is done: the visitor changed their answer, stopped sharing, or shared again. Helmi tells the bot; the bot answers."""
+    p, F = n["p"], n["p"]["fields"]
+    pl = next(x for x in p["places"] if x["id"] == pid)
+    g = n["prog"][pid]
+    before = list(g["shared"])
+    keys = n.get("keys", {}).get(pid, [])
+    now = [k for k in shares if k in keys] if how != "stop" else []
+    added, removed = [k for k in now if k not in before], [k for k in before if k not in now]
+    if not added and not removed:
+        return
+    name = p["short"]
+    lab = lambda k: F[k]["label"].split(": ")[-1]
+    g["shared"][:] = now
+    g["kept"][:] = [k for k in keys if k not in now]
+    if pid in n.get("res", {}):
+        n["res"][pid]["shared"], n["res"][pid]["kept"] = list(now), [k for k in keys if k not in now]
+    lines, fb = [], []
+    if how == "stop":
+        lines.append(f"Tell the bot that {name} has stopped sharing with {pl['name']}. Ask them to delete what you sent: {jn(lab(k) for k in removed)}. Be polite and brief.")
+        fb.append(f"{name} has stopped sharing with {pl['name']}. Please delete what I sent: {jn(lab(k) for k in removed)}.")
+    else:
+        if added:
+            lines.append(f"{name} has decided to share more. Share these details, keeping the facts: " + "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in added) + ".")
+            fb.append(f"{name} would also like you to have this: " + "; ".join(f"{lab(k)}: {F[k]['value'].rstrip('.')}" for k in added) + ".")
+        if removed:
+            lines.append(f"{name} has taken back these details. Ask the bot to delete them: {jn(lab(k) for k in removed)}.")
+            fb.append(f"{name} has taken back {P_pos(p)} {jn(lab(k) for k in removed)}. Please delete it.")
+    keep_out = [k for k in F if k not in now]
+    out = await write("helmi", helmi_sys(p), f"Your message to {pl['name']}'s bot. " + " ".join(lines), " ".join(fb), unknown(F, now))
+    await say(n, "helmi", out, place=pid, shared=added, kept=removed)
+    known = "; ".join(F[k]["value"] for k in now if F[k]["kind"] == "need")[:300]
+    ack = await write("bot", bot_sys(pl, p), (f"Helmi says {name} stopped sharing and asks you to delete their details. Confirm briefly that you have deleted them." if how == "stop" else
+                                              f"Helmi updated what {name} shares. Acknowledge briefly" + (f" and say what you will now prepare, using only: {known}." if added and known else ".")),
+                      "Understood. We have deleted those details." if (how == "stop" or (removed and not added)) else "Thank you, noted. We'll have it ready.", unknown(F, now))
+    await say(n, "bot", ack, place=pid)
+    push({"t": "place_update", "nid": n["nid"], "place": pid, "shared": now, "how": how}, n["vid"])
+
+
+def P_pos(p):
+    return p["pron"]["pos"]
+
+
 async def api_policy(req: Request):
     """The visitor changed a rule mid-trip. It applies to the places Helmi hasn't reached yet."""
     b = await req.json()
@@ -1139,7 +1345,7 @@ async def api_answer(req: Request):
     b = await req.json()
     fut = WAIT.get((b.get("nid"), b.get("place"), b.get("k")))
     if fut and not fut.done():
-        fut.set_result(bool(b.get("ok")))
+        fut.set_result([str(x) for x in b["shares"]] if isinstance(b.get("shares"), list) else bool(b.get("ok")))
         return JSONResponse({"ok": True})
     return JSONResponse({"ok": False}, status_code=404)
 
@@ -1240,8 +1446,9 @@ setup()
 
 
 page = lambda f: (lambda req: FileResponse(STATIC / f))
-app = Starlette(middleware=[Middleware(NoCache)], routes=[
-    Route("/", page("live.html")),
+app = Starlette(middleware=[Middleware(GZipMiddleware, minimum_size=2000), Middleware(NoCache)], routes=[
+    Route("/", page("trip_live.html")),
+    Route("/v2", page("live.html")),
     Route("/stand", page("stand.html")),
     Route("/intro", page("intro.html")),
     Route("/events", events),
@@ -1254,6 +1461,9 @@ app = Starlette(middleware=[Middleware(NoCache)], routes=[
     Route("/api/resume", api_resume),
     Route("/api/ask", api_ask, methods=["POST"]),
     Route("/api/say", api_say, methods=["POST"]),
+    Route("/api/go", api_go, methods=["POST"]),
+    Route("/api/decide", api_decide, methods=["POST"]),
+    Route("/api/revoke", api_revoke, methods=["POST"]),
     Route("/api/bizstory", api_bizstory, methods=["POST"]),
     Route("/api/standlog", api_standlog),
     Route("/api/leave", api_leave, methods=["POST"]),

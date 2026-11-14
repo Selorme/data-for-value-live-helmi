@@ -191,6 +191,9 @@ ul.plain li{font-size:14px}
 .tbl th{position:sticky;top:0;background:var(--card)}
 .story p{font-size:15px;line-height:1.6}
 .thead b{font-family:var(--display)}
+.rule{display:flex;flex-direction:column;align-items:flex-start;gap:4px;align-self:stretch;text-align:left;margin:0}
+.rule>span{display:block;width:auto;text-align:left;margin:0;padding:0}
+.rule select{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
@@ -311,7 +314,7 @@ function rules(){
   $('r-list').innerHTML=Object.keys(m).sort((a,b)=>order(a)-order(b)).map(k=>ruleRow(k,m[k])).join('');
 }
 document.querySelector('.presets').onclick=e=>{const b=e.target.closest('[data-pre]');if(!b)return;pre=b.dataset.pre;const m=keysAsked();Object.keys(m).forEach(k=>pol[k]=preset(pre,k,F(k)));rules()};
-document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k||e.target.type!=='radio')return;pol[k]=e.target.value;pre=null;document.querySelectorAll('[data-pre]').forEach(b=>b.setAttribute('aria-pressed','false'));
+document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.k;if(!k||(e.target.type!=='radio'&&e.target.tagName!=='SELECT'))return;pol[k]=e.target.value;pre=null;document.querySelectorAll('[data-pre]').forEach(b=>b.setAttribute('aria-pressed','false'));
   if(nid&&!finished){fetch('/api/policy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,nid,policy:{[k]:pol[k]}})}).catch(()=>{});toast('Rule changed. It applies to the places Helmi hasn’t reached yet.')}});
 
 /* ---------------------------------------------------------------- the live trip: trip mode's app (Trip, Helmi, Messages, My data, About me, Sharing), with live agents */
@@ -507,7 +510,7 @@ function sourceView(s){const t=s.tables[TBL]||s.tables[0];const ks=Object.keys(V
     ${t?`<p class="small muted">Showing ${fmt(t.rows.length)} of ${fmt(Math.max(t.total,s.tables.length===1?s.rows:t.total))} rows</p>
     <div class="tbl" tabindex="0" role="region" aria-label="${Y(t.name)}"><table><thead><tr>${t.cols.map(c=>`<th scope="col">${Y(c.replace(/_/g,' '))}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r=>`<tr>${r.map(c=>`<td>${Y(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}`}
 /* ---- About me */
-function seg(k){const v=pol[k]||'ask';return `<div class="seg" role="radiogroup" aria-label="${Y(F(k).label)}">${[['share','Share'],['ask','Ask me'],['never','Never']].map(([x,l])=>`<label class="${x}"><input type="radio" name="m-${k}" value="${x}" data-k="${k}" ${v===x?'checked':''}>${l}</label>`).join('')}</div>`}
+function seg(k){const v=pol[k]||'ask';return `<label class="rule"><span class="small muted">When asked:</span><select data-k="${k}" aria-label="Rule for ${Y(F(k).label)}">${[['ask','Ask me'],['share','Always share'],['never','Never share']].map(([x,l])=>`<option value="${x}" ${v===x?'selected':''}>${l}</option>`).join('')}</select></label>`}
 function meView(){const V=VAULT?VAULT.fields:{};const ks=Object.keys(cur.fields);const needs=ks.filter(k=>cur.fields[k].kind==='need'),other=ks.filter(k=>cur.fields[k].kind!=='need');
   const row=k=>{const f=cur.fields[k],v=V[k]||{},u=seenBy(k);return `<li><span class="label">${Y(v.label||f.label)}</span><span class="val">${Y(v.value||f.value)}</span>${v.verified?`<span class="small muted">Checked by: ${Y(v.verified)}</span>`:''}${u.length?`<span class="small"><b>Shared with:</b> ${Y(u.join(', '))}</span>`:''}${seg(k)}</li>`};
   return `<div class="card"><div class="me-h"><div class="av" aria-hidden="true">${Y(cur.short[0])}</div><div><h2>${Y(cur.name)}</h2><p class="small muted">${Y(cur.who)}</p></div></div></div>`+
