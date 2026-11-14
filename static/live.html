@@ -246,6 +246,7 @@ details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10p
     </div>
     <div class="card" id="r-list"></div>
     <button class="btn" id="go">Start the trip</button>
+    <p class="small muted">The traveller and their data are made up. We keep an anonymous record of the choices you make here for our research: no names, nothing that identifies you.</p>
     <button class="btn alt" id="r-back">Back</button>
   </section>
 
@@ -359,7 +360,7 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
-    const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol,setup:{uns:(SU||{}).uns||'no',conn:Object.keys((SU||{}).conn||{}).filter(k=>SU.conn[k])},locked:lockedKeys()})});
+    const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol,preset:pre,setup:{uns:(SU||{}).uns||'no',conn:Object.keys((SU||{}).conn||{}).filter(k=>SU.conn[k])},locked:lockedKeys()})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
     await loadVault();fresh(j.nid);show('s-app');enterApp();render();
     (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
@@ -416,7 +417,8 @@ function on(t,d){
     if(TAB==='msgs'&&(!OPEN||(TH[OPEN]&&TH[OPEN].status==='done')))OPEN=d.place;
     render(false,true);return}
   if(t==='msg'&&th){th.items.push({type:'msg',...d});
-    (d.shared||[]).forEach(k=>{(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name)});
+    if(d.who==='bot'&&d.asks)d.asks.forEach(k=>{if(!th.keys.includes(k))th.keys.push(k)});
+    (d.shared||[]).forEach(k=>{(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name)});th.basis=Object.assign(th.basis||{},d.basis||{});
     if(d.who==='helmi'&&(d.shared||[]).length){note(`I gave ${th.name}: ${labs(d.shared)}.`,d.place);HIST.push({place:th.name,text:'Shared: '+labs(d.shared)})}
     if(d.who==='helmi'&&(d.checked||[]).length){d.checked.forEach(k=>{(CHK[k]=CHK[k]||[]).includes(th.name)||CHK[k].push(th.name)});note(`I gave ${th.name} a yes-or-no answer instead of your ${labs(d.checked)}: “${d.check}”`,d.place);HIST.push({place:th.name,text:'Yes-or-no check only: '+labs(d.checked)})}
     if(d.who==='helmi'&&d.counter)note(`${th.name} offered something for a detail you kept. I proposed something smaller instead.`,d.place);
@@ -475,10 +477,12 @@ function pingCard(it,inSheet){const o=it.offer,late=it.state==='late',open=it.st
   const tail=open?`<div class="row"><button class="btn" data-ans="1" data-key="${it.key}">${it.check?'Send only that':'Share it'}</button><button class="btn alt" data-ans="0" data-key="${it.key}">${o?'Still no':'Don’t share'}</button></div>${inSheet&&!late?`<p class="small muted">You have 45 seconds. If you don’t answer: ${Y(((UNS.find(x=>x[0]===((SU||{}).uns||'no'))||UNS[2])[1]).toLowerCase())}.</p>`:''}`
     :`<p class="small"><b>${{sent:'Sending your answer…',yes:'You said yes. I shared it.',no:'You said no. I kept it.',timeout:`No answer in time. You told me “${Y(it.uns||'Say no for now')}”, so I kept it.`,tshared:`No answer in time. You told me “${Y(it.uns||'')}”, so I shared it.`,lateyes:'You said yes later, so I sent it.'}[it.state]}</b></p>`;
   return `<div class="ping ${o?'offer':''}" role="group" aria-label="${o?'An offer':'Helmi needs you'}">${head}${tail}</div>`}
+const BASIS={rule:'your rule: Always share',you:'you said yes',offer:'you took the offer',late:'you said yes later','unsure:min':'no answer, your setup: share the minimum','unsure:guess':'no answer, your setup: decide as best I can'};
+const basisOf=(id,k)=>((TH[id]&&TH[id].basis)||{})[k];
 function msgHtml(th,x){
   if(x.who==='me')return `<div class="msg me"><div class="b"><span class="who">You</span>${Y(x.text)}</div></div>`;
   const bot=x.who==='bot';
-  const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${Y(short(F(k).label))}</span>`),...(x.checked||[]).map(k=>`<span class="tag s">Yes or no only: ${Y(short(F(k).label))}</span>`),
+  const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${Y(short(F(k).label))}${(x.basis||{})[k]?' · '+Y(BASIS[x.basis[k]]||''):''}</span>`),...(x.checked||[]).map(k=>`<span class="tag s">Yes or no only: ${Y(short(F(k).label))}</span>`),
     ...(x.counter?['<span class="tag">Counter-offer</span>']:[]),...(x.uses?['<span class="tag">What they do with it</span>']:[]),...(x.tailored?['<span class="tag">Suggested for you</span>']:[]),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${Y(short(F(k).label))}</span>`)].join('');
   const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+Y(x.src);
   return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?Y(th.bot[0]):'H'}</div><div class="b"><span class="who">${bot?Y(th.bot+' · '+th.name)+(x.to==='me'?' · to you':''):'Your Helmi'}</span>${Y(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}
@@ -570,7 +574,7 @@ function meView(){const V=VAULT?VAULT.fields:{};const ks=Object.keys(cur.fields)
 function shareView(){const ids=ORDER.filter(id=>TH[id].status!=='waiting');
   const cards=ids.map(id=>{const th=TH[id],g=Object.keys(SH).filter(k=>SH[k].includes(th.name)),asked=th.keys.length;
     return `<div class="card"><p class="big"><b>${Y(th.name)}</b></p><p class="small muted">${th.status==='done'?`Sees ${g.length} of ${asked} things they asked for`:'Talking to Helmi now'}</p>
-      ${g.length?`<ul class="plain">${g.map(k=>`<li>${Y(F(k).label)}</li>`).join('')}</ul>`:'<p class="small">Sees nothing from you. To them you’re a customer with a booking.</p>'}
+      ${g.length?`<ul class="plain">${g.map(k=>`<li>${Y(F(k).label)}${basisOf(id,k)?` <span class="small muted">· ${Y(BASIS[basisOf(id,k)]||'')}</span>`:''}</li>`).join('')}</ul>`:'<p class="small">Sees nothing from you. To them you’re a customer with a booking.</p>'}
       ${Object.keys(CHK).filter(k=>CHK[k].includes(th.name)).map(k=>`<p class="small"><b>Yes-or-no check only:</b> ${Y(F(k).label)}. They got the answer, not the detail.</p>`).join('')}
       ${th.res&&th.res.kept.length?`<p class="small"><b>Can’t see:</b> ${Y(labs(th.res.kept))}</p>`:''}<button class="linkbtn" data-open="${id}">Messages with ${Y(th.bot)} ›</button></div>`}).join('');
   const n=ids.filter(id=>Object.keys(SH).some(k=>SH[k].includes(TH[id].name))).length;

@@ -8,7 +8,7 @@ Run locally:   uvicorn server:app --port 8000
 Environment:   GROQ_API_KEY (no key = scripted messages), HELMI_MODEL, BOT_MODEL, BACKUP_MODEL,
                LLM_BASE_URL, TOKENS_PER_MINUTE, STAND_KEY, PACE_SECONDS, READ_WPM, MAX_PAUSE_SECONDS
 """
-import asyncio, json, os, re, time, uuid, urllib.request, urllib.error
+import asyncio, csv, hashlib, io, json, os, re, time, uuid, urllib.request, urllib.error
 from collections import deque
 from pathlib import Path
 
@@ -17,7 +17,7 @@ from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
-from starlette.responses import FileResponse, JSONResponse, StreamingResponse
+from starlette.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -33,6 +33,57 @@ BOT_MODEL = os.getenv("BOT_MODEL", "qwen/qwen3.8-27b")
 BACKUP_MODEL = os.getenv("BACKUP_MODEL", "openai/gpt-oss-20b")
 TPM = int(os.getenv("TOKENS_PER_MINUTE", "7000"))  # Groq's free plan allows 8K per model per minute
 STAND_KEY = os.getenv("STAND_KEY", "")
+
+# ---------------------------------------------------------------- the fair record: what visitors decide, as travellers and as businesses
+# Anonymous: a visitor is a random code, never a name. Kept in memory and in a file, and sent to RECORD_WEBHOOK (e.g. a Google Sheet) if set,
+# because a free Render server forgets everything when it restarts or sleeps.
+RECORDS = deque(maxlen=50000)
+RECORDS_FILE = Path(os.getenv("RECORDS_FILE", "/tmp/helmi-records.jsonl"))
+RECORD_WEBHOOK = os.getenv("RECORD_WEBHOOK", "")
+RECORD_COLS = ["time", "kind", "trip", "visitor", "traveller", "business", "detail", "decision", "how", "offer", "seconds", "text", "extra"]
+try:
+    from zoneinfo import ZoneInfo
+    _TZ = ZoneInfo("Europe/Helsinki")
+except Exception:
+    _TZ = None
+try:
+    for _l in RECORDS_FILE.read_text(encoding="utf-8").splitlines():
+        RECORDS.append(json.loads(_l))
+except (OSError, ValueError):
+    pass
+
+
+def anon(vid):
+    return hashlib.sha1(("helmi-fair/" + str(vid)).encode()).hexdigest()[:8]
+
+
+def _post_record(r):
+    try:
+        req = urllib.request.Request(RECORD_WEBHOOK, data=json.dumps(r, ensure_ascii=False).encode(), headers={"Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=10).read()
+    except Exception as e:
+        print("record webhook failed:", e)
+
+
+def record(kind, n=None, **kw):
+    import datetime
+    now = datetime.datetime.now(_TZ) if _TZ else datetime.datetime.utcnow()
+    r = {"time": now.strftime("%Y-%m-%d %H:%M:%S"), "kind": kind}
+    if n:
+        r.update(trip=n["nid"], visitor=anon(n["vid"]), traveller=n["p"]["short"])
+    for k, v in kw.items():
+        r[k if k in RECORD_COLS else "extra"] = v if isinstance(v, (str, int, float)) or v is None else json.dumps(v, ensure_ascii=False)
+    RECORDS.append(r)
+    try:
+        with RECORDS_FILE.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+    if RECORD_WEBHOOK:
+        try:
+            asyncio.get_running_loop().run_in_executor(None, _post_record, r)
+        except RuntimeError:
+            pass
 LOCAL_LLM = any(h in LLM_URL for h in ("localhost", "127.0.0.1", "0.0.0.0"))
 AI_ON = bool(LLM_KEY) or LOCAL_LLM
 PACE = float(os.getenv("PACE_SECONDS", "1.0"))    # fixed pause after every message
@@ -493,11 +544,13 @@ ARRANGE = {"ins": "travel insurance", "rail": "a seat on the journey", "hotel": 
 
 # What a business asks EVERY customer, by the kinds of detail set on the stand. Nothing here assumes anything about this customer:
 # only Helmi discloses needs, a disability, health or family.
-ASKQ = {"trip": "the dates of the visit", "need": "anything we should prepare for {pos} visit, such as access needs",
+ASKQ = {"trip": "the dates of the visit", "need": "anything {sub} needs for the visit, including any access needs or disability we should know about",
         "diet": "any allergies or dietary needs", "card": "whether {sub} has an EU Disability Card, so a companion can come free",
         "health": "{pos} health information", "passport": "{pos} passport number", "dob": "the dates of birth of everyone coming",
         "spend": "{pos} spending history", "location": "{pos} location history", "messages": "{pos} messages and inbox",
         "online": "{pos} search history", "photos": "permission to use photos", "activity": "{pos} activity data", "other": "anything else we should know"}
+ASKQ2 = {"card": "whether {sub} has an EU Disability Card, so a companion can come free",
+         "health": "any equipment or health needs that would help us prepare"}  # asked only after Helmi has disclosed needs
 TOPIC = {"need": "other needs", "card": "an EU Disability Card", "health": "health information", "diet": "diet",
          "dob": "dates of birth", "photos": "photos"}
 
@@ -578,6 +631,7 @@ async def late_share(n, pid, k):
         await asyncio.sleep(1)
     g = n.get("prog", {}).get(pid)
     if g and k not in g["shared"]:
+        n.setdefault("basis", {}).setdefault(pid, {})[k] = "late"
         await update_place(n, pid, list(g["shared"]) + [k], "change")
 
 
@@ -591,9 +645,11 @@ async def ask_person(n, place, k, offer=None, send=None):
         STATS["offers"] += 1
     push({"t": "stepin", "nid": n["nid"], "place": place["id"], "pname": place["name"], "k": k, "label": F[k]["label"], "value": send or F[k]["value"],
           "why": place["why"], "offer": offer, "check": bool(send), "name": p["short"]}, n["vid"])
+    timed_out, t0 = False, time.time()
     try:
         ok = await asyncio.wait_for(fut, STEPIN_TIMEOUT)
     except asyncio.TimeoutError:
+        timed_out = True
         uns = n.get("setup", {}).get("uns", "no")
         ok = False if offer else unsure_one(n, k)
         if not ok:
@@ -602,6 +658,10 @@ async def ask_person(n, place, k, offer=None, send=None):
             n.setdefault("late", set()).add((place["id"], k))
         push({"t": "stepin_timeout", "nid": n["nid"], "place": place["id"], "k": k, "ok": ok, "uns": uns}, n["vid"])
     WAIT.pop(key, None)
+    record("ping", n, business=place["name"], detail=F[k]["label"], decision="yes" if ok else "no", how="no answer in time" if timed_out else "answered",
+           offer=(offer or "") + (" (yes-or-no check instead)" if send else ""), seconds=round(time.time() - t0, 1))
+    if ok:  # the basis for sharing: the traveller tapped yes, or their own setup decided when they didn't answer
+        n.setdefault("basis", {}).setdefault(place["id"], {})[k] = ("unsure:" + n.get("setup", {}).get("uns", "no")) if timed_out else ("offer" if offer else "you")
     push({"t": "stepin_done", "nid": n["nid"], "place": place["id"], "k": k, "ok": ok}, n["vid"])
     if ok:
         STATS["stepin_yes"] += 1
@@ -667,7 +727,8 @@ async def negotiate_place(n, place, hotel_name):
         s = F[k]["label"].split(": ")[-1]
         w = s.split(" ")[0]
         return s if (s[:2].isupper() or any(c.isupper() for c in w[1:]) or "'" in w or "’" in w) else s[0].lower() + s[1:]
-    push({"t": "place", "nid": n["nid"], "place": place["id"], "pname": place["name"], "ptype": place["type"], "bot": bot_name(place), "keys": keys,
+    later = lambda k: not n.get("driven") and (cat(k, F[k]) == "card" or (cat(k, F[k]) == "health" and place["type"] != "insurer"))
+    push({"t": "place", "nid": n["nid"], "place": place["id"], "pname": place["name"], "ptype": place["type"], "bot": bot_name(place), "keys": [k for k in keys if not later(k)],
           "labels": {k: F[k]["label"] for k in keys}}, n["vid"])
 
     # 1. Helmi gets in touch first, to arrange the visit; the business answers with what it needs
@@ -681,7 +742,8 @@ async def negotiate_place(n, place, hotel_name):
     topic = lambda k: (TOPIC.get("dob" if k == "id.kids_dob" else "photos" if k == "photos.kids" else cat(k, F[k]), "other details") if private(k, F[k]) else f"{P['pos']} {blab(k)}")
     shares = vb("shares", "share")
     cond = lambda k: (f"if {name} {vb('has','have')} an EU Disability Card and {shares} it" if cat(k, F[k]) == "card" else f"if {name} {shares} {topic(k)}")
-    qs = jn(dict.fromkeys(ASKQ[c].format(pos=P["pos"], sub=P["sub"]) for c in CATS if c in C["asks"]))
+    first_cats = [c for c in CATS if c in C["asks"] and not (c == "card" or (c == "health" and place["type"] != "insurer"))]
+    qs = jn(dict.fromkeys(ASKQ[c].format(pos=P["pos"], sub=P["sub"]) for c in first_cats)) or "the basic booking details"
     why = ("to price the travel insurance policy" if place["type"] == "insurer" else "to build the travel plan automatically" if place["type"] == "trip planner app"
            else "; ".join(list(dict.fromkeys(PURPOSE[c] for c in CATS if c in C["asks"]))[:3]))  # the business's own reasons, the same for everyone
     ctx = (f"Helmi has just asked you to arrange {wants} for {name}. Reply: say you'd be glad to, then ask the questions you ask every customer, and say briefly why: {qs}. Your general reason: {why}. "
@@ -700,7 +762,7 @@ async def negotiate_place(n, place, hotel_name):
     if place["id"] == "bistro" and hotel_name:
         ctx += f" First ask whether you may simply reuse what {name} already shared with {hotel_name}, which has the same owner as you."
         fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Happy to arrange that. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, we ask every customer for {qs}."
-    await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb, unknown(F, [])), place=place["id"], asks=keys)
+    await say(n, "bot", await write("bot", bot_sys(place, p, True), ctx, fb, unknown(F, [])), place=place["id"], asks=[k for k in keys if not later(k)])
 
     # 2. the code decides each detail from the visitor's rules
     setup, locked = n.get("setup", {"auto": "auto"}), set(n.get("locked", []))
@@ -720,6 +782,9 @@ async def negotiate_place(n, place, hotel_name):
     core = place.get("core") or []
     preset = {k: (pol.get(k) == "share") if mode == "ask" else (k in core and pol.get(k) != "never") if mode == "suggest" else False for k in check}
     n.setdefault("prog", {})[place["id"]] = {"name": place["name"], "type": place["type"], "bot": bot_name(place), "status": "talking", "shared": give, "kept": keep}
+    basis = n.setdefault("basis", {}).setdefault(place["id"], {})
+    for k in give:
+        basis[k] = "rule"
 
     def forbidden():
         shared = " ".join(F[k]["value"] for k in give).lower()
@@ -755,8 +820,9 @@ async def negotiate_place(n, place, hotel_name):
                              "; ".join(f"{lab(k)} (reason or alternative: {alt(k)})" for k in pub) + ".")
                 fbp.append(f"{cap(jn(lab(k) for k in pub))} stays with {name}: " + "; ".join(alt(k) for k in pub) + ".")
             if prv:
-                lines.append(f"Also say there is nothing more to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind.")
-                fbp.append(f"There's nothing more to share on {jn(prv)}.")
+                more = "more " if give else ""
+                lines.append(f"Also say there is nothing {more}to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind.")
+                fbp.append(f"There's nothing {more}to share on {jn(prv)}.")
         if not lines:
             return
         def mentions_shared(txt):
@@ -770,8 +836,13 @@ async def negotiate_place(n, place, hotel_name):
                 if not words or any(w in low for w in words):
                     hits += 1
             return hits * 2 >= len(new_give)
-        out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden(), require=mentions_shared)
-        await say(n, "helmi", out, place=place["id"], shared=new_give, kept=refuse)
+        lines.append(f"Write about {name} in the third person ('{name} needs…', '{P['sub']} would like…'). 'I' is only ever you, Helmi: never write 'I need' or 'my' for {poss} things.")
+        def ok(txt):
+            if re.search(r"\b(I need|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip)\b", txt, re.I):
+                return False
+            return mentions_shared(txt)
+        out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden(), require=ok)
+        await say(n, "helmi", out, place=place["id"], shared=new_give, kept=refuse, basis={k: basis.get(k, "you") for k in new_give})
 
     reuse = place["id"] == "bistro" and bool(hotel_name)
     if reuse:  # a sister business asks to reuse what the hotel got: Helmi always says no, in its own message
@@ -783,21 +854,41 @@ async def negotiate_place(n, place, hotel_name):
                           f"No, you can't reuse what {name} shared with {hotel_name}. That was for the hotel stay only, and details are never passed from one business to another, "
                           f"even with the same owner. I'll answer your own request separately.", forbidden(), require=r"^\W*no,?\s+you\b")
         await say(n, "helmi", out, place=place["id"], reuse=True)
-    await helmi(give, keep, check)
+    # 3. the visitor's phone buzzes for "ask me" details. Round 1 answers the broad questions; round 2 (a disability card, equipment or health)
+    #    only comes up if Helmi has disclosed needs and the business follows up. Otherwise the business never asks.
+    async def answer_round(ks):
+        g, c, kp = [k for k in give if k in ks], [k for k in check if k in ks], [k for k in keep if k in ks]
+        if not (g or c or kp):
+            return
+        await helmi(g, kp, c)
+        if n.get("driven"):
+            yes = await ask_request(n, place, c, preset) if c else []
+        else:  # the fair page: the phone buzzes once for each "ask me" detail, as before
+            yes = []
+            for k in c:
+                if await ask_person(n, place, k):
+                    yes.append(k)
+        no = [k for k in c if k not in yes]
+        give.extend(yes)
+        keep.extend(no)
+        for k in c:
+            check.remove(k)
+        if c:
+            await helmi(yes, no, [])
 
-    # 3. the visitor's phone buzzes with the request
-    if n.get("driven"):
-        yes = await ask_request(n, place, check, preset) if check else []
-    else:  # the fair page: the phone buzzes once for each "ask me" detail, as before
-        yes = []
-        for k in check:
-            if await ask_person(n, place, k):
-                yes.append(k)
-    no = [k for k in check if k not in yes]
-    give += yes
-    keep += no
-    if check:
-        await helmi(yes, no, [])
+    round2 = [k for k in keys if later(k)]
+    await answer_round([k for k in keys if not later(k)])
+    if round2 and any(F[k]["kind"] == "need" for k in give):
+        q2 = jn(dict.fromkeys(ASKQ2[cat(k, F[k])].format(pos=P["pos"], sub=P["sub"]) for k in round2))
+        out = await write("bot", bot_sys(place, p), f"Helmi has just told you what {name} {vb('needs','need')}. Thank Helmi briefly, then ask one follow-up question about {q2}. "
+                          "Ask it because of what Helmi told you, without guessing any details.", f"Thank you, that helps. Could you also tell us {q2}?", unknown(F, give))
+        await say(n, "bot", out, place=place["id"], asks=round2)
+        await answer_round(round2)
+    elif round2:  # no needs disclosed, so the business never asks about a disability card or health
+        for k in round2:
+            for L in (keys, give, keep, check):
+                if k in L:
+                    L.remove(k)
 
     # 4. the business pushes back once on something it didn't get
     base = PUSH.get(place["id"], {})
@@ -841,7 +932,7 @@ async def negotiate_place(n, place, hotel_name):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "you", "via": prop}
                         o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} {vb('agrees','agree')}, and give exactly this and nothing more: {ctr[1]}",
                                         f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden())
-                        await say(n, "helmi", o, place=place["id"], checked=[target], check=ctr[1])
+                        await say(n, "helmi", o, place=place["id"], checked=[target], check=ctr[1], basis={target: "offer"})
                         n.setdefault("checks", {}).setdefault(place["id"], {})[target] = ctr[1]
                     else:
                         offer_fact = {"detail": lab(target), "offer": gives, "took": False, "by": "you", "without": rule["lose"], "via": prop}
@@ -865,7 +956,7 @@ async def negotiate_place(n, place, hotel_name):
                 give.append(target)
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} {vb('accepts','accept')} the offer of {rule['offer']}, and share: "
                                 f"{F[target]['label']}: {F[target]['value']}.", f"{name} {vb('accepts', 'accept')}. Here it is: {lab(target)}: {F[target]['value'].rstrip('.')}.", [])
-                await say(n, "helmi", o, place=place["id"], shared=[target])
+                await say(n, "helmi", o, place=place["id"], shared=[target], basis={target: "offer"})
             else:
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "you", "without": rule["lose"]}
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} considered the offer and still {vb('says','say')} no to sharing "
@@ -936,10 +1027,22 @@ async def negotiate_place(n, place, hotel_name):
     to = n.get("timeouts", set())
     pw = n.get("why", {}).get(place["id"], {})
     why = {k: (pw[k] if pw.get(k) in ("noconn", "rule", "you", "timeout") else "noconn" if k in locked else "rule" if pol.get(k) == "never" and mode == "auto" else "timeout" if (place["id"], k) in to else "you") for k in keep}
-    res = {"shared": give, "kept": keep, "lost": lost, "why": why, "offer": offer_fact, "checks": n.get("checks", {}).get(place["id"], {})}
+    res = {"shared": give, "kept": keep, "lost": lost, "why": why, "offer": offer_fact, "checks": n.get("checks", {}).get(place["id"], {}), "basis": {k: basis.get(k, "you") for k in give}}
     n["prog"][place["id"]]["status"] = "done"
     n.setdefault("res", {})[place["id"]] = dict(res, asked=keys, config={k: (list(v) if isinstance(v, list) else v) for k, v in C.items()})
     push({"t": "place_done", "nid": n["nid"], "place": place["id"], "pname": place["name"], **res}, n["vid"])
+    HOW = {"rule": "rule: Always share", "you": "said yes", "offer": "took the offer", "late": "said yes later", "unsure:min": "no answer: share the minimum",
+           "unsure:guess": "no answer: decide as best I can"}
+    for k in give:
+        record("result", n, business=place["name"], detail=F[k]["label"], decision="shared", how=HOW.get(basis.get(k, "you"), basis.get(k, "")),
+               text=("yes-or-no check only: " + res["checks"][k]) if k in res.get("checks", {}) else "")
+    for k in keep:
+        record("result", n, business=place["name"], detail=F[k]["label"], decision="yes-or-no check only" if k in res.get("checks", {}) else "kept",
+               how="not connected" if k in locked else "rule: Never share" if pol.get(k) == "never" else "said no or no answer",
+               text=res["checks"].get(k, "") if k in res.get("checks", {}) else "")
+    if offer_fact:
+        record("offer", n, business=place["name"], detail=offer_fact["detail"], decision="taken" if offer_fact["took"] else "not taken", how=offer_fact.get("by", ""),
+               offer=offer_fact["offer"], text=("Helmi proposed instead: " + offer_fact["via"]) if offer_fact.get("via") else "")
     return res
 
 
@@ -978,6 +1081,7 @@ async def negotiate(n):
     push({"t": "writing", "nid": n["nid"]}, n["vid"])
     story = await write_story(n, places, results)
     push({"t": "done", "nid": n["nid"], "person": p["id"], "results": results, "story": story, "stats": STATS}, n["vid"])
+    record("trip_done", n, decision=f"{sum(len(r['shared']) for r in results.values())} shared, {sum(len(r['kept']) for r in results.values())} kept")
 
 
 def moment_facts(pl, shared):
@@ -1157,6 +1261,11 @@ async def api_config(req: Request):
     C["keep"] = h.get("keep") if h.get("keep") in KEEP else C["keep"]
     C["review"] = bool(h.get("review", C["review"]))
     C["push"] = bool(h.get("push", C["push"]))
+    O = offers_for(biz)
+    record("business_settings", business=f"{biz} ({META[biz]['type']})", decision="asks for: " + ", ".join(CATS.get(c, c) for c in C["asks"]),
+           how=KEEP[C["keep"]], offer=", ".join(O[o][2] for o in C["offers"] if o in O),
+           text=("promises: " + ", ".join(TRUST[t] for t in C["trust"]) + ". " if C["trust"] else "") + ("staff double-check. " if C["review"] else "") + ("makes offers for kept details." if C["push"] else "no offers for kept details."),
+           extra=dict(C, biz=biz))
     for c in list(CLIENTS.values()):
         try:
             c["q"].put_nowait({"t": "config", "biz": biz, "settings": C, "at": time.time()})
@@ -1202,6 +1311,13 @@ async def api_start(req: Request):
     LOG[vid] = {"nid": n["nid"], "person": pid, "places": places, "policy": pol, "setup": setup, "locked": locked, "conn": su.get("conn") or [], "events": []}
     while len(LOG) > 300:
         LOG.pop(next(iter(LOG)))
+    rw = {"share": "Always share", "ask": "Ask me", "never": "Never share"}
+    pnames = {pl["id"]: pl["name"] for pl in p["places"]}
+    record("trip_start", n, business=", ".join(pnames[x] for x in places), decision=str(b.get("preset") or ""),
+           how={"wait": "Wait and ask me later", "min": "Share only the minimum needed", "no": "Say no for now", "guess": "Decide as best I can"}[setup["uns"]],
+           text=("Not connected: " + ", ".join(p["fields"][k]["label"] for k in locked)) if locked else "")
+    for k, f in p["fields"].items():
+        record("rule_at_start", n, detail=f["label"], decision=rw[pol.get(k, "ask")], extra=k)
     t = asyncio.create_task(run(n))
     n["task"] = t
     TASKS.add(t)
@@ -1329,6 +1445,9 @@ async def _answer_ask(n, q, qid):
         out = {"reply": ("Right now " + ", ".join(seen) + " from you. " if seen else "Nobody has anything from you yet. ") +
                "I can’t think through other questions at the moment, but your rules are in About me and you can change them there.", "rules": {}}
         m = "script"
+    record("ask_helmi", n, text=q, extra={"reply": out["reply"]})
+    for k, v in out["rules"].items():
+        record("rule_change", n, detail=F[k]["label"], decision={"share": "Always share", "ask": "Ask me", "never": "Never share"}[v], how="asked Helmi", extra=k)
     if out["rules"]:
         pol.update(out["rules"])
     push({"t": "ask_reply", "nid": n["nid"], "qid": qid, "a": out["reply"], "rules": out["rules"], "src": m}, n["vid"])
@@ -1350,6 +1469,7 @@ async def api_say(req: Request):
         return JSONResponse({"ok": True})
     by = "helmi" if b.get("by") == "helmi" else "you"
     push({"t": "msg", "nid": n["nid"], "who": "me", "text": text, "src": by, "blocked": False, "place": pid, "by": by}, vid)
+    record("message_to_business", n, business=pl["name"], text=text)
     asyncio.create_task(answer_say(n, pl, text))
     return JSONResponse({"ok": True})
 
@@ -1407,6 +1527,7 @@ async def api_bizstory(req: Request):
     r = n and n.get("res", {}).get(pid)
     if not r:
         return JSONResponse({"ok": False}, status_code=404)
+    record("business_replay", n, business=next((x["name"] for x in n["p"]["places"] if x["id"] == pid), pid))
     if (nid, pid) in BIZSTORY:
         return JSONResponse({"ok": True, "story": BIZSTORY[(nid, pid)], "res": r})
     p, F = n["p"], n["p"]["fields"]
@@ -1549,7 +1670,7 @@ async def update_place(n, pid, shares, how):
             fb.append(f"{name} has taken back {P_pos(p)} {jn(lab(k) for k in removed)}. Please delete it.")
     keep_out = [k for k in F if k not in now]
     out = await write("helmi", helmi_sys(p), f"Your message to {pl['name']}'s bot. " + " ".join(lines), " ".join(fb), unknown(F, now))
-    await say(n, "helmi", out, place=pid, shared=added, kept=removed)
+    await say(n, "helmi", out, place=pid, shared=added, kept=removed, basis={k: n.get("basis", {}).get(pid, {}).get(k, "you") for k in added})
     known = "; ".join(F[k]["value"] for k in now if F[k]["kind"] == "need")[:300]
     ack = await write("bot", bot_sys(pl, p), (f"Helmi says {name} stopped sharing and asks you to delete their details. Confirm briefly that you have deleted them." if how == "stop" else
                                               f"Helmi updated what {name} shares. Acknowledge briefly" + (f" and say what you will now prepare, using only: {known}." if added and known else ".")),
@@ -1568,7 +1689,11 @@ async def api_policy(req: Request):
     n = BYID.get(b.get("nid"))
     if not n or n["vid"] != str(b.get("vid", "")):
         return JSONResponse({"ok": False}, status_code=404)
-    n["policy"].update({k: v for k, v in (b.get("policy") or {}).items() if k in n["p"]["fields"] and v in ("share", "ask", "never")})
+    ch = {k: v for k, v in (b.get("policy") or {}).items() if k in n["p"]["fields"] and v in ("share", "ask", "never")}
+    for k, v in ch.items():
+        if n["policy"].get(k, "ask") != v:
+            record("rule_change", n, detail=n["p"]["fields"][k]["label"], decision={"share": "Always share", "ask": "Ask me", "never": "Never share"}[v], how="About me", extra=k)
+    n["policy"].update(ch)
     return JSONResponse({"ok": True})
 
 
@@ -1583,10 +1708,29 @@ async def api_answer(req: Request):
     if n and key in n.get("late", set()):  # 'wait and ask me later'
         n["late"].discard(key)
         push({"t": "late_done", "nid": n["nid"], "place": key[0], "k": key[1], "ok": bool(b.get("ok"))}, n["vid"])
+        pl = next((x for x in n["p"]["places"] if x["id"] == key[0]), {"name": key[0]})
+        record("ping", n, business=pl["name"], detail=n["p"]["fields"].get(key[1], {}).get("label", key[1]), decision="yes" if b.get("ok") else "no", how="answered later")
         if b.get("ok"):
             asyncio.create_task(safe(late_share(n, key[0], key[1])))
         return JSONResponse({"ok": True})
     return JSONResponse({"ok": False}, status_code=404)
+
+
+async def api_records(req: Request):
+    """The fair record, to download: CSV for a spreadsheet (default) or JSON."""
+    if STAND_KEY and req.query_params.get("key") != STAND_KEY:
+        return JSONResponse({"ok": False, "error": "Wrong stand key"}, status_code=403)
+    rows = list(RECORDS)
+    stamp = time.strftime("%Y%m%d-%H%M")
+    if req.query_params.get("format") == "json":
+        return Response(json.dumps(rows, ensure_ascii=False, indent=1), media_type="application/json",
+                        headers={"Content-Disposition": f'attachment; filename="helmi-fair-{stamp}.json"'})
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=RECORD_COLS, extrasaction="ignore")
+    w.writeheader()
+    w.writerows(rows)
+    return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",  # the BOM makes Excel read ä and ö correctly
+                    headers={"Content-Disposition": f'attachment; filename="helmi-fair-{stamp}.csv"'})
 
 
 async def api_reset(req: Request):
@@ -1708,6 +1852,7 @@ app = Starlette(middleware=[Middleware(GZipMiddleware, minimum_size=2000), Middl
     Route("/api/leave", api_leave, methods=["POST"]),
     Route("/api/policy", api_policy, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),
+    Route("/api/records", api_records),
     Route("/api/diag", api_diag),
     Mount("/static", StaticFiles(directory=STATIC)),
 ])

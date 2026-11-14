@@ -143,12 +143,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
     <div class="card"><p class="k">Shared, by kind of detail</p><div class="bars" id="bars-c"><p class="small muted">Fills in as travellers negotiate.</p></div></div>
     <div class="card"><p class="k">From our workshop</p><p class="small">Four tech-confident students shared <b>82%</b> of what an event asked for and <b>68%</b> for a hotel, but only <b>14%</b> for an insurer. Nobody let a business read their chats or email.</p></div>
     <button class="reset" id="reset">Reset today’s numbers</button>
+    <p class="small"><a id="records" href="/api/records" download>Download the fair record (spreadsheet)</a>. Anonymous: what travellers chose and how businesses were set up.</p>
   </section>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY=new URLSearchParams(location.search).get('key')||'';
+addEventListener('DOMContentLoaded',()=>{const r=document.getElementById('records');if(r&&KEY)r.href='/api/records?key='+encodeURIComponent(KEY)});
 let D,CFG={},META={},BIZ='hotel',AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
 const CATD={trip:'Travel and arrival times',need:'What the person needs: room, seat, route, service',diet:'Allergies and food',card:'Proof of disability',health:'Diagnoses, health records, device records',passport:'To check identity in advance',dob:'For offers, or checking ages',spend:'Bank transactions and spending',location:'Where the person has been',messages:'Private conversations, with other people in them',online:'What the person has searched for',photos:'Photos, often of other people too',activity:'Steps, sleep and fitness',other:'Grades and other records'};
 const SENS=['card','health','passport','dob','spend','location','messages','online','photos','activity'];
@@ -224,7 +226,7 @@ function ev(t,d){
   if(t==='stepin'&&d.offer){n.off.n++;n.offk[d.place+d.k]=1}
   if(t==='stepin')n.items.push({k:'wait',place:d.place,key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
   if(t==='stepin_done'&&d.ok&&n.offk[d.place+d.k])n.off.yes++;
-  if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?'No answer in time. Helmi keeps it.':d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
+  if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?(d.ok?`No answer in time. ${p.short}’s setup said to go ahead, so Helmi shared it.`:d.uns==='wait'?`No answer in time. Helmi keeps it for now and will ask ${p.short} again.`:'No answer in time. Helmi keeps it.'):d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
   if(t==='place_done'){n.st[d.place]='done';n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
   if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;n.story=d.story;stats(d.stats)}
   if(t==='error'){n.done=true;n.items.push({k:'sys',place:'*',text:d.text})}
@@ -245,7 +247,8 @@ function draw(){
     if(x.k==='replay')return `<div class="replays"><button class="replay" data-replay="${view}">▶ ${esc(p.short)}${p.plural?'’':'’s'} trip</button><p>How each business did</p><div class="bizrow">${Object.keys(n.pn).sort((a,b)=>(b===BIZ)-(a===BIZ)).map(id=>`<button class="replay biz ${id===BIZ?'mine':''}" data-bizreplay="${view}|${id}">▶ ${esc(n.pn[id])}</button>`).join('')}</div></div>`;
     const bot=x.who==='bot',F=p.fields,sh=l=>l.split(': ').pop();
     if(x.who==='me')return `<div class="msg helmi"><div class="av h" aria-hidden="true">${esc(p.short[0])}</div><div class="b"><span class="who">${esc(p.short)}, writing directly</span>${esc(x.text)}</div></div>`;
-    const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
+    const BS={rule:'rule: Always share',you:'said yes',offer:'took the offer',late:'said yes later','unsure:min':'no answer: setup said share the minimum','unsure:guess':'no answer: setup said decide as best I can'};
+    const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Got: ${esc(sh(F[k].label))}${(x.basis||{})[k]?' · '+esc(p.short)+(x.basis[k]==='rule'?'’s ':' ')+esc(BS[x.basis[k]]||''):''}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${esc(sh(F[k].label))}</span>`)].join('');
     const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with a safe line.</b>':x.src==='script'?'Scripted line':'Written by '+esc(x.src);
     return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'':'h'}" aria-hidden="true">${bot?esc((n.bn[x.place]||'B')[0]):'H'}</div><div class="b"><span class="who">${bot?esc((n.bn[x.place]||'Bot')+' · '+(n.pn[x.place]||'')):esc(p.short)+(p.plural?'’':'’s')+' Helmi'}</span>${esc(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}).join('');
   $('chat').scrollTop=$('chat').scrollHeight;

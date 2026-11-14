@@ -123,3 +123,33 @@ Add `GROQ_API_KEY` and `STAND_KEY` as environment variables in the Render dashbo
 - Project journey: https://selorme.github.io/data-for-value-demo/journey/
 
 Made by Ruth, Dora, Towhidul and Rui for the Demola Data for Value challenge, 2026.
+
+## The fair record
+
+The server keeps an anonymous record of what visitors decide:
+
+- **As travellers:** the persona, the places, the preset, every starting rule, the "When Helmi isn't sure" choice and any data sources left unconnected.
+- **During the trip:** each ping and its answer (with seconds taken), every rule change, questions to Ask Helmi, and messages to a business.
+- **Results:** what each place got or didn't, and why ("rule: Always share", "said yes" and so on), plus offers and counter-offers.
+- **As businesses:** every change made on the stand.
+
+A visitor is a random code, never a name.
+
+**Download it:** on the stand page, use *Download the fair record (spreadsheet)* at the bottom. You can also open `/api/records` (CSV, opens in Excel) or `/api/records?format=json`. If `STAND_KEY` is set, add `?key=...`.
+
+**Important:** a free Render server forgets everything when it restarts, redeploys or falls asleep (15 minutes with nobody connected). Keeping the stand page open keeps it awake. Download the record before you close the stand page. For a copy that can't be lost, send every line to a Google Sheet as it happens:
+
+1. Make a new Google Sheet. Open *Extensions → Apps Script*, replace the code with the code below, and save.
+2. Click *Deploy → New deployment → Web app*. Set *Execute as: Me* and *Who has access: Anyone*, then deploy and copy the web app URL.
+3. In Render, add the environment variable `RECORD_WEBHOOK` with that URL, and redeploy.
+
+```javascript
+const COLS = ["time","kind","trip","visitor","traveller","business","detail","decision","how","offer","seconds","text","extra"];
+function doPost(e) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  if (sh.getLastRow() === 0) sh.appendRow(COLS);
+  const r = JSON.parse(e.postData.contents);
+  sh.appendRow(COLS.map(c => r[c] === undefined ? "" : r[c]));
+  return ContentService.createTextOutput("ok");
+}
+```
