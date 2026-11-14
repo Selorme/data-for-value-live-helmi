@@ -425,6 +425,14 @@ function tfOpen(data){ tfF=tfBuild(data); { const miss=tfF.caps.flatMap(c=>c.par
   document.getElementById('tf-prog').oninput=e=>{ const w=tfPlaying; tfPause(); tfRender(+e.target.value); if(w) tfPlay(); };
   try{ speechSynthesis.cancel(); }catch(e){} tfT=0; tfRender(0); tfPlay(); }
 
+let LiveFilm_last=null;
+function tfLead(ty,name,when,nm,pl){ const h=(/(\d\d):\d\d/.exec(when)||[])[1], meal=h&&+h<16?'Lunch':'Dinner', be=pl?'are':'is';
+  const L={'insurer':`Before the trip, ${nm} ${pl?'buy':'buys'} travel insurance from ${name}.`,'trip planner app':`Before the trip, ${nm} ${pl?'plan':'plans'} it all in ${name}.`,
+   'transport':`The journey, with ${name}.`,'taxi':`A ride with ${name}.`,'hotel':`Arriving at ${name}.`,'restaurant':`${meal} at ${name}.`,
+   'venue':`${/concert|music/i.test(name)?'The concert':/circus/i.test(name)?'The circus':/arena/i.test(name)?'The evening':'The show'} at ${name}.`,'work event':`The work event at ${name}.`,'course':`The course at ${name}.`,'pharmacy':`A stop at ${name}, the pharmacy.`,
+   'grocery delivery':`A delivery from ${name}.`,'spa':`A visit to ${name}.`,'museum':`A visit to ${name}.`,'tour':`A walking tour with ${name}.`,
+   'childcare':`An evening with ${name}.`,'school':`A visit to ${name}.`,'coworking space':`A day at ${name}.`};
+  return L[ty]||`Next, ${name}.`; }
 function trip(cur,results,info){
   const {PN,BN,PTY,OFF}=info;
   const nm=cur.short;
@@ -440,13 +448,14 @@ function trip(cur,results,info){
     const picks=[pickA,pickB,...(trades.length&&!trades.includes(pickB)?[trades[0]]:[])].filter(Boolean).slice(0,3);
     const bad=picks.some(x=>x.trade&&!x.good), slow=picks.some(x=>!x.trade&&!x.good);
     const lines=picks.map(x=>x.text.trim());
+    const lead=tfLead(pl.type||PTY[id]||'',PN[id]||pl.name||id,pl.when||'',nm,cur.plural); if(lead) lines.unshift(lead);
     stops.push({kind:'stop',id,per:cur.id,name:PN[id]||id,when:(pl.when||PTY[id]||''),ok:bad?false:slow?null:true,
       title:picks[0]?picks[0].mo.t:(PN[id]||id),text:lines.join(' '),e,m,
       say:lines.length?lines:[`${nm} ${cur.plural?'are':'is'} at ${PN[id]||id}.`]});
   });
-  tfOpen({intro:`This is the story of ${nm}${cur.plural?'’':'’s'} trip.`,sub:cur.who,stops,
+  LiveFilm_last=stops; tfOpen({intro:`This is the story of ${nm}${cur.plural?'’':'’s'} trip.`,sub:cur.who,stops,
     outro:{rows:[[e,'details shared'],[m,'details kept'],[OFF.n?OFF.yes+' of '+OFF.n:'0','offers taken']],
       sub:`${nm} decided what went where. Nothing went anywhere ${cur.pron.sub} didn’t allow.`,say:'And then the trip is over.'}});
 }
-return {open:tfOpen,trip};
+return {open:tfOpen,trip,last:()=>LiveFilm_last};
 })();
