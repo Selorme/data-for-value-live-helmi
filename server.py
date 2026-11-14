@@ -219,6 +219,7 @@ def reset_stats():
 reset_stats()
 
 CLIENTS, ACTIVE, WAIT, PENDING, TASKS, BYID = {}, {}, {}, {}, set(), {}
+LOG = {}  # vid -> the visitor's latest trip and its events, so a page refresh can pick the trip up again
 SEM = asyncio.Semaphore(2)
 QUEUE = deque()
 USE = {}
@@ -227,6 +228,9 @@ ERRORS = deque(maxlen=20)
 
 def push(ev, vid=None):
     ev = dict(ev, at=time.time())
+    lg = LOG.get(vid) if vid else None
+    if lg and ev.get("nid") == lg["nid"] and len(lg["events"]) < 800:
+        lg["events"].append(ev)
     for c in list(CLIENTS.values()):
         if c["role"] == "stand" or (vid and c["vid"] == vid):
             try:
@@ -610,7 +614,8 @@ async def run(n):
             finally:
                 ACTIVE.pop(n["nid"], None)
     finally:
-        PENDING.pop(n["vid"], None)
+        if PENDING.get(n["vid"]) == n["nid"]:
+            PENDING.pop(n["vid"], None)
         BYID.pop(n["nid"], None)
         if n["nid"] in QUEUE:
             QUEUE.remove(n["nid"])
@@ -686,8 +691,7 @@ async def api_start(req: Request):
     vid, pid = str(b.get("vid", ""))[:40], b.get("person")
     if not vid or pid not in PEOPLE:
         return JSONResponse({"ok": False, "error": "Choose a person first"}, status_code=400)
-    if vid in PENDING:
-        return JSONResponse({"ok": False, "error": "Your Helmi is already on a trip"}, status_code=409)
+    stop_trip(vid, "The traveller started a new trip.")
     if len(QUEUE) >= 6:
         return JSONResponse({"ok": False, "error": "The stand is busy. Try again in a minute."}, status_code=429)
     p = PEOPLE[pid]
@@ -699,10 +703,41 @@ async def api_start(req: Request):
     STATS["n"] += 1
     PENDING[vid] = n["nid"]
     BYID[n["nid"]] = n
+    LOG[vid] = {"nid": n["nid"], "person": pid, "places": places, "policy": pol, "events": []}
+    while len(LOG) > 300:
+        LOG.pop(next(iter(LOG)))
     t = asyncio.create_task(run(n))
+    n["task"] = t
     TASKS.add(t)
     t.add_done_callback(TASKS.discard)
     return JSONResponse({"ok": True, "nid": n["nid"]})
+
+
+def stop_trip(vid, why):
+    """A visitor's earlier trip ends when they start a new one or choose to leave it."""
+    old = BYID.get(PENDING.get(vid))
+    if old and old.get("task") and not old["task"].done():
+        old["task"].cancel()
+        push({"t": "error", "nid": old["nid"], "text": why}, None)
+    PENDING.pop(vid, None)
+
+
+async def api_resume(req: Request):
+    """After a page refresh: the visitor's latest trip, with everything that has happened so far."""
+    vid = (req.query_params.get("vid") or "")[:40]
+    lg = LOG.get(vid)
+    if not lg:
+        return JSONResponse({"ok": False})
+    return JSONResponse({"ok": True, **lg, "running": PENDING.get(vid) == lg["nid"]})
+
+
+async def api_leave(req: Request):
+    """The visitor chose to leave their trip: stop it, and forget it so a refresh starts fresh."""
+    b = await req.json()
+    vid = str(b.get("vid", ""))[:40]
+    stop_trip(vid, "The traveller left the trip.")
+    LOG.pop(vid, None)
+    return JSONResponse({"ok": True})
 
 
 async def api_policy(req: Request):
@@ -831,6 +866,8 @@ app = Starlette(middleware=[Middleware(NoCache)], routes=[
     Route("/api/config", api_config, methods=["POST"]),
     Route("/api/start", api_start, methods=["POST"]),
     Route("/api/answer", api_answer, methods=["POST"]),
+    Route("/api/resume", api_resume),
+    Route("/api/leave", api_leave, methods=["POST"]),
     Route("/api/policy", api_policy, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),
     Route("/api/diag", api_diag),

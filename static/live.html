@@ -235,6 +235,7 @@ async function boot(){
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
   $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(b)pick(b.dataset.p)};
   connect();
+  if(await resume())return;
   const q=new URLSearchParams(location.search).get('p');if(q&&D.people.some(p=>p.id===q))pick(q);
 }
 function connect(){
@@ -276,12 +277,24 @@ $('go').onclick=async()=>{
   try{
     const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
-    nid=j.nid;TH={};ORDER=[];TAB='trip';PINGS={};PEND=[];NOTES=[];seenNotes=0;finished=false;SH={};OFF={n:0,yes:0};results=null;queuePos=0;EXP={};tripBadge=false;
-    sheetKey='';show('s-app');render();
+    fresh(j.nid);show('s-app');render();
     (EARLY[nid]||[]).forEach(([t,d])=>on(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
 };
+function fresh(id){nid=id;TH={};ORDER=[];TAB='trip';PINGS={};PEND=[];NOTES=[];seenNotes=0;finished=false;SH={};OFF={n:0,yes:0};results=null;queuePos=0;EXP={};tripBadge=false;sheetKey='';endArm=false}
+let REPLAY=false,endArm=false;
+/* a refresh picks the trip up where it was: the server keeps every event of this phone's latest trip */
+async function resume(){try{
+  const r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json();if(!r.ok)return false;
+  const p=D.people.find(x=>x.id===r.person);if(!p)return false;
+  cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();
+  fresh(r.nid);show('s-app');REPLAY=true;let last=0;
+  r.events.forEach(ev=>{last=Math.max(last,ev.at||0);on(ev.t,ev)});REPLAY=false;
+  (EARLY[nid]||[]).forEach(([t,d])=>{if((d.at||0)>last)on(t,d)});EARLY={};
+  if(!r.running&&!finished){finished=true;note('This trip stopped before the end.')}
+  render(true);return true}catch(e){REPLAY=false;return false}}
+function leave(){if(nid)fetch('/api/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid})}).catch(()=>{});nid=null}
 function err(t){let b=document.querySelector('#s-rules .err');if(!b){b=document.createElement('p');b.className='err';b.setAttribute('role','alert');$('go').before(b)}b.textContent=t}
 function toast(t,tab){clearTimeout(toastT);const el=$('toast');el.textContent=t;el.hidden=false;el.onclick=()=>{el.hidden=true;if(tab){TAB=tab;render(true)}};toastT=setTimeout(()=>el.hidden=true,4500)}
 function placeOf(id){return (cur.places||[]).find(x=>x.id===id)||{}}
@@ -310,7 +323,7 @@ function on(t,d){
   if(t==='stepin'&&th){const key=d.place+'|'+d.k;if(d.offer)OFF.n++;
     PINGS[key]={key,place:d.place,pname:d.pname,dk:d.k,label:d.label,value:d.value,offer:d.offer,bot:th.bot,state:'open'};
     th.items.push({type:'ping',key});NOTES.push({type:'ping',key});PEND.push(key);
-    try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}render();return}
+    if(!REPLAY)try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}render();return}
   if((t==='stepin_done'||t==='stepin_timeout')&&th){const key=d.place+'|'+d.k,it=PINGS[key];
     if(it){if(t==='stepin_timeout'){it.state='timeout';note(`You didn’t answer in time, so I kept your ${low(it.label)}.`)}else if(it.state!=='timeout'){it.state=d.ok?'yes':'no';if(d.ok&&it.offer)OFF.yes++}}
     PEND=PEND.filter(x=>x!==key);render();return}
@@ -325,8 +338,9 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-ans]');if(
   const x=e.target.closest('[data-exp]');if(x){EXP[x.dataset.exp]=!EXP[x.dataset.exp];render();return}
   const g=e.target.closest('[data-goto]');if(g){TAB=g.dataset.goto;render(true);return}
   if(e.target.closest('[data-replay]')){film();return}
-  if(e.target.closest('[data-again]')){nid=null;show('s-pick');return}
-  if(e.target.closest('[data-redo]')){nid=null;rules();show('s-rules');return}});
+  if(e.target.closest('[data-again]')){leave();show('s-pick');return}
+  if(e.target.closest('[data-redo]')){leave();rules();show('s-rules');return}
+  if(e.target.closest('[data-end]')){if(!endArm){endArm=true;render();return}leave();show('s-pick');return}});
 $('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;TAB=b.dataset.tab;if(TAB==='trip')tripBadge=false;render(true)};
 const Y=s=>esc(s);
 function pingCard(it,inSheet){const o=it.offer,open=it.state==='open';
@@ -363,6 +377,7 @@ function tripView(){
   const done=ORDER.filter(id=>TH[id].status==='done'),act=ORDER.filter(id=>TH[id].status==='active'),soon=ORDER.filter(id=>TH[id].status==='waiting');
   return top+(finished?done:done.concat(act)).map(id=>stopCard(TH[id],ORDER.indexOf(id))).join('')+
     (soon.length?`<div class="card soon"><p class="k">Coming up</p>${soon.map(id=>`<p>${Y(whenOf(id))} · ${Y(TH[id].name)}</p>`).join('')}</div>`:'')+
+    (!finished?`<button class="btn alt" data-end>${endArm?'Tap again to end the trip and start over':'End this trip'}</button>`:'')+
     (finished?`<button class="btn" data-replay>▶ Watch your trip (replay)</button><button class="btn" data-again>Try another person</button><button class="btn alt" data-redo>Same person, different rules</button>`:'')}
 function helmiView(){
   return `<div class="chat">${NOTES.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):`<div class="hnote"><div class="av" aria-hidden="true">H</div><div class="b">${Y(x.text)}</div></div>`).join('')}</div>
