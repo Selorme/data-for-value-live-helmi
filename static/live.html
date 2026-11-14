@@ -198,6 +198,12 @@ details.place-d{background:var(--card);border:1px solid var(--line);border-radiu
 details.place-d summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none} details.place-d summary::-webkit-details-marker{display:none}
 details.place-d summary::after{content:'›';font-size:20px;color:var(--muted);transition:transform .2s} details.place-d[open] summary::after{transform:rotate(90deg)}
 details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer}
+.opt input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--helmi)} .opt span{display:flex;flex-direction:column;gap:2px} .opt small{color:var(--muted);font-size:13px}
+.opt:has(input:checked){border-color:var(--helmi);box-shadow:inset 0 0 0 1px var(--helmi)} .opts{display:flex;flex-direction:column;gap:8px}
+.sw{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);cursor:pointer} .sw span{display:flex;flex-direction:column} .sw small{color:var(--muted);font-size:13px}
+.sw input{width:22px;height:22px;flex:none;accent-color:var(--helmi)}
+.locked{color:var(--never);font-size:13px;font-weight:600}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
@@ -218,8 +224,19 @@ details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10p
 
   <section id="s-trip" hidden>
     <div class="card"><p class="k" id="t-who"></p><h2>Where is your trip going?</h2><p class="small muted">Each place takes about a minute. Five places is about five minutes.</p><div id="t-places"></div></div>
-    <button class="btn" id="t-next">Next: set Helmi’s rules</button>
+    <button class="btn" id="t-next">Next: set up Helmi</button>
     <button class="btn alt" id="t-back">Choose someone else</button>
+  </section>
+
+  <section id="s-setup" hidden>
+    <div class="card"><p class="k">Set up Helmi</p><h2>Which of your data may Helmi read?</h2>
+      <p class="small">Helmi never copies your data. It fetches a single line only when your rules allow. If you don’t connect a place, Helmi can’t fetch anything from it, and you sort those things out yourself on the trip.</p>
+      <p class="small"><b id="su-lead"></b></p><div id="su-conn"></div><p class="small muted">What you wrote yourself (your needs) is always available to Helmi.</p></div>
+    <div class="card"><h2>When Helmi isn’t sure</h2>
+      <p class="small">Sometimes Helmi can’t reach you in time: your phone is off, you’re asleep, you’re at a concert. If you don’t answer a question within 45 seconds, what should Helmi do?</p>
+      <div class="opts" id="su-uns" role="radiogroup" aria-label="When Helmi isn’t sure"></div></div>
+    <button class="btn" id="su-next">Next: Helmi’s rules</button>
+    <button class="btn alt" id="su-back">Back to the places</button>
   </section>
 
   <section id="s-rules" hidden>
@@ -229,7 +246,7 @@ details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10p
     </div>
     <div class="card" id="r-list"></div>
     <button class="btn" id="go">Start the trip</button>
-    <button class="btn alt" id="r-back">Back to the places</button>
+    <button class="btn alt" id="r-back">Back</button>
   </section>
 
   <section id="s-app" hidden>
@@ -264,7 +281,7 @@ function preset(name,k,f){
   if(k==='id.dob'||bulk)return 'never'; return 'ask';
 }
 function show(id){showRaw(id);if(!NAVING&&id!=='s-app')pushNav()}
-function showRaw(id){['s-pick','s-trip','s-rules','s-app'].forEach(s=>$(s).hidden=s!==id);const inapp=id==='s-app';$('nav').hidden=!inapp;document.body.classList.toggle('inapp',inapp);$('foot').hidden=inapp;if(!inapp){$('sheet').hidden=true;$('toast').hidden=true}scrollTo(0,0)}
+function showRaw(id){['s-pick','s-trip','s-setup','s-rules','s-app'].forEach(s=>$(s).hidden=s!==id);const inapp=id==='s-app';$('nav').hidden=!inapp;document.body.classList.toggle('inapp',inapp);$('foot').hidden=inapp;if(!inapp){$('sheet').hidden=true;$('toast').hidden=true}scrollTo(0,0)}
 function F(k){return cur.fields[k]}
 function short(l){return l.split(': ').pop()}
 function low(l){const s=short(l),w=s.split(' ')[0];return (s.slice(0,2)===s.slice(0,2).toUpperCase()||/[A-Z]/.test(w.slice(1))||/['’]/.test(w))?s:s[0].toLowerCase()+s.slice(1)}
@@ -287,7 +304,7 @@ function connect(){
   es.onerror=()=>{lost=true;$('conn').className='conn';$('conn').lastChild.textContent='Reconnecting'};
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')catchUp()});
   es.addEventListener('config',()=>{if(!cur)return;if(!$('s-rules').hidden)loadReq().then(rules);else if(!$('s-trip').hidden)loadReq().then(trip)});
-  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)feed(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
+  ['start','place','msg','stepin','stepin_done','stepin_timeout','late_done','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)feed(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
 }
 /* every event of a trip is numbered: skip what we already have, and fetch anything missed while the phone was offline or asleep */
 let SEQ=-1;
@@ -303,13 +320,27 @@ function trip(){
   $('t-places').innerHTML=REQ.map(p=>`<label class="place"><input type="checkbox" data-pl="${p.id}" ${chosen.includes(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small>${esc(p.why)}</small><span class="tagt">${esc(p.type)} · bot: ${esc(p.bot||'')} · asks for ${p.keys.length} detail${p.keys.length===1?'':'s'}</span></span></label>`).join('');
 }
 $('t-places').addEventListener('change',e=>{const k=e.target.dataset.pl;if(!k)return;chosen=REQ.map(p=>p.id).filter(id=>document.querySelector(`[data-pl="${id}"]`).checked);$('t-next').disabled=!chosen.length});
-$('t-next').onclick=()=>{rules();show('s-rules')};
+$('t-next').onclick=async()=>{await loadVault();suInit();setup();show('s-setup')};
+/* ---------------------------------------------------------------- set Helmi up: which data it may read, and what it does when you don't answer in time */
+let SU=null;
+const UNS=[['wait','Wait and ask me later','The trip goes on without it. I keep asking you, and send it if you say yes.'],['min','Share only the minimum needed','Only what you need for the visit, nothing else.'],['no','Say no for now','I keep it. That’s the safe default.'],['guess','Decide as best I can','I share what the place needs for what it promised, never records or histories.']];
+function vaultOf(){return VAULTS&&VAULTS[cur.id]||null}
+function suInit(){if(SU&&SU.person===cur.id)return;const V=vaultOf();SU={person:cur.id,conn:{},uns:'no'};(V?V.sources:[]).forEach(s=>{if(s.id!=='vault')SU.conn[s.id]=true})}
+function lockedKeys(){const V=vaultOf();if(!SU||!V)return [];return Object.keys(cur.fields).filter(k=>{const f=V.fields[k];return f&&f.src&&f.src!=='vault'&&SU.conn[f.src]===false})}
+function setup(){const V=vaultOf(),fm=n=>Number(n).toLocaleString('en-GB');
+  const need=new Set(Object.keys(keysAsked()).map(k=>V&&V.fields[k]&&V.fields[k].src).filter(Boolean)),list=(V?V.sources:[]).filter(s=>s.id!=='vault'&&need.has(s.id));
+  $('su-lead').textContent=list.length?`Your ${chosen.length} place${chosen.length===1?'':'s'} ask for things kept in ${list.length} place${list.length===1?'':'s'}. Switch one off and Helmi can’t fetch anything from it.`:'Your places only ask for things you wrote yourself, so there’s nothing to connect.';
+  $('su-conn').innerHTML=list.map(s=>`<label class="sw"><span><b>${esc(s.holder)}</b><small>${esc(s.what||s.name)} · ${fm(s.rows)} rows about you</small></span><input type="checkbox" role="switch" data-conn="${s.id}" ${SU.conn[s.id]!==false?'checked':''} aria-label="Let Helmi read ${esc(s.holder)}"></label>`).join('');
+  $('su-uns').innerHTML=UNS.map(([v,l,d])=>`<label class="opt"><input type="radio" name="su-uns" value="${v}" ${SU.uns===v?'checked':''}><span><b>${l}</b><small>${d}</small></span></label>`).join('')}
+$('s-setup').addEventListener('change',e=>{const t=e.target;if(t.dataset.conn)SU.conn[t.dataset.conn]=t.checked;if(t.name==='su-uns')SU.uns=t.value});
+$('su-next').onclick=()=>{rules();show('s-rules')};
+$('su-back').onclick=()=>{if(history.state&&history.state.scr==='s-setup')history.back();else{trip();show('s-trip')}};
 $('t-back').onclick=()=>{if(history.state&&history.state.scr==='s-trip')history.back();else show('s-pick')};
-$('r-back').onclick=()=>{if(history.state&&history.state.scr==='s-rules')history.back();else{trip();show('s-trip')}};
+$('r-back').onclick=()=>{if(history.state&&history.state.scr==='s-rules')history.back();else{setup();show('s-setup')}};
 function keysAsked(){const m={};REQ.filter(p=>chosen.includes(p.id)).forEach(p=>p.keys.forEach(k=>(m[k]=m[k]||[]).push(p.name)));return m}
 const order=k=>({need:0,record:1,bulk:2}[F(k).kind]??1);
 function ruleRow(k,by){const f=F(k);return `<div class="rule"><div class="lab"><b>${esc(f.label)}</b><span class="kind ${f.kind}">${f.kind==='need'?'What you need':f.kind==='record'?'Record':'Lots of data'}</span></div>
-    <p class="val">${esc(f.value)}</p><p class="by">Asked by ${esc(by.join(', '))}</p>
+    <p class="val">${esc(f.value)}</p><p class="by">Asked by ${esc(by.join(', '))}</p>${lockedKeys().includes(k)?'<p class="locked">Not connected: Helmi can’t fetch this, so it stays with you whatever the rule.</p>':''}
     <div class="seg" role="radiogroup" aria-label="${esc(f.label)}">${[['share','Share'],['ask','Ask me'],['never','Never']].map(([v,l])=>`<label class="${v}"><input type="radio" name="p-${k}" value="${v}" data-k="${k}" ${pol[k]===v?'checked':''}>${l}</label>`).join('')}</div></div>`}
 function rules(){
   const m=keysAsked();
@@ -322,34 +353,34 @@ document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.datase
   if(nid&&!finished){fetch('/api/policy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,nid,policy:{[k]:pol[k]}})}).catch(()=>{});toast('Rule changed. It applies to the places Helmi hasn’t reached yet.')}});
 
 /* ---------------------------------------------------------------- the live trip: trip mode's app (Trip, Helmi, Messages, My data, About me, Sharing), with live agents */
-let sheetKey='',TH={},ORDER=[],TAB='trip',OPEN=null,SRC=null,TBL=0,PINGS={},PEND=[],NOTES=[],ASKS={},HIST=[],finished=false,writing=false,STORY=null,SH={},OFF={n:0,yes:0},queuePos=0,toastT,tripBadge=false,endArm=false,REPLAY=false,VAULT=null,VAULTS=null,lastVoice='';
+let sheetKey='',TH={},ORDER=[],TAB='trip',OPEN=null,SRC=null,TBL=0,PINGS={},PEND=[],NOTES=[],ASKS={},HIST=[],finished=false,writing=false,STORY=null,SH={},CHK={},CURK={},OFF={n:0,yes:0},queuePos=0,toastT,tripBadge=false,endArm=false,REPLAY=false,VAULT=null,VAULTS=null,lastVoice='';
 const fmt=n=>Number(n).toLocaleString('en-GB');
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
-    const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol})});
+    const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol,setup:{uns:(SU||{}).uns||'no',conn:Object.keys((SU||{}).conn||{}).filter(k=>SU.conn[k])},locked:lockedKeys()})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
     await loadVault();fresh(j.nid);show('s-app');enterApp();render();
     (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
 };
-function fresh(id){nid=id;SEQ=-1;LOCALEV=[];TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
+function fresh(id){nid=id;SEQ=-1;LOCALEV=[];TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};CHK={};CURK={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
   VAULT=VAULTS&&VAULTS[cur.id]||null}
 async function loadVault(){if(VAULTS)return;try{VAULTS=await (await fetch('/static/vault.json')).json()}catch(e){VAULTS={}}}
 /* a refresh picks the trip up where it was: the server keeps every event of this phone's latest trip */
 /* this phone also keeps its own copy of the trip, so a refresh works even if the server restarted */
 let saveT;
-function saveLocal(){clearTimeout(saveT);saveT=setTimeout(()=>{try{if(!nid)return;localStorage.setItem('helmi-trip',JSON.stringify({nid,person:cur.id,places:chosen,policy:pol,events:LOCALEV}))}catch(e){}},400)}
+function saveLocal(){clearTimeout(saveT);saveT=setTimeout(()=>{try{if(!nid)return;localStorage.setItem('helmi-trip',JSON.stringify({nid,person:cur.id,places:chosen,policy:pol,su:SU,events:LOCALEV}))}catch(e){}},400)}
 let LOCALEV=[];
 function dropLocal(){LOCALEV=[];try{localStorage.removeItem('helmi-trip')}catch(e){}}
 async function resume(){try{
   let r=null;try{r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json()}catch(e){}
   if(!r||!r.ok){let L=null;try{L=JSON.parse(localStorage.getItem('helmi-trip')||'null')}catch(e){}
-    if(!L||!L.nid||!L.events||!L.events.length)return false;r={ok:true,nid:L.nid,person:L.person,places:L.places,policy:L.policy,events:L.events,running:false,local:true}}
+    if(!L||!L.nid||!L.events||!L.events.length)return false;r={ok:true,nid:L.nid,person:L.person,places:L.places,policy:L.policy,su:L.su,events:L.events,running:false,local:true}}
   const p=D.people.find(x=>x.id===r.person);if(!p)return false;
-  cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();await loadVault();
+  cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();await loadVault();SU=r.su||{person:cur.id,conn:Object.fromEntries((r.conn||[]).map(k=>[k,true])),uns:(r.setup||{}).uns||'no'};if(r.locked&&!r.su){const V=vaultOf();(V?V.sources:[]).forEach(s=>{if(s.id!=='vault'&&!(r.conn||[]).includes(s.id))SU.conn[s.id]=false})}
   fresh(r.nid);show('s-app');enterApp();REPLAY=true;let last=0;
   LOCALEV=r.events.slice();r.events.forEach(ev=>{last=Math.max(last,ev.at||0);if(ev.seq!=null)SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;saveLocal();
   (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
@@ -373,7 +404,7 @@ function on(t,d){
   if(t==='queue'){queuePos=d.pos;render();return}
   if(t==='error'){finished=true;note(d.text);if(!REPLAY)toast(d.text);render();return}
   if(t==='start'){queuePos=0;d.places.forEach(([id,n,ty,bn])=>{if(TH[id])return;TH[id]={id,name:n,type:ty,bot:bn||'Bot',status:'waiting',items:[],res:null,keys:[],unread:0};ORDER.push(id)});
-    note(`Hi, I’m Helmi. I’ll talk to the ${ORDER.length} places on your trip for you, one at a time, in the order you’ll meet them. I follow your rules, and I’ll buzz you when I need you. You can ask me anything here.`);render();return}
+    note(`Hi, I’m Helmi. I’ll get in touch with the ${ORDER.length} places on your trip and arrange each visit for you, one at a time, in the order you’ll meet them. I follow your rules, and I’ll buzz you when I need you. You can ask me anything here.`);render();return}
   if(t==='ask'){const a=ASKS[d.qid]||(ASKS[d.qid]={q:d.q,a:null});if(!NOTES.some(x=>x.qid===d.qid))NOTES.push({type:'qa',qid:d.qid});render();return}
   if(t==='ask_reply'){const a=ASKS[d.qid]||(ASKS[d.qid]={q:'',a:null});a.a=d.a;a.src=d.src;if(!NOTES.some(x=>x.qid===d.qid))NOTES.push({type:'qa',qid:d.qid});
     const ch=Object.entries(d.rules||{});ch.forEach(([k,v])=>{pol[k]=v;HIST.push({place:'Helmi',text:`Rule changed: ${low(F(k).label)}: ${{share:'Share',ask:'Ask me',never:'Never'}[v]}`})});
@@ -381,28 +412,36 @@ function on(t,d){
   if(t==='writing'){writing=true;render();return}
   const th=TH[d.place];
   if(t==='place'&&th){th.status='active';th.keys=d.keys||[];
-    note(`Now I’m talking to ${th.bot} at ${th.name}. They ask for ${th.keys.length} thing${th.keys.length===1?'':'s'}.`,d.place);
+    note(`Now I’m arranging your visit with ${th.bot} at ${th.name}. To arrange it, they ask for ${th.keys.length} thing${th.keys.length===1?'':'s'}.`,d.place);
     if(TAB==='msgs'&&(!OPEN||(TH[OPEN]&&TH[OPEN].status==='done')))OPEN=d.place;
     render(false,true);return}
   if(t==='msg'&&th){th.items.push({type:'msg',...d});
     (d.shared||[]).forEach(k=>{(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name)});
     if(d.who==='helmi'&&(d.shared||[]).length){note(`I gave ${th.name}: ${labs(d.shared)}.`,d.place);HIST.push({place:th.name,text:'Shared: '+labs(d.shared)})}
+    if(d.who==='helmi'&&(d.checked||[]).length){d.checked.forEach(k=>{(CHK[k]=CHK[k]||[]).includes(th.name)||CHK[k].push(th.name)});note(`I gave ${th.name} a yes-or-no answer instead of your ${labs(d.checked)}: “${d.check}”`,d.place);HIST.push({place:th.name,text:'Yes-or-no check only: '+labs(d.checked)})}
+    if(d.who==='helmi'&&d.counter)note(`${th.name} offered something for a detail you kept. I proposed something smaller instead.`,d.place);
+    if(d.who==='bot'&&d.tailored)note(`${th.bot} suggested something that fits what you need. See Messages.`,d.place);
     if(d.who==='helmi'&&(d.kept||[]).length){note(`I kept these from ${th.name}: ${labs(d.kept)}.`,d.place);HIST.push({place:th.name,text:'Kept: '+labs(d.kept)})}
     if(d.to==='me'&&!(TAB==='msgs'&&OPEN===d.place)){if(!REPLAY)toast(`${th.bot} answered you`,()=>{TAB='msgs';OPEN=d.place;render(true)})}
     if(!(TAB==='msgs'&&OPEN===d.place))th.unread++;render();return}
-  if(t==='stepin'&&th){const key=d.place+'|'+d.k;if(d.offer)OFF.n++;
-    PINGS[key]={key,place:d.place,pname:d.pname,dk:d.k,label:d.label,value:d.value,offer:d.offer,bot:th.bot,state:'open'};
+  if(t==='stepin'&&th){const key=d.place+'|'+d.k+(d.offer?'|o':'');CURK[d.place+'|'+d.k]=key;if(d.offer)OFF.n++;
+    PINGS[key]={key,place:d.place,pname:d.pname,dk:d.k,label:d.label,value:d.value,offer:d.offer,check:d.check,bot:th.bot,state:'open'};
     th.items.push({type:'ping',key});NOTES.push({type:'ping',key,place:d.place});PEND.push(key);
     if(!REPLAY)try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}render();return}
-  if((t==='stepin_done'||t==='stepin_timeout')&&th){const key=d.place+'|'+d.k,it=PINGS[key];
-    if(it){if(t==='stepin_timeout'){it.state='timeout';note(`You didn’t answer in time, so I kept your ${low(it.label)}.`,d.place)}else if(it.state!=='timeout'){it.state=d.ok?'yes':'no';if(d.ok&&it.offer)OFF.yes++}}
+  if((t==='stepin_done'||t==='stepin_timeout')&&th){const key=CURK[d.place+'|'+d.k]||d.place+'|'+d.k,it=PINGS[key];
+    if(it){if(t==='stepin_timeout'){const u=(UNS.find(x=>x[0]===(d.uns||'no'))||UNS[2])[1];it.uns=u;
+        if(d.uns==='wait'&&!it.offer){it.state='late';note(`You didn’t answer in time, so the trip went on without your ${low(it.label)}. I’ll keep asking: say yes and I’ll send it.`,d.place);render();return}
+        it.state=d.ok?'tshared':'timeout';note(d.ok?`You didn’t answer in time. You told me “${u}”, so I shared your ${low(it.label)}.`:`You didn’t answer in time. You told me “${u}”, so I kept your ${low(it.label)}.`,d.place)}
+      else if(it.state==='late'){render();return}
+      else if(it.state!=='timeout'&&it.state!=='tshared'){it.state=d.ok?'yes':'no';if(d.ok&&it.offer)OFF.yes++}}
     PEND=PEND.filter(x=>x!==key);render();return}
+  if(t==='late_done'&&th){const key=d.place+'|'+d.k,it=PINGS[key];if(it){it.state=d.ok?'lateyes':'no';note(d.ok?`You said yes later, so I sent your ${low(it.label)} to ${th.name}.`:`You said no, so I kept your ${low(it.label)}.`,d.place)}PEND=PEND.filter(x=>x!==key);render();return}
   if(t==='place_done'&&th){th.status='done';th.res=d;
     note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`,d.place);render();return}
   if(t==='done'){finished=true;writing=false;results=d.results;STORY=d.story||null;tripBadge=TAB!=='trip';note('Your trip is over. Your trip story and the replay are in Trip.');
     if(TAB!=='trip'&&!REPLAY)toast('Trip finished. Tap to see your trip story and the replay.',()=>{TAB='trip';tripBadge=false;render(true)});render(TAB==='trip');return}
 }
-function answer(key,ok){const it=PINGS[key];if(!it||it.state!=='open')return;it.state='sent';PEND=PEND.filter(x=>x!==key);render();
+function answer(key,ok){const it=PINGS[key];if(!it||(it.state!=='open'&&it.state!=='late'))return;it.state='sent';PEND=PEND.filter(x=>x!==key);render();
   fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:it.place,k:it.dk,ok})}).catch(()=>{})}
 function ask(q,voice){q=String(q||'').trim();if(!q)return;const qid=Math.random().toString(36).slice(2,9);ASKS[qid]={q,a:null};NOTES.push({type:'qa',qid});if(voice)lastVoice=qid;render();
   fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,qid,text:q})}).then(r=>{if(!r.ok){ASKS[qid].a='I can’t reach the stand right now. Try again in a moment.';render()}}).catch(()=>{ASKS[qid].a='I can’t reach the stand right now.';render()})}
@@ -420,6 +459,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-ans]');if(
   const tb=e.target.closest('[data-tbl]');if(tb){TBL=+tb.dataset.tbl;render();return}
   const g=e.target.closest('[data-goto]');if(g){TAB=g.dataset.goto;OPEN=null;SRC=null;render(true);return}
   const ex=e.target.closest('[data-ex]');if(ex){ask(ex.dataset.ex);return}
+  const sy=e.target.closest('[data-say]');if(sy){sayTo(sy.dataset.say,sy.dataset.q);return}
   const mic=e.target.closest('[data-mic]');if(mic){const pl=mic.dataset.mic;listen(mic,q=>pl==='helmi'?ask(q,true):sayTo(pl,q));return}
   if(e.target.closest('[data-replay]')){film();return}
   if(e.target.closest('[data-again]')){leave();show('s-pick');return}
@@ -430,15 +470,16 @@ document.addEventListener('submit',e=>{const f=e.target;if(!f.matches('[data-for
 $('nav').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;TAB=b.dataset.tab;OPEN=null;SRC=null;if(TAB==='trip')tripBadge=false;render(true)};
 const Y=s=>esc(s==null?'':s);
 const helmiB=h=>`<div class="hnote"><div class="av" aria-hidden="true">H</div><div class="b">${h}</div></div>`;
-function pingCard(it,inSheet){const o=it.offer,open=it.state==='open';
-  const head=`<p class="k">${o?'An offer':'Helmi needs you'}</p><p>${o?`${Y(it.pname)} offers <b>${Y(o)}</b> if you share your <b>${Y(low(it.label))}</b>. You said no before. Change your mind?`:`<b>${Y(it.bot)}</b> at <b>${Y(it.pname)}</b> wants your <b>${Y(low(it.label))}</b>. Your rule says: ask me.`}</p><p class="small muted">I would send: ${Y(it.value)}</p>`;
-  const tail=open?`<div class="row"><button class="btn" data-ans="1" data-key="${it.key}">Share it</button><button class="btn alt" data-ans="0" data-key="${it.key}">${o?'Still no':'Don’t share'}</button></div>${inSheet?'<p class="small muted">You have 45 seconds. If you don’t answer, I keep it.</p>':''}`
-    :`<p class="small"><b>${{sent:'Sending your answer…',yes:'You said yes. I shared it.',no:'You said no. I kept it.',timeout:'No answer in time, so I kept it. That’s the safe default.'}[it.state]}</b></p>`;
+function pingCard(it,inSheet){const o=it.offer,late=it.state==='late',open=it.state==='open'||late;
+  const head=`<p class="k">${o?'An offer':'Helmi needs you'}</p><p>${o?(it.check?`I talked ${Y(it.pname)} down: they’ll give <b>${Y(o)}</b> for something smaller than your <b>${Y(low(it.label))}</b>. Send it?`:`${Y(it.pname)} offers <b>${Y(o)}</b> if you share your <b>${Y(low(it.label))}</b>. You said no before. Change your mind?`):`<b>${Y(it.bot)}</b> at <b>${Y(it.pname)}</b> wants your <b>${Y(low(it.label))}</b>. Your rule says: ask me.`}</p><p class="small muted">I would send: ${Y(it.value)}</p>${late?'<p class="small"><b>You didn’t answer in time, so the trip went on without it. Share it now anyway?</b></p>':''}`;
+  const tail=open?`<div class="row"><button class="btn" data-ans="1" data-key="${it.key}">${it.check?'Send only that':'Share it'}</button><button class="btn alt" data-ans="0" data-key="${it.key}">${o?'Still no':'Don’t share'}</button></div>${inSheet&&!late?`<p class="small muted">You have 45 seconds. If you don’t answer: ${Y(((UNS.find(x=>x[0]===((SU||{}).uns||'no'))||UNS[2])[1]).toLowerCase())}.</p>`:''}`
+    :`<p class="small"><b>${{sent:'Sending your answer…',yes:'You said yes. I shared it.',no:'You said no. I kept it.',timeout:`No answer in time. You told me “${Y(it.uns||'Say no for now')}”, so I kept it.`,tshared:`No answer in time. You told me “${Y(it.uns||'')}”, so I shared it.`,lateyes:'You said yes later, so I sent it.'}[it.state]}</b></p>`;
   return `<div class="ping ${o?'offer':''}" role="group" aria-label="${o?'An offer':'Helmi needs you'}">${head}${tail}</div>`}
 function msgHtml(th,x){
   if(x.who==='me')return `<div class="msg me"><div class="b"><span class="who">You</span>${Y(x.text)}</div></div>`;
   const bot=x.who==='bot';
-  const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${Y(short(F(k).label))}</span>`),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${Y(short(F(k).label))}</span>`)].join('');
+  const tags=[...(x.shared||[]).map(k=>`<span class="tag s">Shared: ${Y(short(F(k).label))}</span>`),...(x.checked||[]).map(k=>`<span class="tag s">Yes or no only: ${Y(short(F(k).label))}</span>`),
+    ...(x.counter?['<span class="tag">Counter-offer</span>']:[]),...(x.uses?['<span class="tag">What they do with it</span>']:[]),...(x.tailored?['<span class="tag">Suggested for you</span>']:[]),...(x.kept||[]).map(k=>`<span class="tag n">Kept: ${Y(short(F(k).label))}</span>`)].join('');
   const src=x.blocked?'<b>The AI’s message mentioned something that wasn’t shared, so the code replaced it with this safe line.</b>':x.src==='script'?'Scripted line':'Written by '+Y(x.src);
   return `<div class="msg ${bot?'bot':'helmi'}"><div class="av ${bot?'bz':''}" aria-hidden="true">${bot?Y(th.bot[0]):'H'}</div><div class="b"><span class="who">${bot?Y(th.bot+' · '+th.name)+(x.to==='me'?' · to you':''):'Your Helmi'}</span>${Y(x.text)}${tags?`<div class="tags">${tags}</div>`:''}<p class="src">${src}</p></div></div>`}
 function compose(id,ph){return `<form class="askrow" data-form="${id}"><label class="sr" for="in-${id}">${Y(ph)}</label><input id="in-${id}" autocomplete="off" maxlength="300" placeholder="${Y(ph)}">${SR?`<button type="button" class="ib" data-mic="${id}" aria-label="Speak">🎤</button>`:''}<button type="submit" class="ib txt">Send</button></form>`}
@@ -489,8 +530,8 @@ function helmiView(){const pend=PEND.map(k=>PINGS[k]);
       <div class="items">${items||'<p class="small muted">Nothing yet.</p>'}${th.status!=='waiting'?`<button class="linkbtn" data-open="${id}">Messages with ${Y(th.bot)} ›</button>`:''}</div></details>`};
   return (pend.length?`<p class="k">Waiting for you (${pend.length})</p>`+pend.map(p=>pingCard(p,false)).join(''):'')+
     `<div class="card ask"><h3>Ask Helmi</h3>${compose('helmi','Ask or tell me something')}
-     <div class="chips">${['Who can see my data?','What did '+(TH[ORDER[0]]?TH[ORDER[0]].name:'the insurer')+' get?','Never share my diagnoses'].map(q=>`<button class="chip" data-ex="${Y(q)}">${Y(q)}</button>`).join('')}</div>
-     <p class="small muted">Type or tap 🎤 to speak. I can answer questions and change a rule when you ask. Your answer comes from the live AI.</p>${qa?`<div class="chat">${qa}</div>`:''}</div>
+     <div class="chips">${['Should I share my diagnoses with '+(TH[ORDER[0]]?TH[ORDER[0]].name:'the insurer')+'?','Who can see my data?','Never share my diagnoses'].map(q=>`<button class="chip" data-ex="${Y(q)}">${Y(q)}</button>`).join('')}</div>
+     <p class="small muted">Type or tap 🎤 to speak. Ask me anything, or ask me to help you decide whether to share something. I can change a rule when you ask. My answers come from the live AI.</p>${qa?`<div class="chat">${qa}</div>`:''}</div>
     <p class="k">What I’m doing</p>${general}${ORDER.map(place).join('')}`}
 /* ---- Messages */
 function last(th){const m=[...th.items].reverse().find(x=>x.type==='msg');return m?(m.who==='bot'?th.bot+': ':m.who==='me'?'You: ':'Helmi: ')+m.text:th.status==='waiting'?'Not started yet':'…'}
@@ -502,7 +543,7 @@ function threadView(th){th.unread=0;const lastMsg=[...th.items].reverse().find(x
   const typing=th.status==='active'?(waiting?'<p class="typing">Waiting for your answer…</p>':`<p class="typing">${lastMsg&&lastMsg.who==='bot'?'Helmi':Y(th.bot)} is writing…</p>`):(lastMsg&&lastMsg.who==='me'?`<p class="typing">${Y(th.bot)} is writing…</p>`:'');
   return `<div class="thead"><button class="back" data-back aria-label="Back to messages">‹ Messages</button><div class="av bz" aria-hidden="true">${Y(th.bot[0])}</div><div style="min-width:0"><b>${Y(th.bot)} · ${Y(th.name)}</b><p class="small muted">${Y(th.type)}${th.status==='done'?' · done':''}</p></div></div>
     <div class="chat" id="chat" aria-live="polite">${th.items.map(x=>x.type==='ping'?pingCard(PINGS[x.key],false):msgHtml(th,x)).join('')||'<p class="typing">Waiting for this conversation to start.</p>'}${typing}</div>
-    ${th.status!=='waiting'?`<div class="composer">${compose(th.id,'Write to '+th.bot)}<p class="small muted">${Y(th.bot)} only knows what Helmi shared with ${Y(th.name)}, and what you write here.</p></div>`:''}`}
+    ${th.status!=='waiting'?`<div class="composer">${compose(th.id,'Write to '+th.bot)}<div class="chips">${['What will you do with my details?','Is there step-free access?','What can you offer me?'].map(q=>`<button class="chip" data-say="${th.id}" data-q="${Y(q)}">${Y(q)}</button>`).join('')}</div><p class="small muted">${Y(th.bot)} only knows what Helmi shared with ${Y(th.name)}, and what you write here.</p></div>`:''}`}
 /* ---- My data */
 function seenBy(k){return SH[k]||[]}
 function dataView(){
@@ -521,7 +562,7 @@ function sourceView(s){const t=s.tables[TBL]||s.tables[0];const ks=Object.keys(V
 /* ---- About me */
 function seg(k){const v=pol[k]||'ask';return `<label class="rule"><span class="small muted">When asked:</span><select data-k="${k}" aria-label="Rule for ${Y(F(k).label)}">${[['ask','Ask me'],['share','Always share'],['never','Never share']].map(([x,l])=>`<option value="${x}" ${v===x?'selected':''}>${l}</option>`).join('')}</select></label>`}
 function meView(){const V=VAULT?VAULT.fields:{};const ks=Object.keys(cur.fields);const needs=ks.filter(k=>cur.fields[k].kind==='need'),other=ks.filter(k=>cur.fields[k].kind!=='need');
-  const row=k=>{const f=cur.fields[k],v=V[k]||{},u=seenBy(k);return `<li><span class="label">${Y(v.label||f.label)}</span><span class="val">${Y(v.value||f.value)}</span>${v.verified?`<span class="small muted">Checked by: ${Y(v.verified)}</span>`:''}${u.length?`<span class="small"><b>Shared with:</b> ${Y(u.join(', '))}</span>`:''}${seg(k)}</li>`};
+  const row=k=>{const f=cur.fields[k],v=V[k]||{},u=seenBy(k);return `<li><span class="label">${Y(v.label||f.label)}</span><span class="val">${Y(v.value||f.value)}</span>${v.verified?`<span class="small muted">Checked by: ${Y(v.verified)}</span>`:''}${u.length?`<span class="small"><b>Shared with:</b> ${Y(u.join(', '))}</span>`:''}${(CHK[k]||[]).length?`<span class="small"><b>Yes-or-no check for:</b> ${Y(CHK[k].join(', '))}</span>`:''}${lockedKeys().includes(k)?'<span class="locked">Not connected: Helmi can’t fetch this.</span>':''}${seg(k)}</li>`};
   return `<div class="card"><div class="me-h"><div class="av" aria-hidden="true">${Y(cur.short[0])}</div><div><h2>${Y(cur.name)}</h2><p class="small muted">${Y(cur.who)}</p></div></div></div>`+
     helmiB(`You wrote this once. I share single lines, only when your rules allow. Set a rule on any line, and I’ll use it with the places I haven’t reached yet.`)+
     `<h3 class="vh">What you need (${needs.length})</h3><ul class="me">${needs.map(row).join('')}</ul><h3 class="vh">Rules for your other data</h3><ul class="me">${other.map(row).join('')}</ul>`}
@@ -530,6 +571,7 @@ function shareView(){const ids=ORDER.filter(id=>TH[id].status!=='waiting');
   const cards=ids.map(id=>{const th=TH[id],g=Object.keys(SH).filter(k=>SH[k].includes(th.name)),asked=th.keys.length;
     return `<div class="card"><p class="big"><b>${Y(th.name)}</b></p><p class="small muted">${th.status==='done'?`Sees ${g.length} of ${asked} things they asked for`:'Talking to Helmi now'}</p>
       ${g.length?`<ul class="plain">${g.map(k=>`<li>${Y(F(k).label)}</li>`).join('')}</ul>`:'<p class="small">Sees nothing from you. To them you’re a customer with a booking.</p>'}
+      ${Object.keys(CHK).filter(k=>CHK[k].includes(th.name)).map(k=>`<p class="small"><b>Yes-or-no check only:</b> ${Y(F(k).label)}. They got the answer, not the detail.</p>`).join('')}
       ${th.res&&th.res.kept.length?`<p class="small"><b>Can’t see:</b> ${Y(labs(th.res.kept))}</p>`:''}<button class="linkbtn" data-open="${id}">Messages with ${Y(th.bot)} ›</button></div>`}).join('');
   const n=ids.filter(id=>Object.keys(SH).some(k=>SH[k].includes(TH[id].name))).length;
   return helmiB(n?`${n} place${n>1?'s':''} can see some of your data. Each one only sees what it got itself, even the restaurant owned by the hotel.`:'Nobody can see your data yet. Only you, and me when you ask.')+cards+
@@ -558,7 +600,7 @@ function film(){ if(!window.LiveFilm||!results)return; try{history.pushState(Obj
    Every screen, tab, conversation and the replay is an entry in the browser history, so Back goes to what was on screen before.
    During a trip, Back never leaves the trip: that takes "End this trip" or the buttons at the end. */
 let NAVING=false;
-function curScr(){return ['s-pick','s-trip','s-rules','s-app'].find(x=>!$(x).hidden)||'s-pick'}
+function curScr(){return ['s-pick','s-trip','s-setup','s-rules','s-app'].find(x=>!$(x).hidden)||'s-pick'}
 function snap(){const x={scr:curScr()};if(cur)x.p=cur.id;if(x.scr==='s-app'){x.tab=TAB;x.open=OPEN||null;x.src=SRC||null}return x}
 function same(a,b){return !!a&&!!b&&a.scr===b.scr&&(a.tab||null)===(b.tab||null)&&(a.open||null)===(b.open||null)&&(a.src||null)===(b.src||null)&&!a.film===!b.film&&!a.guard===!b.guard}
 function pushNav(){if(NAVING)return;const x=snap();if(same(x,history.state))return;try{history.pushState(x,'')}catch(e){}}
@@ -574,7 +616,7 @@ window.addEventListener('popstate',async e=>{const x=e.state||{scr:'s-pick'};NAV
   if(nid&&!finished&&curScr()==='s-app'){toast('Your trip is still running. To leave it, use “End this trip” on the Trip tab.');history.pushState(snap(),'');return}
   if(x.p&&(!cur||cur.id!==x.p)){cur=D.people.find(p=>p.id===x.p);if(cur){pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id)}}
   if(!cur&&x.scr!=='s-pick')x.scr='s-pick';
-  if(x.scr==='s-trip')trip();if(x.scr==='s-rules')rules();
+  if(x.scr==='s-trip')trip();if(x.scr==='s-rules')rules();if(x.scr==='s-setup'){await loadVault();suInit();setup()}
   showRaw(x.scr)}finally{NAVING=false}});
 document.addEventListener('click',e=>{if(e.target.closest('#tf-x')&&history.state&&history.state.film){setTimeout(()=>history.back(),0);return}
   if(e.target.closest('#nav,[data-open],[data-src],[data-goto],#toast'))setTimeout(pushNav,0)});
