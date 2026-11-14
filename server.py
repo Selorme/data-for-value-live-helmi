@@ -79,7 +79,28 @@ def record(kind, n=None, **kw):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     except OSError:
         pass
+    if RECORD_WEBHOOK:  # the detailed rows go to the sheet's Details tab in batches, not one request per row
+        DETAIL_OUT.append(r)
+        global DETAIL_TASK
+        try:
+            if DETAIL_TASK is None or DETAIL_TASK.done():
+                DETAIL_TASK = asyncio.get_running_loop().create_task(flush_details())
+        except RuntimeError:
+            pass
     return r
+
+
+DETAIL_OUT = []
+DETAIL_TASK = None
+
+
+async def flush_details():
+    """Every 20 seconds, send the waiting detailed rows to the sheet in one request."""
+    while DETAIL_OUT:
+        await asyncio.sleep(20)
+        batch = DETAIL_OUT[:]
+        del DETAIL_OUT[:len(batch)]
+        await asyncio.get_running_loop().run_in_executor(None, _post_record, {"sheet": "Details", "cols": RECORD_COLS, "rows": batch})
 
 
 TRIP_COLS = ["started", "ended", "status", "trip", "visitor", "traveller", "places", "preset", "when_not_sure", "not_connected", "rules_at_start",

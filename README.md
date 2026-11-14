@@ -130,11 +130,11 @@ The server keeps an anonymous record of what visitors decide; a visitor is a ran
 
 - **Trips:** one row per trip, written when it ends or is stopped. Each row has the traveller, the places, the preset, every starting rule, the "When Helmi isn't sure" choice and any unconnected sources. It also has every answer on the phone (with seconds taken), rule changes, questions to Helmi, messages to businesses, what each place got or didn't and why, offers and yes-or-no checks.
 - **Businesses:** one row per business setup, written once nobody has changed that business's settings for a minute.
-- **Every step, in detail:** one row per event, for deeper analysis. Download only; this isn't sent to the sheet.
+- **Every step, in detail:** one row per event, for deeper analysis. Sent to the sheet's Details tab in batches every 20 seconds.
 
 **Download:** use the three links at the bottom of the stand page, or open `/api/records?view=trips`, `?view=businesses` or `?view=all` (add `&format=json` for JSON). If `STAND_KEY` is set, add `&key=...`.
 
-**Google Sheet, live:** a free Render server forgets everything on a restart, redeploy or sleep. To keep a copy that can't be lost, the Trips and Businesses rows can go to a Google Sheet as they happen, each on its own tab.
+**Google Sheet, live:** a free Render server forgets everything on a restart, redeploy or sleep. To keep a copy that can't be lost, all three can go to a Google Sheet as they happen, each on its own tab (Trips, Businesses, Details).
 
 1. Make a Google Sheet. Open *Extensions → Apps Script*, replace the code with the code below, and save.
 2. Click *Deploy → New deployment → Web app*. Set *Execute as: Me* and *Who has access: Anyone*, deploy, and copy the web app URL.
@@ -145,13 +145,14 @@ To change the script later and keep the same URL: *Deploy → Manage deployments
 ```javascript
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);  // two trips ending at once must not overwrite each other
+  lock.waitLock(25000);  // two deliveries at once must not overwrite each other
   try {
     const d = JSON.parse(e.postData.contents);
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sh = ss.getSheetByName(d.sheet) || ss.insertSheet(d.sheet);
     if (sh.getLastRow() === 0) { sh.appendRow(d.cols); sh.setFrozenRows(1); }
-    sh.appendRow(d.cols.map(c => d.row[c] === undefined ? "" : d.row[c]));
+    const rows = (d.rows || [d.row]).map(r => d.cols.map(c => r[c] === undefined ? "" : r[c]));
+    if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, d.cols.length).setValues(rows);
   } finally {
     lock.releaseLock();
   }
