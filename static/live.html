@@ -194,6 +194,10 @@ ul.plain li{font-size:14px}
 .rule{display:flex;flex-direction:column;align-items:flex-start;gap:4px;align-self:stretch;text-align:left;margin:0}
 .rule>span{display:block;width:auto;text-align:left;margin:0;padding:0}
 .rule select{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font:inherit;font-size:16px;background:var(--bg);color:var(--ink)}
+details.place-d{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px} details.place-d[open]{border-color:var(--helmi)}
+details.place-d summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none} details.place-d summary::-webkit-details-marker{display:none}
+details.place-d summary::after{content:'›';font-size:20px;color:var(--muted);transition:transform .2s} details.place-d[open] summary::after{transform:rotate(90deg)}
+details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
@@ -363,7 +367,7 @@ function scene(id){const pl=placeOf(id),th=TH[id],ty=th.type,nm=th.name,h=+((/(\
     'museum':'You visit the museum.','tour':'You join a walking tour.','childcare':'You book a babysitter for the evening.','school':'You visit a school.','coworking space':'You work from a coworking space for the day.','course':'You start your course.'};
   return S[ty]||`Next stop: ${nm}.`}
 function whenOf(id){return (placeOf(id).when||'').replace(', arrival',', on arrival')}
-function note(text){NOTES.push({type:'note',text})}
+function note(text,place){NOTES.push({type:'note',text,place:place||null})}
 const labs=ks=>ks.map(k=>low(F(k).label)).join('; ');
 function on(t,d){
   if(t==='queue'){queuePos=d.pos;render();return}
@@ -377,24 +381,24 @@ function on(t,d){
   if(t==='writing'){writing=true;render();return}
   const th=TH[d.place];
   if(t==='place'&&th){th.status='active';th.keys=d.keys||[];
-    note(`Now I’m talking to ${th.bot} at ${th.name}. They ask for ${th.keys.length} thing${th.keys.length===1?'':'s'}.`);
+    note(`Now I’m talking to ${th.bot} at ${th.name}. They ask for ${th.keys.length} thing${th.keys.length===1?'':'s'}.`,d.place);
     if(TAB==='msgs'&&(!OPEN||(TH[OPEN]&&TH[OPEN].status==='done')))OPEN=d.place;
     render(false,true);return}
   if(t==='msg'&&th){th.items.push({type:'msg',...d});
     (d.shared||[]).forEach(k=>{(SH[k]=SH[k]||[]).includes(th.name)||SH[k].push(th.name)});
-    if(d.who==='helmi'&&(d.shared||[]).length){note(`I gave ${th.name}: ${labs(d.shared)}.`);HIST.push({place:th.name,text:'Shared: '+labs(d.shared)})}
-    if(d.who==='helmi'&&(d.kept||[]).length){note(`I kept these from ${th.name}: ${labs(d.kept)}.`);HIST.push({place:th.name,text:'Kept: '+labs(d.kept)})}
+    if(d.who==='helmi'&&(d.shared||[]).length){note(`I gave ${th.name}: ${labs(d.shared)}.`,d.place);HIST.push({place:th.name,text:'Shared: '+labs(d.shared)})}
+    if(d.who==='helmi'&&(d.kept||[]).length){note(`I kept these from ${th.name}: ${labs(d.kept)}.`,d.place);HIST.push({place:th.name,text:'Kept: '+labs(d.kept)})}
     if(d.to==='me'&&!(TAB==='msgs'&&OPEN===d.place)){if(!REPLAY)toast(`${th.bot} answered you`,()=>{TAB='msgs';OPEN=d.place;render(true)})}
     if(!(TAB==='msgs'&&OPEN===d.place))th.unread++;render();return}
   if(t==='stepin'&&th){const key=d.place+'|'+d.k;if(d.offer)OFF.n++;
     PINGS[key]={key,place:d.place,pname:d.pname,dk:d.k,label:d.label,value:d.value,offer:d.offer,bot:th.bot,state:'open'};
-    th.items.push({type:'ping',key});NOTES.push({type:'ping',key});PEND.push(key);
+    th.items.push({type:'ping',key});NOTES.push({type:'ping',key,place:d.place});PEND.push(key);
     if(!REPLAY)try{navigator.vibrate&&navigator.vibrate([150,80,150])}catch(e){}render();return}
   if((t==='stepin_done'||t==='stepin_timeout')&&th){const key=d.place+'|'+d.k,it=PINGS[key];
-    if(it){if(t==='stepin_timeout'){it.state='timeout';note(`You didn’t answer in time, so I kept your ${low(it.label)}.`)}else if(it.state!=='timeout'){it.state=d.ok?'yes':'no';if(d.ok&&it.offer)OFF.yes++}}
+    if(it){if(t==='stepin_timeout'){it.state='timeout';note(`You didn’t answer in time, so I kept your ${low(it.label)}.`,d.place)}else if(it.state!=='timeout'){it.state=d.ok?'yes':'no';if(d.ok&&it.offer)OFF.yes++}}
     PEND=PEND.filter(x=>x!==key);render();return}
   if(t==='place_done'&&th){th.status='done';th.res=d;
-    note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`);render();return}
+    note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`,d.place);render();return}
   if(t==='done'){finished=true;writing=false;results=d.results;STORY=d.story||null;tripBadge=TAB!=='trip';note('Your trip is over. Your trip story and the replay are in Trip.');
     if(TAB!=='trip'&&!REPLAY)toast('Trip finished. Tap to see your trip story and the replay.',()=>{TAB='trip';tripBadge=false;render(true)});render(TAB==='trip');return}
 }
@@ -472,17 +476,22 @@ function tripView(){
     (soon.length?`<div class="card soon"><p class="k">Coming up</p>${soon.map(id=>`<p>${Y(whenOf(id))} · ${Y(TH[id].name)}</p>`).join('')}</div>`:'')+
     `<button class="btn alt" data-end>${endArm?'Tap again to end the trip and start over':'End this trip'}</button>`}
 /* ---- Helmi */
+const OPENP={};
+document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.place-d'))OPENP[d.dataset.pid]=d.open},true);
 function helmiView(){const pend=PEND.map(k=>PINGS[k]);
-  const feed=NOTES.slice().reverse().map(x=>{
-    if(x.type==='ping')return PINGS[x.key].state==='open'?'':pingCard(PINGS[x.key],false);
-    if(x.type==='qa'){const a=ASKS[x.qid];return `<div class="msg me"><div class="b"><span class="who">You</span>${Y(a.q)}</div></div>`+helmiB(a.a?Y(a.a):'<span class="muted">Thinking…</span>')}
-    return helmiB(Y(x.text))});
-  // newest first, but keep each question above its answer
+  const qa=NOTES.filter(x=>x.type==='qa').map(x=>{const a=ASKS[x.qid];return `<div class="msg me"><div class="b"><span class="who">You</span>${Y(a.q)}</div></div>`+helmiB(a.a?Y(a.a):'<span class="muted">Thinking…</span>')}).join('');
+  const general=NOTES.filter(x=>x.type==='note'&&!x.place).map(x=>helmiB(Y(x.text))).join('');
+  const act=ORDER.find(id=>TH[id].status==='active');
+  // what Helmi did, one place at a time: tap a place to see the details
+  const place=id=>{const th=TH[id],items=NOTES.filter(x=>x.place===id).map(x=>x.type==='ping'?(PINGS[x.key].state==='open'?'':pingCard(PINGS[x.key],false)):helmiB(Y(x.text))).join('');
+    const st=th.status==='active'?'<span class="st on">Talking</span>':th.status==='done'?'<span class="st ok">Done</span>':'<span class="st">Waiting</span>';
+    return `<details class="place-d" data-pid="${id}" ${(OPENP[id]===undefined?id===act:OPENP[id])?'open':''}><summary><span><b>${Y(th.bot)} · ${Y(th.name)}</b><br><span class="small muted">${Y(th.type)}</span></span>${st}</summary>
+      <div class="items">${items||'<p class="small muted">Nothing yet.</p>'}${th.status!=='waiting'?`<button class="linkbtn" data-open="${id}">Messages with ${Y(th.bot)} ›</button>`:''}</div></details>`};
   return (pend.length?`<p class="k">Waiting for you (${pend.length})</p>`+pend.map(p=>pingCard(p,false)).join(''):'')+
     `<div class="card ask"><h3>Ask Helmi</h3>${compose('helmi','Ask or tell me something')}
      <div class="chips">${['Who can see my data?','What did '+(TH[ORDER[0]]?TH[ORDER[0]].name:'the insurer')+' get?','Never share my diagnoses'].map(q=>`<button class="chip" data-ex="${Y(q)}">${Y(q)}</button>`).join('')}</div>
-     <p class="small muted">Type or tap 🎤 to speak. I can answer questions and change a rule when you ask. Your answer comes from the live AI.</p></div>
-    <p class="k">What I’m doing</p><div class="chat">${feed.join('')}</div>`}
+     <p class="small muted">Type or tap 🎤 to speak. I can answer questions and change a rule when you ask. Your answer comes from the live AI.</p>${qa?`<div class="chat">${qa}</div>`:''}</div>
+    <p class="k">What I’m doing</p>${general}${ORDER.map(place).join('')}`}
 /* ---- Messages */
 function last(th){const m=[...th.items].reverse().find(x=>x.type==='msg');return m?(m.who==='bot'?th.bot+': ':m.who==='me'?'You: ':'Helmi: ')+m.text:th.status==='waiting'?'Not started yet':'…'}
 function stLabel(th){return th.status==='active'?'<span class="st on">Talking</span>':th.status==='done'?'<span class="st ok">Done</span>':'<span class="st">Waiting</span>'}
