@@ -681,7 +681,13 @@ async def negotiate_place(n, place, hotel_name):
     await helmi(give, keep, check, not reuse)
 
     # 3. the visitor's phone buzzes with the request
-    yes = await ask_request(n, place, check, preset) if check else []
+    if n.get("driven"):
+        yes = await ask_request(n, place, check, preset) if check else []
+    else:  # the fair page: the phone buzzes once for each "ask me" detail, as before
+        yes = []
+        for k in check:
+            if await ask_person(n, place, k):
+                yes.append(k)
     no = [k for k in check if k not in yes]
     give += yes
     keep += no
@@ -1447,8 +1453,8 @@ setup()
 
 page = lambda f: (lambda req: FileResponse(STATIC / f))
 app = Starlette(middleware=[Middleware(GZipMiddleware, minimum_size=2000), Middleware(NoCache)], routes=[
-    Route("/", page("trip_live.html")),
-    Route("/v2", page("live.html")),
+    Route("/", page("live.html")),
+    Route("/trip", page("trip_live.html")),
     Route("/stand", page("stand.html")),
     Route("/intro", page("intro.html")),
     Route("/events", events),
