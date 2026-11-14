@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Helmi Live</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/film.css?v=1114d">
+<link rel="stylesheet" href="/static/film.css?v=1114e">
 <style>
 /* Layout: one column phone flow. Person, trip, rules, live trip, result. */
 :root{
@@ -242,7 +242,7 @@ ul.plain li{font-size:14px}
 </nav>
 <div class="sheet" id="sheet" hidden></div>
 <button class="toast" id="toast" hidden></button>
-<script src="/static/film.js?v=1114d"></script>
+<script src="/static/film.js?v=1114e"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -282,10 +282,10 @@ function connect(){
 }
 /* every event of a trip is numbered: skip what we already have, and fetch anything missed while the phone was offline or asleep */
 let SEQ=-1;
-function feed(t,d){if(d.seq!=null){if(d.seq<=SEQ)return;if(d.seq>SEQ+1){catchUp();return}SEQ=d.seq}on(t,d)}
+function feed(t,d){if(d.seq!=null){if(d.seq<=SEQ)return;if(d.seq>SEQ+1){catchUp();return}SEQ=d.seq}LOCALEV.push(Object.assign({t},d));saveLocal();on(t,d)}
 let catching=false;
 async function catchUp(){if(!nid||catching)return;catching=true;try{const r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json();
-  if(r.ok&&r.nid===nid){const miss=r.events.filter(ev=>ev.seq>SEQ);REPLAY=true;miss.forEach(ev=>{SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;if(miss.length)render()}}catch(e){REPLAY=false}finally{catching=false}
+  if(r.ok&&r.nid===nid){const miss=r.events.filter(ev=>ev.seq>SEQ);REPLAY=true;miss.forEach(ev=>{SEQ=ev.seq;LOCALEV.push(ev);on(ev.t,ev)});saveLocal();REPLAY=false;if(miss.length)render()}}catch(e){REPLAY=false}finally{catching=false}
 }
 async function loadReq(){REQ=(await (await fetch('/api/requests?person='+cur.id)).json()).places}
 async function pick(id){cur=D.people.find(p=>p.id===id);pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id);trip();show('s-trip')}
@@ -326,20 +326,27 @@ $('go').onclick=async()=>{
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}
 };
-function fresh(id){nid=id;SEQ=-1;TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
+function fresh(id){nid=id;SEQ=-1;LOCALEV=[];TH={};ORDER=[];TAB='trip';OPEN=null;SRC=null;TBL=0;PINGS={};PEND=[];NOTES=[];ASKS={};HIST=[];finished=false;writing=false;STORY=null;SH={};OFF={n:0,yes:0};results=null;queuePos=0;tripBadge=false;sheetKey='';endArm=false;
   VAULT=VAULTS&&VAULTS[cur.id]||null}
 async function loadVault(){if(VAULTS)return;try{VAULTS=await (await fetch('/static/vault.json')).json()}catch(e){VAULTS={}}}
 /* a refresh picks the trip up where it was: the server keeps every event of this phone's latest trip */
+/* this phone also keeps its own copy of the trip, so a refresh works even if the server restarted */
+let saveT;
+function saveLocal(){clearTimeout(saveT);saveT=setTimeout(()=>{try{if(!nid)return;localStorage.setItem('helmi-trip',JSON.stringify({nid,person:cur.id,places:chosen,policy:pol,events:LOCALEV}))}catch(e){}},400)}
+let LOCALEV=[];
+function dropLocal(){LOCALEV=[];try{localStorage.removeItem('helmi-trip')}catch(e){}}
 async function resume(){try{
-  const r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json();if(!r.ok)return false;
+  let r=null;try{r=await (await fetch('/api/resume?vid='+encodeURIComponent(vid),{cache:'no-store'})).json()}catch(e){}
+  if(!r||!r.ok){let L=null;try{L=JSON.parse(localStorage.getItem('helmi-trip')||'null')}catch(e){}
+    if(!L||!L.nid||!L.events||!L.events.length)return false;r={ok:true,nid:L.nid,person:L.person,places:L.places,policy:L.policy,events:L.events,running:false,local:true}}
   const p=D.people.find(x=>x.id===r.person);if(!p)return false;
   cur=p;pol=Object.assign({},r.policy);chosen=r.places.slice();pre=null;await loadReq();await loadVault();
   fresh(r.nid);show('s-app');REPLAY=true;let last=0;
-  r.events.forEach(ev=>{last=Math.max(last,ev.at||0);SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;
+  LOCALEV=r.events.slice();r.events.forEach(ev=>{last=Math.max(last,ev.at||0);if(ev.seq!=null)SEQ=ev.seq;on(ev.t,ev)});REPLAY=false;saveLocal();
   (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
-  if(!r.running&&!finished){finished=true;note('This trip stopped before the end.')}
+  if(!r.running&&!finished){finished=true;note(r.local?'The stand restarted, so this trip stopped here. Everything up to this point is still on your phone.':'This trip stopped before the end.')}
   render(true);return true}catch(e){REPLAY=false;return false}}
-function leave(){if(nid)fetch('/api/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid})}).catch(()=>{});nid=null}
+function leave(){dropLocal();if(nid)fetch('/api/leave',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid})}).catch(()=>{});nid=null}
 function err(t){let b=document.querySelector('#s-rules .err');if(!b){b=document.createElement('p');b.className='err';b.setAttribute('role','alert');$('go').before(b)}b.textContent=t}
 function toast(t,go){clearTimeout(toastT);const el=$('toast');el.textContent=t;el.hidden=false;el.onclick=()=>{el.hidden=true;if(go)go()};toastT=setTimeout(()=>el.hidden=true,4500)}
 function placeOf(id){return (cur.places||[]).find(x=>x.id===id)||{}}

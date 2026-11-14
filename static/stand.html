@@ -6,8 +6,8 @@
 <title>Helmi Live Stand</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link rel="stylesheet" href="/static/film.css?v=1114d">
-<script src="/static/film.js?v=1114d"></script>
+<link rel="stylesheet" href="/static/film.css?v=1114e">
+<script src="/static/film.js?v=1114e"></script>
 <style>
 /* Layout: projector screen in three columns. Left: how the hotel sets up its bot. Middle: the live negotiation. Right: scan to join, and what guests gave. */
 :root{
@@ -162,7 +162,7 @@ async function boot(){
   const st=await (await fetch('/api/state',{cache:'no-store'})).json();CFG=st.config;META=st.meta;AI=st.ai;M=st.models;CATS=st.cats;picker();renderCfg();stats(st.stats);
   const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
   try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
-  connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
+  await restore();connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
 }
 function picker(){
   const ids=Object.keys(META).sort((a,b)=>META[a].order-META[b].order),core=['rail','hotel','bistro','venue','ins'];
@@ -204,12 +204,22 @@ function connect(){
   es.onerror=()=>{$('livek').textContent='Reconnecting…'};
   es.addEventListener('config',e=>{const d=JSON.parse(e.data);if(JSON.stringify(d.settings)!==JSON.stringify(CFG[d.biz])){CFG[d.biz]=d.settings;if(d.biz===BIZ)renderCfg()}});
   es.addEventListener('stats',e=>stats(JSON.parse(e.data).stats));
-  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','error'].forEach(t=>es.addEventListener(t,e=>ev(t,JSON.parse(e.data))));
+  let lost=false;const op=es.onopen,er=es.onerror;es.onopen=()=>{op();if(lost){lost=false;restore()}};es.onerror=()=>{lost=true;er()};
+  ['start','place','msg','stepin','stepin_done','stepin_timeout','place_done','done','error'].forEach(t=>es.addEventListener(t,e=>take(t,JSON.parse(e.data))));
 }
+/* The stand keeps its trips through a refresh: the server holds each trip's events, and this browser keeps a copy in case the server restarted. */
+const SEEN=new Set();let RESTORING=false;
+function key(t,d){return d.nid+'|'+t+'|'+(d.at||'')}
+function take(t,d,quiet){const k=key(t,d);if(SEEN.has(k))return;SEEN.add(k);if(!quiet)keep(t,d);ev(t,d)}
+function keep(t,d){try{const L=JSON.parse(localStorage.getItem('stand-log')||'{}');(L[d.nid]=L[d.nid]||[]).push([t,d]);const ids=Object.keys(L);while(ids.length>10)delete L[ids.shift()];localStorage.setItem('stand-log',JSON.stringify(L))}catch(e){}}
+async function restore(){RESTORING=true;let local={};try{local=JSON.parse(localStorage.getItem('stand-log')||'{}')}catch(e){}
+  Object.values(local).forEach(L=>L.forEach(([t,d])=>take(t,d,true)));
+  try{const j=await (await fetch('/api/standlog',{cache:'no-store'})).json();(j.trips||[]).forEach(tr=>tr.events.forEach(d=>take(d.t,d)))}catch(e){}
+  RESTORING=false;try{stats((await (await fetch('/api/state',{cache:'no-store'})).json()).stats)}catch(e){}if(view&&NEG[view])draw();else drawTabs()}
 function ev(t,d){
   if(t==='start'){NEG[d.nid]={...d,items:[],done:false,off:{n:0,yes:0},offk:{},pty:Object.fromEntries(d.places.map(([id,n,ty])=>[id,ty])),pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
   const n=NEG[d.nid];if(!n)return;const p=P(n.person);
-  if(t==='place'){n.i++;n.cur=d.pname;n.curid=d.place;n.st=n.st||{};n.st[d.place]='active';if(!n.sel||$('follow').checked||n.st[n.sel]==='done')n.sel=d.place;if(d.nid===view&&$('follow').checked&&META[d.place]&&BIZ!==d.place){BIZ=d.place;picker();renderCfg();$('cfgstat').textContent=`Now showing ${META[d.place].bot}: the trip is at ${d.pname}.`}}
+  if(t==='place'){n.i++;n.cur=d.pname;n.curid=d.place;n.st=n.st||{};n.st[d.place]='active';if(!n.sel||$('follow').checked||n.st[n.sel]==='done')n.sel=d.place;if(!RESTORING&&d.nid===view&&$('follow').checked&&META[d.place]&&BIZ!==d.place){BIZ=d.place;picker();renderCfg();$('cfgstat').textContent=`Now showing ${META[d.place].bot}: the trip is at ${d.pname}.`}}
   if(t==='msg')n.items.push({k:'msg',...d});
   if(t==='stepin'&&d.offer){n.off.n++;n.offk[d.place+d.k]=1}
   if(t==='stepin')n.items.push({k:'wait',place:d.place,key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
@@ -218,6 +228,7 @@ function ev(t,d){
   if(t==='place_done'){n.st[d.place]='done';n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
   if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;n.story=d.story;stats(d.stats)}
   if(t==='error'){n.done=true;n.items.push({k:'sys',place:'*',text:d.text})}
+  if(RESTORING)return;
   if(d.nid===view)draw();else drawTabs();
 }
 function drawTabs(){const act=order.filter(id=>!NEG[id].done),ids=[...new Set([...act,...order.slice(-4)])];
@@ -241,8 +252,8 @@ function draw(){
 }
 $('chat').addEventListener('click',async e=>{const z=e.target.closest('[data-bizreplay]');if(z){const [nid,pid]=z.dataset.bizreplay.split('|'),n=NEG[nid];if(!n||!window.LiveFilm)return;
     const was=z.textContent;z.disabled=true;z.textContent='Writing the story…';
-    try{const j=await (await fetch('/api/bizstory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:pid})})).json();if(j.ok)LiveFilm.biz(P(n.person),pid,j.res,j.story,{name:n.pn[pid]})}catch(_){}
-    z.disabled=false;z.textContent=was;return}
+    try{const j=await (await fetch('/api/bizstory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:pid})})).json();if(j.ok){LiveFilm.biz(P(n.person),pid,j.res,j.story,{name:n.pn[pid]});z.disabled=false;z.textContent=was}else{z.textContent='Not available: the server restarted after this trip'}}catch(_){z.disabled=false;z.textContent=was}
+    return}
   const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off,STORY:n.story})});
 $('biztabs').onclick=e=>{const b=e.target.closest('[data-b]');if(!b||b.disabled)return;NEG[view].sel=b.dataset.b;draw()};
 $('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};

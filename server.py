@@ -222,6 +222,7 @@ def reset_stats():
 reset_stats()
 
 CLIENTS, ACTIVE, WAIT, PENDING, TASKS, BYID = {}, {}, {}, {}, set(), {}
+STANDLOG = {}  # nid -> every event of that trip, so a refreshed stand screen gets its trips back
 DONE = {}  # nid -> a finished trip, so the stand can show each business how it did
 BIZSTORY = {}  # (nid, place) -> that business's story
 NBYVID = {}  # vid -> the visitor's latest trip, kept after it ends so they can still ask Helmi about it
@@ -238,6 +239,12 @@ def push(ev, vid=None):
     if lg and ev.get("nid") == lg["nid"] and len(lg["events"]) < 800:
         ev["seq"] = len(lg["events"])  # numbered, so a phone that lost its connection gets what it missed
         lg["events"].append(ev)
+    if ev.get("nid") and ev.get("t") not in ("ask", "ask_reply"):
+        sl = STANDLOG.setdefault(ev["nid"], [])
+        if len(sl) < 1000:
+            sl.append(ev)
+        while len(STANDLOG) > 30:
+            STANDLOG.pop(next(iter(STANDLOG)))
     for c in list(CLIENTS.values()):
         if c["role"] == "stand" or (vid and c["vid"] == vid):
             try:
@@ -1000,6 +1007,11 @@ async def _answer_say(n, pl, text):
     push({"t": "msg", "nid": n["nid"], "who": "bot", "text": out[0], "src": out[1], "blocked": out[2], "place": pl["id"], "to": "me"}, n["vid"])
 
 
+async def api_standlog(req: Request):
+    """The stand screen after a refresh: the latest trips, each with all its events."""
+    return JSONResponse({"ok": True, "trips": [{"nid": k, "events": v} for k, v in list(STANDLOG.items())[-15:]]})
+
+
 async def api_bizstory(req: Request):
     """The stand's second replay: how one business did with this traveller's Helmi, told to the business."""
     b = await req.json()
@@ -1191,6 +1203,7 @@ app = Starlette(middleware=[Middleware(NoCache)], routes=[
     Route("/api/ask", api_ask, methods=["POST"]),
     Route("/api/say", api_say, methods=["POST"]),
     Route("/api/bizstory", api_bizstory, methods=["POST"]),
+    Route("/api/standlog", api_standlog),
     Route("/api/leave", api_leave, methods=["POST"]),
     Route("/api/policy", api_policy, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),
