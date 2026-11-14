@@ -54,6 +54,8 @@ section .wrap{display:flex;flex-direction:column;gap:28px}
 .g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
 .g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
 .g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.g22{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:700px){.g22{grid-template-columns:1fr}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .card .n{font:700 2.4rem var(--f-display);color:var(--rail);line-height:1}
 .tag{display:inline-block;font:600 .75rem var(--f-mono);letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
@@ -107,6 +109,11 @@ section .wrap{display:flex;flex-direction:column;gap:28px}
 
 .vid{background:#000;border-radius:16px;overflow:hidden;aspect-ratio:16/9;max-width:100%}
 .vid video{display:block;width:100%;height:100%}
+.lanes{display:flex;flex-direction:column}
+.lanes div{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:14px;padding:12px 0;border-top:1px solid var(--line)}
+.lanes div:first-child{border-top:0}
+.lanes em{font-style:normal;font-weight:600;color:var(--signal)}
+@media (max-width:640px){.lanes div{grid-template-columns:1fr;gap:4px}}
 .quote{font:500 1.15rem/1.45 var(--f-display);border-left:4px solid var(--signal);padding-left:14px}
 .line{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:10px}
 .line div{border-top:4px solid var(--rail);padding-top:10px}
@@ -204,21 +211,68 @@ body.present{font-size:19px}
 </div></section>
 
 <section id="learned"><div class="wrap">
-  <div class="head"><p class="eyebrow">06 · What people chose</p><h2>People shared less than we expected, and it depended on the place</h2>
-    <p class="lede">Our first workshop, 9 November: four participants played trip mode as invented people, then talked it through.</p></div>
+  <div class="head"><p class="eyebrow">06 · What people chose</p><h2>Four tech-confident students shared far less than we expected</h2>
+    <p class="lede">Workshop 1, Monday 9 November, 45 minutes. Each participant set up Helmi and played a trip as Juho, Ravi, Pekka or Elina, sorted 24 cards about their own life, discussed it at a round table, then answered again.</p></div>
+  <div class="grid g4">
+    <div class="card"><p class="n">3 of 4</p><p class="muted">shared nothing with the insurer</p></div>
+    <div class="card"><p class="n">0 of 4</p><p class="muted">let a business read their WhatsApp or email</p></div>
+    <div class="card"><p class="n">0 of 4</p><p class="muted">let Helmi read every place that holds their data</p></div>
+    <div class="card"><p class="n">3–17</p><p class="muted">sources Helmi could read, out of about 19</p></div>
+  </div>
   <div class="grid g2">
     <div class="card"><h3>Share of what each place asked for</h3><div class="bars">
       <div class="barrow"><span>Event</span><div class="track"><i style="width:82%"></i></div><span class="pct">82%</span></div>
       <div class="barrow"><span>Hotel</span><div class="track"><i style="width:68%"></i></div><span class="pct">68%</span></div>
       <div class="barrow"><span>Insurer</span><div class="track"><i style="width:14%"></i></div><span class="pct">14%</span></div></div>
-      <p class="small muted">3 of 4 shared nothing with the insurer. Nobody let a business read their chats or email.</p></div>
-    <div class="card"><h3>Let the agent do the legwork, keep the deal</h3><p class="muted">Helmi may search, compare and talk to a car dealer’s bot, but the person sees the car and pays. Buying stocks only inside a limit the person sets. Nobody let Helmi send messages alone.</p>
-      <p class="quote">“Needing access weakens the freedom to say no.”</p><p class="small muted">Participants preferred sharing a need or a verified disability card over a diagnosis.</p></div>
+      <p class="small muted">If Helmi couldn’t reach them, nobody let it share even the minimum or use its own judgement.</p></div>
+    <div class="card"><h3>How much Helmi decides</h3><p class="muted">One participant wanted to be asked every time, two wanted suggestions, and one let Helmi follow rules. Nobody let Helmi send messages alone.</p>
+      <p class="quote">“Your entire project is about trust.”</p></div>
   </div>
+  <div class="grid g22">
+    <div class="card"><p class="eyebrow">Finding 1</p><h3>Knowing the technology did not mean saying yes</h3><p class="muted">The most tech-confident group we could find kept most data back. What they shared depended on the place: the event and hotel got most of what they asked for, the insurer almost nothing.</p></div>
+    <div class="card"><p class="eyebrow">Finding 2</p><h3>Trust depended on the conditions of sharing</h3><p class="muted">People asked for extra checks before transactions that matter, security they could believe, clear retention, and care with chats and photos because other people are in them.</p></div>
+    <div class="card"><p class="eyebrow">Finding 3</p><h3>Needing access weakens the freedom to say no</h3><p class="muted">People with disabilities can be pushed to disclose more to get a service that works. Sharing a need or a verified disability card was preferred to sharing a diagnosis.</p></div>
+    <div class="card"><p class="eyebrow">Finding 4</p><h3>Understanding the controls is part of control</h3><p class="muted">People wanted a short walkthrough, finer choices (a degree without all the grades), the reason for each request, and a way to change their mind, knowing copies already sent can’t be recalled.</p></div>
+  </div>
+  <div class="card"><h3>When Helmi acts alone, and when people step in</h3>
+    <p class="muted">People let Helmi do the legwork, then take over for the deal. The more money at stake, the more they wanted to be there in person; a spending limit or a second check made them comfortable letting Helmi act.</p>
+    <div class="lanes">
+      <div><b>Buying a car</b><span>Helmi searches dealers and talks to the dealer’s bot, then books a meeting. <em>You see the car, negotiate and pay.</em></span></div>
+      <div><b>Buying stocks</b><span><em>You set the limit</em>, for example never more than 400 euros. Helmi trades inside it, depending on how well it is trained.</span></div>
+      <div><b>Card or ID at checkout</b><span>Helmi fills it in. <em>You confirm with a second sign-in on your phone.</em></span></div>
+      <div><b>A hotel that needs to know about a disability</b><span>Helmi reads the health record and shares only the need and the verified disability card, not the diagnosis or medicines.</span></div>
+      <div><b>Photos and private messages</b><span><em>You pick the specific photo, every time.</em> Other people are in them, and they never agreed.</span></div>
+    </div></div>
+  <div class="grid g3">
+    <div class="card"><p class="quote">“I would use it for browsing, for sure. I’d like the AI to arrange a meeting. Until that step I can use AI.”</p><p class="small muted">Participant, on buying a car</p></div>
+    <div class="card"><p class="quote">“They don’t need to know what medicines I’m taking. It’s already verified on the disability card.”</p><p class="small muted">Participant</p></div>
+    <div class="card"><p class="quote">“It’s not only my privacy but the people in the photos and their privacy as well.”</p><p class="small muted">Participant</p></div>
+    <div class="card"><p class="quote">“If you’re disabled, I feel like you have no option. You need help.”</p><p class="small muted">Participant</p></div>
+    <div class="card"><p class="quote">“Apps should have credible cybersecurity, or some kind of certification. Then it might be more helpful to use the app than to do it myself.”</p><p class="small muted">Participant</p></div>
+    <div class="card"><p class="quote">“I wish there was a walkthrough, like some apps have: this page is the questions I’ll ask you, this page is your profile.”</p><p class="small muted">Participant</p></div>
+  </div>
+  <p class="small muted">What this round can’t tell us: four technologically confident students are not older adults or people with lived access needs; nobody had grown up in the EU; they decided for an invented person. Time, breach and insurance numbers come from our own simulation.</p>
+</div></section>
+
+<section id="questions"><div class="wrap">
+  <div class="head"><p class="eyebrow">07 · Research questions</p><h2>What we are trying to find out</h2>
+    <p class="lede">Our first question was whether a business should get access. After talking with Jere at Demola, we asked something better: how two agents negotiate what is needed, with people at the last mile, and how much people let their own agent decide.</p></div>
+  <div class="grid g22">
+    <div class="card"><p class="eyebrow">RQ1</p><h3>What evidence changes a sharing decision?</h3><p class="muted">Including the size of the benefit and safeguards people can see. The offers at this stand, like 15% off for a health record, test exactly this.</p></div>
+    <div class="card"><p class="eyebrow">RQ2</p><h3>Can agents lower the privacy cost of accessibility?</h3><p class="muted">A need or eligibility proof instead of a diagnosis, so the accessible route is never the less private route.</p></div>
+    <div class="card"><p class="eyebrow">RQ3</p><h3>What makes consent usable across digital confidence?</h3><p class="muted">Do walkthroughs and permission histories help, or add work?</p></div>
+    <div class="card"><p class="eyebrow">RQ4</p><h3>Which decisions should Helmi make alone?</h3><p class="muted">By the stakes, the recipient and how sensitive the data is.</p></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>Risk understanding or real preference?</h3><p class="muted">Probably both. One participant preferred to share nothing at all; two were open to it if the risks were reduced.</p></div>
+    <div class="card"><h3>When would safeguards change a decision?</h3><p class="muted">Which protections would people believe, and how do we show them honestly?</p></div>
+    <div class="card"><h3>How much benefit would it take?</h3><p class="muted">Everything we proposed lowers the risk. One hint: to find a hospital fast, a participant would share their location.</p></div>
+  </div>
+  <p class="muted">Next: workshop 2 adds a health or disability scenario and compares sharing the raw record, an editable summary and declining, with people who have lower digital confidence, lived access needs, or grew up in the EU.</p>
 </div></section>
 
 <section id="business"><div class="wrap">
-  <div class="head"><p class="eyebrow">07 · For businesses</p><h2>Ask for less, get more</h2>
+  <div class="head"><p class="eyebrow">08 · For businesses</p><h2>Ask for less, get more</h2>
     <p class="lede">At the stand you run the businesses. Change what a bot asks for and watch what the next traveller shares.</p></div>
   <div class="grid g4">
     <div class="card"><h3>Ask for the need</h3><p class="muted">“Step-free room near the lift” serves the guest. A diagnosis is a liability you now have to protect.</p></div>
@@ -229,7 +283,7 @@ body.present{font-size:19px}
 </div></section>
 
 <section id="journey"><div class="wrap">
-  <div class="head"><p class="eyebrow">08 · How we got here</p><h2>From a brief to a live demo</h2></div>
+  <div class="head"><p class="eyebrow">09 · How we got here</p><h2>From a brief to a live demo</h2></div>
   <div class="line">
     <div><b>October</b>The Demola brief: personal AI agents that deal with businesses for us</div>
     <div><b>Late October</b>First Helmi prototypes, synthetic data and short films</div>
@@ -243,7 +297,7 @@ body.present{font-size:19px}
 </div></section>
 
 <section id="try"><div class="wrap">
-  <div class="head"><p class="eyebrow">09 · Try it</p><h2>Send your Helmi on a trip</h2>
+  <div class="head"><p class="eyebrow">10 · Try it</p><h2>Send your Helmi on a trip</h2>
     <p class="lede">Scan the code, pick an invented traveller, set what your Helmi may share, and watch it negotiate on the big screen. About three minutes. Everyone in it is invented.</p></div>
   <div class="grid g2">
     <div class="qrbox" style="justify-self:start"><div id="qr2" aria-label="QR code for the live demo"></div><p id="qrurl2"></p></div>
@@ -270,7 +324,7 @@ $('vf').addEventListener('timeupdate',()=>{const w=$('vf').currentTime>=121;docu
 
 /* section nav and presenting */
 const secs=[...document.querySelectorAll('main section')];
-const names={start:'Start',problem:'Problem',film:'Film',idea:'Idea',where:'Data',how:'How',learned:'Findings',business:'Business',journey:'Journey',try:'Try it'};
+const names={start:'Start',problem:'Problem',film:'Film',idea:'Idea',where:'Data',how:'How',learned:'Findings',questions:'Questions',business:'Business',journey:'Journey',try:'Try it'};
 $('stops').innerHTML=secs.map(s=>`<a href="#${s.id}">${names[s.id]||s.id}</a>`).join('');
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)document.querySelectorAll('#stops a').forEach(a=>a.setAttribute('aria-current',a.getAttribute('href')==='#'+e.target.id))}),{rootMargin:'-45% 0px -50% 0px'});
 secs.forEach(s=>io.observe(s));
