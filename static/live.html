@@ -290,6 +290,7 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 async function boot(){
   D=await (await fetch('/static/trip.json',{cache:'no-store'})).json();
   const st=await (await fetch('/api/state',{cache:'no-store'})).json();AI=st.ai;M=st.models;
+  try{if(st.boot&&localStorage.getItem('helmi-boot')!==st.boot){localStorage.removeItem('helmi-trip');localStorage.setItem('helmi-boot',st.boot)}}catch(e){}  // the server restarted: its trips are gone, so forget ours
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
   $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(b)pick(b.dataset.p)};
   connect();

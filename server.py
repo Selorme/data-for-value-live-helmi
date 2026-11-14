@@ -364,8 +364,11 @@ def push(ev, vid=None):
                 pass
 
 
+BOOT = uuid.uuid4().hex[:8]  # changes every time the server starts, so browsers know to forget their copies
+
+
 def public_state():
-    return {"config": CONFIG, "meta": META, "stats": STATS, "ai": AI_ON, "models": {"helmi": HELMI_MODEL, "bot": BOT_MODEL, "backup": BACKUP_MODEL},
+    return {"boot": BOOT, "config": CONFIG, "meta": META, "stats": STATS, "ai": AI_ON, "models": {"helmi": HELMI_MODEL, "bot": BOT_MODEL, "backup": BACKUP_MODEL},
             "active": [{"nid": n["nid"], "person": n["person"]} for n in ACTIVE.values()], "queue": len(QUEUE), "cats": CATS}
 
 

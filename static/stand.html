@@ -164,7 +164,7 @@ async function boot(){
   const st=await (await fetch('/api/state',{cache:'no-store'})).json();CFG=st.config;META=st.meta;AI=st.ai;M=st.models;CATS=st.cats;picker();renderCfg();stats(st.stats);
   const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
   try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
-  await restore();connect();setInterval(()=>fetch('/api/ping').catch(()=>{}),240000);
+  await restore();connect();setInterval(async()=>{try{const b=(await (await fetch('/api/ping',{cache:'no-store'})).json()).boot;if(b&&window.__boot&&b!==window.__boot){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);location.reload()}}catch(e){}},30000);  // keeps the free server awake, and starts afresh if it restarted
 }
 function picker(){
   const ids=Object.keys(META).sort((a,b)=>META[a].order-META[b].order),core=['rail','hotel','bistro','venue','ins'];
@@ -214,7 +214,8 @@ const SEEN=new Set();let RESTORING=false;
 function key(t,d){return d.nid+'|'+t+'|'+(d.at||'')}
 function take(t,d,quiet){const k=key(t,d);if(SEEN.has(k))return;SEEN.add(k);if(!quiet)keep(t,d);ev(t,d)}
 function keep(t,d){try{const L=JSON.parse(localStorage.getItem('stand-log')||'{}');(L[d.nid]=L[d.nid]||[]).push([t,d]);const ids=Object.keys(L);while(ids.length>10)delete L[ids.shift()];localStorage.setItem('stand-log',JSON.stringify(L))}catch(e){}}
-async function restore(){RESTORING=true;let local={};try{local=JSON.parse(localStorage.getItem('stand-log')||'{}')}catch(e){}
+async function restore(){RESTORING=true;let local={};
+  try{const b=(await (await fetch('/api/state',{cache:'no-store'})).json()).boot;if(b&&localStorage.getItem('stand-boot')!==b){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);if(window.__boot){location.reload();return}}if(b)window.__boot=b;}catch(e){}  // the server restarted: start the stand afreshtry{local=JSON.parse(localStorage.getItem('stand-log')||'{}')}catch(e){}
   Object.values(local).forEach(L=>L.forEach(([t,d])=>take(t,d,true)));
   try{const j=await (await fetch('/api/standlog',{cache:'no-store'})).json();(j.trips||[]).forEach(tr=>tr.events.forEach(d=>take(d.t,d)))}catch(e){}
   RESTORING=false;try{stats((await (await fetch('/api/state',{cache:'no-store'})).json()).stats)}catch(e){}if(view&&NEG[view])draw();else drawTabs()}
