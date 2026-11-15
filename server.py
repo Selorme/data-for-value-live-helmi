@@ -365,6 +365,13 @@ PURPOSE = {"trip": "to have everything ready for the arrival", "need": "to prepa
            "other": "to prepare for the visit"}
 
 
+def purpose(c, place=None):
+    """Why a business uses a kind of detail. Only places with a kitchen talk about the kitchen."""
+    if c == "diet" and place and not re.search(r"restaurant|bistro|hotel|cafe|event|conference|venue|theatre|workplace", place.get("type", "") + " " + place.get("id", ""), re.I):
+        return "to keep any food and snacks safe"
+    return PURPOSE[c]
+
+
 def bot_why(place, keys, F):
     """Why a business asks, in its own general words. The business's bot knows nothing about the customer yet, so no details go in here."""
     if place["type"] == "insurer":
@@ -373,7 +380,7 @@ def bot_why(place, keys, F):
         return "to build the travel plan automatically"
     out = []
     for k in keys:
-        w = PURPOSE[cat(k, F[k])]
+        w = purpose(cat(k, F[k]), place)
         if w not in out:
             out.append(w)
     return "; ".join(out[:3])
@@ -909,7 +916,7 @@ async def negotiate_place(n, place, hotel_name):
     first_cats = [c for c in CATS if c in C["asks"] and not (c == "card" or (c == "health" and place["type"] != "insurer"))]
     qs = jn(dict.fromkeys(ASKQ[c].format(pos=P["pos"], sub=P["sub"]) for c in first_cats)) or "the basic booking details"
     why = ("to price the travel insurance policy" if place["type"] == "insurer" else "to build the travel plan automatically" if place["type"] == "trip planner app"
-           else "; ".join(list(dict.fromkeys(PURPOSE[c] for c in CATS if c in C["asks"] and c != "card" and (c != "health" or place["type"] == "insurer")))[:3]))  # the business's own reasons, the same for everyone
+           else "; ".join(list(dict.fromkeys(purpose(c, place) for c in CATS if c in C["asks"] and c != "card" and (c != "health" or place["type"] == "insurer")))[:3]))  # the business's own reasons, the same for everyone
     ctx = (f"Helmi has just asked you to arrange {wants} for {name}. Reply: say you'd be glad to, then ask the questions you ask every customer, and say briefly why: {qs}. Your general reason: {why}. "
            "You know nothing about this customer: do not assume or hint that they have any need, disability, health condition, diet, family or children. "
            "Ask in neutral words, as you would ask anyone, and do not mention any personal details or numbers.")
@@ -970,7 +977,7 @@ async def negotiate_place(n, place, hotel_name):
         lines, fbp = [], []
         if new_give:
             lines.append("First, share these details, in your own words but keeping the facts (you ARE sharing them): " + "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in new_give) + ".")
-            fbp.append("Here is what " + name + vb(" shares: ", " share: ") + "; ".join(f"{lab(k)}: {F[k]['value'].rstrip('.')}" for k in new_give) + ".")
+            fbp.append("Here is what " + name + vb(" shares. ", " share. ") + " ".join(f"{cap(lab(k))}: {F[k]['value'].rstrip('.')}." for k in new_give))
         if checking:
             named = [lab(k) for k in checking if not private(k, F[k])]
             what = jn(named + ([("a few other things" if named else "a few things")] if len(named) < len(checking) else []))
@@ -978,11 +985,13 @@ async def negotiate_place(n, place, hotel_name):
             fbp.append(f"I'm checking with {name} about {what}.")
         if refuse:
             pub = [k for k in refuse if not private(k, F[k])]
-            prv = list(dict.fromkeys(topic(k) for k in refuse if private(k, F[k])))
+            busy = {topic(k) for k in checking if private(k, F[k])}  # a topic still being checked is not "nothing to share" yet
+            prv = [t for t in dict.fromkeys(topic(k) for k in refuse if private(k, F[k])) if t not in busy]
             if pub:
                 lines.append("Say clearly that these will NOT be shared, and do not offer them in any form: " +
                              "; ".join(f"{lab(k)} (reason or alternative: {alt(k)})" for k in pub) + ".")
-                fbp.append(f"{cap(jn(lab(k) for k in pub))} stays with {name}: " + "; ".join(alt(k) for k in pub) + ".")
+                fl = lambda k: re.sub(r",\s*(\d+) months", r" from the last \1 months", lab(k))
+                fbp.append(f"{name} won't be sharing {jn(fl(k) for k in pub)}. " + " ".join(cap(x.rstrip('.')) + "." for x in dict.fromkeys(alt(k) for k in pub)))
             if prv:
                 more = "more " if give else ""
                 lines.append(f"Also say there is nothing {more}to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind, and add no promises about documents or anything else.")
@@ -1018,7 +1027,7 @@ async def negotiate_place(n, place, hotel_name):
             for mm in re.finditer(r"\bI(?:'m| am| have|'ve)\s+([a-zA-Z']+)", plain):
                 if mm.group(1).lower() not in ok_next:
                     return False  # "I am vegetarian": Helmi speaking as the traveller
-            if re.search(r"\b[Ww]e (?:need|would like|'d like|are travel|have (?:a|an|two|three|four))\b|\bour (?:children|kids|son|daughter|family)\b", plain):
+            if re.search(r"\b[Ww]e (?:need|would like|'d like|are travel\w*|are going|are staying|have (?:a|an|two|three|four))\b|\bour (?:children|kids|son|daughter|family|baby|dates|trip|room|stay|flight)\b", plain):
                 return False  # speaking as the travellers ("we need four seats")
             if re.search(r"\bI(?: am|'m) (?:a|an)\b", plain) and not re.search(r"\bI(?: am|'m) (?:a|an) (?:assistant|AI|digital)", plain):
                 return False
@@ -1071,7 +1080,14 @@ async def negotiate_place(n, place, hotel_name):
             await helmi(yes, no, [])
 
     round2 = [k for k in keys if later(k)]
-    await answer_round([k for k in keys if not later(k)])
+    round1 = [k for k in keys if not later(k)]
+    if round1:
+        await answer_round(round1)
+    else:  # nothing the first questions cover: Helmi still answers, briefly, instead of leaving the bot unanswered
+        out = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. In one or two short sentences, thank them and say {name} {vb('has','have')} nothing to add "
+                          f"on that for now, so the standard arrangement is fine. Share no details and make no requests or promises.",
+                          f"Thank you. {name} {vb('has','have')} nothing to add on that for now, so the standard arrangement is fine.", forbidden_all(F))
+        await say(n, "helmi", out, place=place["id"])
     if round2 and any(F[k]["kind"] == "need" for k in give):
         companion = "companion" in (PUSH.get(place["id"], {}).get("offer") or "")
         q2 = jn(dict.fromkeys((ASKQ2[cat(k, F[k])] if cat(k, F[k]) != "card" or companion else "whether {sub} has an EU Disability Card").format(pos=P["pos"], sub=P["sub"]) for k in round2))
@@ -1171,7 +1187,7 @@ async def negotiate_place(n, place, hotel_name):
     extra = (" A member of staff double-checks the arrangements." if C["review"] and prepared else "")
     by_use = {}
     for k in give[:6]:
-        by_use.setdefault(PURPOSE[cat(k, F[k])], []).append(lab(k))
+        by_use.setdefault(purpose(cat(k, F[k]), place), []).append(lab(k))
     uses = "; ".join(f"{jn(v)}: {u}" for u, v in by_use.items())
     chk = n.get("checks", {}).get(place["id"], {})
     kept_alt = [k for k in keep if (k != target or not offer_fact) and not private(k, F[k])]
@@ -1198,11 +1214,14 @@ async def negotiate_place(n, place, hotel_name):
                 return {"t": ""}
             if any(f.lower() in t.lower() for f in unknown(F, give)):
                 return None
+            if re.search(r"\b(please (confirm|arrange|let|provide|share|ensure|have|ask|make sure|fill|complete)|could you|can you|would you|let us know)\b", t, re.I):
+                return None  # the business offers; it doesn't hand Helmi jobs
             return {"t": t}
         got, m = await write_long("bot", bot_sys(place, p) + " Write at most 2 sentences.",
                                   f"What you know about {name}: {'; '.join(prepared)}. What {place['name']} offers: {'; '.join(mine)}. "
                                   f"Pick at most two offers that one of these details directly calls for, and suggest them to Helmi for {name}, saying in a few words how each helps. "
                                   "Never suggest an accessibility feature (screen readers, step-free access, captions, hearing loops and the like) unless a detail above asks for it, and never guess at needs. "
+                                  f"Suggest only offers from that list, as things {place['name']} will do (for example 'We can…' or 'I suggest…'). You are the one offering, so never ask Helmi to confirm, arrange or provide anything. "
                                   "Do not repeat anything already confirmed. If none clearly fit, reply with only the word NONE.", 200, tcheck, budget=900)
         if got and got["t"]:
             await say(n, "bot", (got["t"], m, False), place=place["id"], tailored=True)
@@ -1687,7 +1706,7 @@ async def _answer_say(n, pl, text):
     g = n.get("prog", {}).get(pl["id"]) or {"shared": []}
     hist = n.setdefault("chat", {}).setdefault(pl["id"], [])
     nm, manner = BOTS.get(pl["id"], ("Botti", "polite"))
-    known = "; ".join(f"{F[k]['label']}: {F[k]['value']} (you use it {PURPOSE[cat(k, F[k])]})" for k in g["shared"]) or "only the basic booking"
+    known = "; ".join(f"{F[k]['label']}: {F[k]['value']} (you use it {purpose(cat(k, F[k]), pl)})" for k in g["shared"]) or "only the basic booking"
     C = CONFIG.get(pl["id"], {})
     O = offers_for(pl["id"])
     chk = n.get("checks", {}).get(pl["id"], {})
