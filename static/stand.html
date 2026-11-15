@@ -144,12 +144,19 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
     <div class="card"><p class="k">From our workshop</p><p class="small">Four tech-confident students shared <b>82%</b> of what an event asked for and <b>68%</b> for a hotel, but only <b>14%</b> for an insurer. Nobody let a business read their chats or email.</p></div>
     <button class="reset" id="reset">Reset today’s numbers</button>
     <p class="small">Fair record (anonymous, opens in Excel): <a class="rec" data-view="trips" href="/api/records?view=trips" download>trips, one row each</a> · <a class="rec" data-view="businesses" href="/api/records?view=businesses" download>business setups</a> · <a class="rec" data-view="all" href="/api/records?view=all" download>every step, in detail</a></p>
+    <p class="small"><a id="reportlink" href="/report" target="_blank" rel="noopener">Open the fair report (charts for the project report)</a></p><p class="small" id="sheetst" aria-live="polite"></p><button class="reset" id="resend" hidden>Send everything to the Google Sheet again</button>
   </section>
 </div>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const KEY=new URLSearchParams(location.search).get('key')||'';
+async function sheetStatus(){try{const s=await (await fetch('/api/sheet',{cache:'no-store'})).json();const el=document.getElementById('sheetst'),b=document.getElementById('resend');if(!el)return;
+  if(!s.set){el.textContent='Google Sheet: not set up, so download the record before you close this page.';b.hidden=true;return}
+  el.textContent=`Google Sheet: ${s.sent} rows sent${s.waiting?`, ${s.waiting} waiting`:''}${s.failed?`, ${s.failed} failed`:''}${s.last_ok?` · last at ${s.last_ok}`:''}${s.last_error&&s.failed?` · problem: ${s.last_error}`:''}`;b.hidden=false}catch(e){}}
+addEventListener('DOMContentLoaded',()=>{sheetStatus();setInterval(sheetStatus,15000);document.getElementById('resend').onclick=async e=>{e.target.disabled=true;const r=await (await fetch('/api/records/resend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY})})).json().catch(()=>({ok:false}));
+  document.getElementById('sheetst').textContent=r.ok?`Sending ${r.queued.Trips} trips, ${r.queued.Businesses} business setups and ${r.queued.Details} detail rows. Rows the sheet already has are skipped.`:('Could not send: '+(r.error||'no connection'));setTimeout(()=>{e.target.disabled=false;sheetStatus()},4000)}});
+addEventListener('DOMContentLoaded',()=>{const rl=document.getElementById('reportlink');if(rl&&KEY)rl.href='/report?key='+encodeURIComponent(KEY)});
 addEventListener('DOMContentLoaded',()=>{if(KEY)document.querySelectorAll('a.rec').forEach(a=>a.href='/api/records?view='+a.dataset.view+'&key='+encodeURIComponent(KEY))});
 let D,CFG={},META={},BIZ='hotel',AI=false,M={},CATS={},NEG={},order=[],view=null,saveT;
 const CATD={trip:'Travel and arrival times',need:'What the person needs: room, seat, route, service',diet:'Allergies and food',card:'Proof of disability',health:'Diagnoses, health records, device records',passport:'To check identity in advance',dob:'For offers, or checking ages',spend:'Bank transactions and spending',location:'Where the person has been',messages:'Private conversations, with other people in them',online:'What the person has searched for',photos:'Photos, often of other people too',activity:'Steps, sleep and fitness',other:'Grades and other records'};

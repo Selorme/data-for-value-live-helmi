@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helmi Fair Report</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* The fair report: what visitors chose as travellers and as businesses, for the project report. Built from the fair record. */
+:root{
+  --bg:#EEF2F1; --card:#FFFFFF; --ink:#14201D; --muted:#56655F; --line:#D2DCD8;
+  --helmi:#2F6FB3; --share:#1F7A4D; --kept:#A4432A; --track:#E3E9E7;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#8a63d2;
+  --display:'Space Grotesk','Segoe UI',system-ui,sans-serif; --body:'Inter','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1513; --card:#17211E; --ink:#E5ECE9; --muted:#9AAAA4; --line:#2A3833;
+  --helmi:#6FA6E0; --share:#4FBF8A; --kept:#E08A70; --track:#25312D; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding:24px max(16px,env(safe-area-inset-right)) 48px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:30px} h2{font-size:21px} h3{font-size:16px}
+p{margin:0}
+.k{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)} .small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:2px}
+.tile b{font:700 28px var(--display);font-variant-numeric:tabular-nums}
+.tile small{color:var(--muted)}
+.bar{display:grid;grid-template-columns:minmax(120px,38%) 1fr 52px;gap:10px;align-items:center;font-size:14px}
+.track{height:14px;background:var(--track);border-radius:7px;overflow:hidden}
+.track i{display:block;height:100%;background:var(--share);border-radius:7px}
+.bar b{text-align:right;font-variant-numeric:tabular-nums}
+.bar small{grid-column:1/-1;margin-top:-6px;color:var(--muted)}
+.donut{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.leg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px;flex:1;min-width:180px}
+.leg li{display:grid;grid-template-columns:12px 1fr auto auto;gap:8px;align-items:center}
+.leg i{width:12px;height:12px;border-radius:3px}
+.leg small{color:var(--muted);min-width:26px;text-align:right}
+.points{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tbl{overflow-x:auto}
+.quotes{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.quotes li{background:var(--bg);border-radius:10px;padding:8px 12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button,.file{font:600 14px var(--body);border-radius:10px;padding:9px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button.pri{background:var(--helmi);color:#fff;border-color:var(--helmi)}
+.file input{display:none}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+@media print{body{background:#fff;padding:0}.noprint{display:none!important}.card,.tile{break-inside:avoid;border-color:#ccc}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="row" style="justify-content:space-between">
+    <div><p class="k">Helmi Live · Demola demo fair</p><h1>What visitors chose</h1><p class="muted small" id="src">Loading the fair record…</p></div>
+    <div class="row noprint">
+      <label class="file">Add a record file<input type="file" id="file" accept=".csv,.json" multiple></label>
+      <button id="refresh">Refresh</button>
+      <button class="pri" onclick="print()">Print or save as PDF</button>
+    </div>
+  </header>
+  <p class="small muted noprint">This page reads the fair record from the stand’s server. If the server has restarted, add the file you downloaded from the stand or from the Google Sheet’s Details tab (as CSV). Rows that appear in both are counted once. Everyone here is anonymous: a visitor is a random code.</p>
+  <div id="out"><div class="card empty">Loading…</div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY=new URLSearchParams(location.search).get('key')||'';
+const pct=(a,b)=>b?Math.round(a/b*100):0;
+let SERVER=[],FILES=[],TYPES={};
+const COLS=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'];
+const CATN={trip:'Trip dates',need:'Access and comfort needs',diet:'Allergies and diet',card:'Disability card',health:'Health records and diagnoses',passport:'Passport number',dob:'Dates of birth',spend:'Spending and bank history',location:'Location history',messages:'Chats and email',online:'Search history',photos:'Photos',activity:'Activity data',other:'Other'};
+function cat(k){if(!k)return 'other';if(k==='trip')return 'trip';if(k==='allergy'||k==='diet')return 'diet';if(k==='card')return 'card';if(k==='id.passport')return 'passport';if(k==='id.dob'||k==='id.kids_dob')return 'dob';
+  if(k.startsWith('health.')||k==='dev.main')return 'health';if(k.startsWith('bank.'))return 'spend';if(k.startsWith('loc.'))return 'location';if(/^(msg|mail)\./.test(k))return 'messages';if(k.startsWith('web.'))return 'online';if(k.startsWith('photos.'))return 'photos';if(k==='activity')return 'activity';if(k.startsWith('need.'))return 'need';return 'other'}
+/* a small CSV reader: quoted fields, commas and line breaks inside quotes */
+function parseCSV(t){t=t.replace(/^﻿/,'');const rows=[];let row=[],f='',q=false;for(let i=0;i<t.length;i++){const c=t[i];
+  if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+  else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f=''}else f+=c}
+  if(f!==''||row.length){row.push(f);rows.push(row)}
+  const h=rows.shift()||[];return rows.filter(r=>r.some(x=>x!=='')).map(r=>Object.fromEntries(h.map((k,i)=>[k,r[i]??''])))}
+async function load(){
+  try{TYPES={};const d=await (await fetch('/static/trip.json')).json();d.people.forEach(p=>(p.places||[]).forEach(pl=>TYPES[pl.name]=pl.type))}catch(e){}
+  try{const r=await fetch('/api/records?view=all&format=json'+(KEY?'&key='+encodeURIComponent(KEY):''),{cache:'no-store'});SERVER=r.ok?await r.json():[];if(!r.ok&&r.status===403)$('src').textContent='Add ?key=<your stand key> to this page’s address to read the server’s record.'}catch(e){SERVER=[]}
+  draw()}
+$('refresh').onclick=load;
+$('file').onchange=async e=>{for(const f of e.target.files){const t=await f.text();let rows=[];try{rows=f.name.endsWith('.json')?JSON.parse(t):parseCSV(t)}catch(err){alert('Could not read '+f.name);continue}
+  if(!Array.isArray(rows))rows=[];FILES.push(...rows.filter(r=>r&&r.kind))}e.target.value='';draw()};
+function rowsAll(){const seen=new Set(),out=[];for(const r of SERVER.concat(FILES)){const k=r.id||[r.time,r.kind,r.trip,r.business,r.detail,r.decision].join('|');if(seen.has(k))continue;seen.add(k);out.push(r)}return out}
+function bars(title,rows,note){return `<section class="card"><h3>${esc(title)}</h3>${rows.length?rows.map(([l,v,sub])=>`<div class="bar"><span>${esc(l)}</span><span class="track" role="img" aria-label="${esc(l)}: ${v}%"><i style="width:${Math.max(v,.6)}%"></i></span><b>${v}%</b>${sub?`<small>${esc(sub)}</small>`:''}</div>`).join(''):'<p class="muted small">No data yet.</p>'}${note?`<p class="small muted">${note}</p>`:''}</section>`}
+function donut(title,items,note,unit){const tot=items.reduce((a,x)=>a+x[1],0);const R=54,r=34,cx=64,cy=64;let a0=-Math.PI/2;const gap=items.filter(x=>x[1]).length>1?.035:0;
+  const arc=(s,e)=>{const L=e-s>Math.PI?1:0,p=(rr,a)=>`${(cx+rr*Math.cos(a)).toFixed(2)} ${(cy+rr*Math.sin(a)).toFixed(2)}`;return `M${p(R,s)}A${R} ${R} 0 ${L} 1 ${p(R,e)}L${p(r,e)}A${r} ${r} 0 ${L} 0 ${p(r,s)}Z`};
+  const segs=items.map((x,i)=>{if(!x[1])return '';const sw=x[1]/tot*Math.PI*2,s=a0+gap/2,e=a0+sw-gap/2;a0+=sw;const d=sw>=Math.PI*2-.001?`M${cx} ${cy-R}A${R} ${R} 0 1 1 ${cx-.01} ${cy-R}L${cx-.01} ${cy-r}A${r} ${r} 0 1 0 ${cx} ${cy-r}Z`:arc(s,e);return `<path d="${d}" fill="${COLS[i%COLS.length]}"><title>${esc(x[0])}: ${pct(x[1],tot)}% (${x[1]})</title></path>`}).join('');
+  return `<section class="card"><h3>${esc(title)}</h3><div class="donut"><svg viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="${esc(title)}: ${items.map(x=>x[0]+' '+pct(x[1],tot)+'%').join(', ')}">${tot?segs:'<circle cx="64" cy="64" r="44" fill="none" stroke="var(--track)" stroke-width="20"/>'}<text x="64" y="64" text-anchor="middle" style="font:700 22px var(--display);fill:var(--ink)">${tot}</text><text x="64" y="82" text-anchor="middle" style="font:12px var(--body);fill:var(--muted)">${esc(unit||'trips')}</text></svg>
+   <ul class="leg">${items.map((x,i)=>`<li><i style="background:${COLS[i%COLS.length]}"></i><span>${esc(x[0])}</span><b>${pct(x[1],tot)}%</b><small>${x[1]}</small></li>`).join('')}</ul></div>${note?`<p class="small muted">${note}</p>`:''}</section>`}
+const tile=(v,l,s)=>`<div class="tile"><b>${esc(v)}</b><span>${esc(l)}</span>${s?`<small>${esc(s)}</small>`:''}</div>`;
+function draw(){
+  const A=rowsAll();
+  $('src').textContent=`${A.length} recorded steps: ${SERVER.length} from the stand’s server${FILES.length?`, ${FILES.length} from files you added`:''}. Updated ${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}.`;
+  const starts=A.filter(r=>r.kind==='trip_start');
+  if(!starts.length&&!A.some(r=>r.kind==='business_settings')){$('out').innerHTML='<div class="card empty">No trips yet. When visitors play, their choices appear here.</div>';return}
+  const trips=[...new Set(starts.map(r=>r.trip))], n=trips.length, done=new Set(A.filter(r=>r.kind==='trip_done').map(r=>r.trip));
+  const keyOf={};A.filter(r=>r.kind==='rule_at_start').forEach(r=>{(keyOf[r.trip]=keyOf[r.trip]||{})[r.detail]=r.extra});
+  const res=A.filter(r=>r.kind==='result'), K=r=>(keyOf[r.trip]||{})[r.detail];
+  const shared=res.filter(r=>r.decision==='shared'), checks=res.filter(r=>r.decision==='yes-or-no check only');
+  const pings=A.filter(r=>r.kind==='ping'&&r.how!=='answered later'), answered=pings.filter(r=>r.how==='answered'), secs=answered.map(r=>+r.seconds).filter(x=>!isNaN(x));
+  const offers=A.filter(r=>r.kind==='offer'), taken=offers.filter(r=>r.decision==='taken');
+  const visitors=new Set(starts.map(r=>r.visitor)).size;
+  const tiles=tile(n,n===1?'trip':'trips',`${done.size} played to the end`)+tile(visitors,visitors===1?'visitor':'visitors','anonymous codes')
+    +tile(pct(shared.length,res.length)+'%','of requested details shared',`${shared.length} of ${res.length}`)
+    +tile(pings.length,'times the phone buzzed',secs.length?`answered in ${Math.round(secs.reduce((a,b)=>a+b,0)/secs.length)} s on average`:'')
+    +tile(pct(pings.filter(r=>r.decision==='yes').length,pings.length)+'%','said yes when asked',`${pings.filter(r=>r.how==='no answer in time').length} didn’t answer in time`)
+    +tile(`${taken.length} of ${offers.length}`,'offers taken',`${taken.filter(r=>/proposed instead/i.test(r.text)).length} through Helmi’s smaller counter-offer`);
+  /* by place, by kind of detail */
+  const grp=(f)=>{const m={};res.forEach(r=>{const g=f(r);if(!g)return;const x=m[g]=m[g]||[0,0];x[1]++;if(r.decision==='shared')x[0]++});return Object.entries(m).map(([g,[s,a]])=>[g,pct(s,a),`${s} of ${a} requested details`]).sort((a,b)=>b[1]-a[1])};
+  const byType=grp(r=>{const t=TYPES[r.business]||'other';return t.charAt(0).toUpperCase()+t.slice(1)});
+  const byCat=grp(r=>CATN[cat(K(r))]);
+  /* why things were shared */
+  const why={};shared.forEach(r=>{const h=r.how||'';const g=/rule/.test(h)?'Their rule said Always share':/offer/.test(h)?'They took an offer':/later/.test(h)?'They said yes later':/no answer/.test(h)?'No answer: their setup decided':'They said yes when asked';why[g]=(why[g]||0)+1});
+  const kept={};res.filter(r=>r.decision!=='shared').forEach(r=>{const g=r.decision==='yes-or-no check only'?'Only a yes-or-no check':r.how==='not connected'?'Helmi wasn’t connected to it':/Never/.test(r.how)?'Their rule said Never share':'They said no, or didn’t answer';kept[g]=(kept[g]||0)+1});
+  const cnt=(rows,f)=>{const m={};rows.forEach(r=>{const g=f(r);if(g)m[g]=(m[g]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const presets=cnt(starts,r=>({careful:'Careful',balanced:'Balanced',open:'Open'}[r.decision]||'Changed by hand'));
+  const unsure=cnt(starts,r=>r.how);
+  const pingOut=[['Yes',pings.filter(r=>r.decision==='yes'&&r.how==='answered').length],['No',pings.filter(r=>r.decision==='no'&&r.how==='answered').length],['No answer in time',pings.filter(r=>r.how==='no answer in time').length]];
+  const offerOut=[['Taken after Helmi’s counter-offer',taken.filter(r=>/proposed instead/i.test(r.text)).length],['Taken as offered',taken.filter(r=>!/proposed instead/i.test(r.text)).length],['Not taken',offers.filter(r=>r.decision!=='taken').length]];
+  const people=cnt(starts,r=>r.traveller).map(([g,v])=>[g,pct(v,n),`${v} trip${v===1?'':'s'}`]);
+  const changes=A.filter(r=>r.kind==='rule_change');
+  /* sensitive data */
+  const sens=[['Chats or email',['messages']],['Diagnoses or health record',['health']],['Location history',['location']],['Bank or spending history',['spend']]].map(([l,cs])=>{const t=new Set(shared.filter(r=>cs.includes(cat(K(r)))).map(r=>r.trip));return [l,pct(t.size,n),`${t.size} of ${n} trips`]});
+  /* talking points */
+  const tp=[];const insT=new Set(res.filter(r=>TYPES[r.business]==='insurer').map(r=>r.trip));const insNone=[...insT].filter(t=>!shared.some(r=>r.trip===t&&TYPES[r.business]==='insurer')).length;
+  if(insT.size)tp.push(`${insNone} of ${insT.size} shared nothing with the insurer.`);
+  if(checks.length)tp.push(`${new Set(checks.map(r=>r.trip)).size} trip${new Set(checks.map(r=>r.trip)).size===1?'':'s'} got a companion benefit with a yes-or-no check instead of showing the disability card.`);
+  if(pings.length)tp.push(`When the phone buzzed, people said yes ${pct(pings.filter(r=>r.decision==='yes').length,pings.length)}% of the time${pings.filter(r=>r.how==='no answer in time').length?`, and let ${pings.filter(r=>r.how==='no answer in time').length} questions time out`:''}.`);
+  const top=byCat.filter(x=>x[0]!=='Other');if(top.length>1)tp.push(`Most shared: ${top[0][0].toLowerCase()} (${top[0][1]}%). Least shared: ${top[top.length-1][0].toLowerCase()} (${top[top.length-1][1]}%).`);
+  if(changes.length)tp.push(`${changes.length} rule${changes.length===1?' was':'s were'} changed during trips, ${changes.filter(r=>r.how==='asked Helmi').length} of them by asking Helmi.`);
+  const pr=presets[0];if(pr)tp.push(`Most common starting point: ${pr[0]} (${pct(pr[1],n)}% of trips).`);
+  /* businesses */
+  const bs=A.filter(r=>r.kind==='business_settings'), lastBiz={};bs.forEach(r=>lastBiz[r.business]=r);
+  const bizTable=Object.values(lastBiz).length?`<section class="card"><h3>How the businesses were set up <span class="muted small">(latest setup of each, ${bs.length} change${bs.length===1?'':'s'} in total)</span></h3><div class="tbl"><table><thead><tr><th>Business</th><th>Asks for</th><th>Keeps details</th><th>Offers so people needn’t explain</th><th>Other settings</th><th>Changes</th></tr></thead><tbody>${Object.values(lastBiz).map(r=>`<tr><td>${esc(r.business)}</td><td>${esc((r.decision||'').replace(/^asks for: /,''))}</td><td>${esc(r.how)}</td><td>${esc(r.offer)}</td><td>${esc(r.text)}</td><td>${bs.filter(x=>x.business===r.business).length}</td></tr>`).join('')}</tbody></table></div></section>`:'';
+  const asks=A.filter(r=>r.kind==='ask_helmi'), msgs=A.filter(r=>r.kind==='message_to_business');
+  const quotes=(title,L,f)=>L.length?`<section class="card"><h3>${esc(title)} <span class="muted small">(${L.length})</span></h3><ul class="quotes">${L.slice(-40).reverse().map(r=>`<li>${f(r)}</li>`).join('')}</ul></section>`:'';
+  $('out').innerHTML=`<div style="display:flex;flex-direction:column;gap:18px">
+   <div class="tiles">${tiles}</div>
+   ${tp.length?`<section class="card"><h2>Talking points</h2><ul class="points">${tp.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></section>`:''}
+   <div class="grid">${bars('Share of requested details shared, by kind of place',byType,'100% means everything the place asked for was shared.')}${bars('Share of requested details shared, by kind of detail',byCat)}</div>
+   <div class="grid">${bars('Trips that shared private data with at least one business',sens)}${bars('Which traveller people played',people)}</div>
+   <div class="grid">${donut('Why details were shared',Object.entries(why),'',`details`)}${donut('Why details were kept',Object.entries(kept),'',`details`)}</div>
+   <div class="grid">${donut('Rules they started from',presets)}${donut('If they don’t answer in time',unsure)}${donut('Answers when the phone buzzed',pingOut,'',`questions`)}${donut('Offers for kept details',offerOut,'Businesses offered something (a discount, a free companion seat) for a detail the traveller kept.',`offers`)}</div>
+   ${bizTable}
+   <div class="grid">${quotes('What people asked Helmi',asks,r=>`${esc(r.text)} <span class="muted small">· ${esc(r.traveller)}</span>`)}${quotes('What people wrote to the businesses',msgs,r=>`<b>${esc(r.business)}:</b> ${esc(r.text)}`)}</div>
+  </div>`}
+load();
+</script>
+</body>
+</html>

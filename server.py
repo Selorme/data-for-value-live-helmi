@@ -40,7 +40,7 @@ STAND_KEY = os.getenv("STAND_KEY", "")
 RECORDS = deque(maxlen=50000)
 RECORDS_FILE = Path(os.getenv("RECORDS_FILE", "/tmp/helmi-records.jsonl"))
 RECORD_WEBHOOK = os.getenv("RECORD_WEBHOOK", "")
-RECORD_COLS = ["time", "kind", "trip", "visitor", "traveller", "business", "detail", "decision", "how", "offer", "seconds", "text", "extra"]
+RECORD_COLS = ["id", "time", "kind", "trip", "visitor", "traveller", "business", "detail", "decision", "how", "offer", "seconds", "text", "extra"]
 try:
     from zoneinfo import ZoneInfo
     _TZ = ZoneInfo("Europe/Helsinki")
@@ -57,18 +57,64 @@ def anon(vid):
     return hashlib.sha1(("helmi-fair/" + str(vid)).encode()).hexdigest()[:8]
 
 
+SHEET = {"sent": 0, "failed": 0, "waiting": 0, "last_ok": "", "last_error": ""}
+SHEET_Q = deque()
+SHEET_TASK = None
+
+
 def _post_record(r):
+    """One delivery to the Google Sheet script. True when the sheet confirms it."""
+    req = urllib.request.Request(RECORD_WEBHOOK, data=json.dumps(r, ensure_ascii=False).encode(), headers={"Content-Type": "application/json"})
+    body = urllib.request.urlopen(req, timeout=40).read().decode("utf-8", "replace").strip()
+    if body == "ok":
+        return True
     try:
-        req = urllib.request.Request(RECORD_WEBHOOK, data=json.dumps(r, ensure_ascii=False).encode(), headers={"Content-Type": "application/json"})
-        urllib.request.urlopen(req, timeout=10).read()
-    except Exception as e:
-        print("record webhook failed:", e)
+        j = json.loads(body)
+    except ValueError:
+        raise RuntimeError("the sheet answered: " + body[:200])
+    if not j.get("ok"):
+        raise RuntimeError("the sheet script failed: " + str(j.get("error"))[:200])
+    return True
+
+
+def sheet_send(payload):
+    """Queue a delivery. One worker sends them in order, and tries each up to 4 times."""
+    if not RECORD_WEBHOOK:
+        return
+    SHEET_Q.append(payload)
+    SHEET["waiting"] = len(SHEET_Q)
+    global SHEET_TASK
+    try:
+        if SHEET_TASK is None or SHEET_TASK.done():
+            SHEET_TASK = asyncio.get_running_loop().create_task(_sheet_worker())
+    except RuntimeError:
+        pass
+
+
+async def _sheet_worker():
+    import datetime
+    while SHEET_Q:
+        p = SHEET_Q[0]
+        for attempt in range(4):
+            try:
+                await asyncio.get_running_loop().run_in_executor(None, _post_record, p)
+                SHEET["sent"] += len(p.get("rows") or [1])
+                SHEET["last_ok"] = datetime.datetime.now(_TZ).strftime("%H:%M:%S") if _TZ else time.strftime("%H:%M:%S")
+                break
+            except Exception as e:
+                SHEET["last_error"] = f"{p.get('sheet')}: {str(e)[:240]}"
+                print("sheet delivery failed:", SHEET["last_error"], flush=True)
+                await asyncio.sleep([3, 10, 30, 0][attempt])
+        else:
+            SHEET["failed"] += len(p.get("rows") or [1])
+        SHEET_Q.popleft()
+        SHEET["waiting"] = len(SHEET_Q)
 
 
 def record(kind, n=None, **kw):
     import datetime
     now = datetime.datetime.now(_TZ) if _TZ else datetime.datetime.utcnow()
-    r = {"time": now.strftime("%Y-%m-%d %H:%M:%S"), "kind": kind}
+    r = {"id": uuid.uuid4().hex[:10], "time": now.strftime("%Y-%m-%d %H:%M:%S"), "kind": kind}
     if n:
         r.update(trip=n["nid"], visitor=anon(n["vid"]), traveller=n["p"]["short"])
     for k, v in kw.items():
@@ -100,13 +146,13 @@ async def flush_details():
         await asyncio.sleep(20)
         batch = DETAIL_OUT[:]
         del DETAIL_OUT[:len(batch)]
-        await asyncio.get_running_loop().run_in_executor(None, _post_record, {"sheet": "Details", "cols": RECORD_COLS, "rows": batch})
+        sheet_send({"sheet": "Details", "cols": RECORD_COLS, "key": "id", "rows": batch})
 
 
 TRIP_COLS = ["started", "ended", "status", "trip", "visitor", "traveller", "places", "preset", "when_not_sure", "not_connected", "rules_at_start",
              "always_share", "ask_me", "never_share", "phone_answers", "rule_changes", "asked_helmi", "messages_to_businesses",
              "results_by_place", "shared_total", "kept_total", "offers", "yes_or_no_checks"]
-BIZ_COLS = ["time", "business", "asks_for", "keeps_details", "offers_for_access", "promises", "staff_double_check", "makes_offers_for_kept_details"]
+BIZ_COLS = ["id", "time", "business", "asks_for", "keeps_details", "offers_for_access", "promises", "staff_double_check", "makes_offers_for_kept_details"]
 SUMMARY = {"Trips": deque(maxlen=5000), "Businesses": deque(maxlen=5000)}
 SUMMED = set()
 SUMMARY_FILE = RECORDS_FILE.with_name(RECORDS_FILE.stem + "-summary.jsonl")
@@ -128,11 +174,7 @@ def to_sheet(sheet, row):
             f.write(json.dumps({"sheet": sheet, "row": row}, ensure_ascii=False) + "\n")
     except OSError:
         pass
-    if RECORD_WEBHOOK:
-        try:
-            asyncio.get_running_loop().run_in_executor(None, _post_record, {"sheet": sheet, "cols": TRIP_COLS if sheet == "Trips" else BIZ_COLS, "row": row})
-        except RuntimeError:
-            pass
+    sheet_send({"sheet": sheet, "cols": TRIP_COLS if sheet == "Trips" else BIZ_COLS, "key": "trip" if sheet == "Trips" else "id", "rows": [row]})
 
 
 def trip_summary(n, status):
@@ -185,7 +227,7 @@ def business_summary(biz, C):
         import datetime
         now = datetime.datetime.now(_TZ) if _TZ else datetime.datetime.utcnow()
         O = offers_for(biz)
-        to_sheet("Businesses", {"time": now.strftime("%Y-%m-%d %H:%M:%S"), "business": f"{biz} ({META[biz]['type']})",
+        to_sheet("Businesses", {"id": uuid.uuid4().hex[:10], "time": now.strftime("%Y-%m-%d %H:%M:%S"), "business": f"{biz} ({META[biz]['type']})",
                                 "asks_for": ", ".join(CATS.get(c, c) for c in C["asks"]), "keeps_details": KEEP[C["keep"]],
                                 "offers_for_access": "; ".join(O[o][2] for o in C["offers"] if o in O), "promises": "; ".join(TRUST[t] for t in C["trust"]),
                                 "staff_double_check": "yes" if C["review"] else "no", "makes_offers_for_kept_details": "yes" if C["push"] else "no"})
@@ -688,7 +730,8 @@ def bot_sys(place, p, first=False):
     return (f"You are {nm}, the booking bot of {place['name']}, a {place['type']}. Your manner: {manner}. {turn}You are chatting with Helmi, the personal AI assistant of "
             f"your customer {p['name']} ({p['pron']['sub']}/{p['pron']['obj']}). Write ONE chat message to Helmi: 2 or 3 sentences, at most 60 words, "
             "friendly and businesslike, plain English, no lists, no markdown, no emoji. Use only the facts given to you; never invent prices, numbers or policies. "
-            f"Refer to the customer as {p['short']} or {p['pron']['sub']}.")
+            f"You are writing to Helmi, not to {p['short']}: never address {p['short']} directly or as 'you'; refer to {p['pron']['obj']} as {p['short']} or {p['pron']['sub']}. "
+            "Vary how you begin; do not start with 'Wonderful', 'Hello' or 'Hi' after your first message.")
 
 
 def helmi_sys(p, first=False):
@@ -917,7 +960,7 @@ async def negotiate_place(n, place, hotel_name):
     async def helmi(new_give, refuse, checking, first=False):
         lines, fbp = [], []
         if new_give:
-            lines.append("Share these details, in your own words but keeping the facts: " + "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in new_give) + ".")
+            lines.append("First, share these details, in your own words but keeping the facts (you ARE sharing them): " + "; ".join(f"{F[k]['label']}: {F[k]['value']}" for k in new_give) + ".")
             fbp.append("Here is what " + name + vb(" shares: ", " share: ") + "; ".join(f"{lab(k)}: {F[k]['value'].rstrip('.')}" for k in new_give) + ".")
         if checking:
             named = [lab(k) for k in checking if not private(k, F[k])]
@@ -933,7 +976,7 @@ async def negotiate_place(n, place, hotel_name):
                 fbp.append(f"{cap(jn(lab(k) for k in pub))} stays with {name}: " + "; ".join(alt(k) for k in pub) + ".")
             if prv:
                 more = "more " if give else ""
-                lines.append(f"Also say there is nothing {more}to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind.")
+                lines.append(f"Also say there is nothing {more}to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind, and add no promises about documents or anything else.")
                 fbp.append(f"There's nothing {more}to share on {jn(prv)}.")
         if not lines:
             return
@@ -950,6 +993,14 @@ async def negotiate_place(n, place, hotel_name):
             return hits * 2 >= len(new_give)
         lines.append(f"Refer to {name} in the third person; 'I' is only ever you, Helmi. Add nothing that is not in these instructions: no requests, questions, needs, plans or wishes of your own.")
         def ok(txt):
+            neg = re.compile(r"\b(not|won't|will not|never|nothing|no further|no more|not be)\b[^.]*\b(share|shared|sharing|provide|disclos)|\bstays? with\b|\bkept\b|\bkeep(s|ing)?\b", re.I)
+            for sent in re.split(r"(?<=[.!?;])\s+", txt):
+                if neg.search(sent):
+                    low_s = sent.lower()
+                    for k in new_give:
+                        words = [w for w in re.findall(r"[a-zA-Z\u00c0-\u017f]{6,}", F[k]["value"].lower())][:6]
+                        if any(w in low_s for w in words):
+                            return False  # it says it keeps something it is actually sharing
             if re.search(r"\b(I need|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip)\b", txt, re.I):
                 return False
             return mentions_shared(txt)
@@ -991,7 +1042,8 @@ async def negotiate_place(n, place, hotel_name):
     round2 = [k for k in keys if later(k)]
     await answer_round([k for k in keys if not later(k)])
     if round2 and any(F[k]["kind"] == "need" for k in give):
-        q2 = jn(dict.fromkeys(ASKQ2[cat(k, F[k])].format(pos=P["pos"], sub=P["sub"]) for k in round2))
+        companion = "companion" in (PUSH.get(place["id"], {}).get("offer") or "")
+        q2 = jn(dict.fromkeys((ASKQ2[cat(k, F[k])] if cat(k, F[k]) != "card" or companion else "whether {sub} has an EU Disability Card").format(pos=P["pos"], sub=P["sub"]) for k in round2))
         out = await write("bot", bot_sys(place, p), f"Helmi has just told you what {name} {vb('needs','need')}. Thank Helmi briefly, then ask one follow-up question about {q2}. "
                           "Ask it because of what Helmi told you, without guessing any details.", f"Thank you, that helps. Could you also tell us {q2}?", unknown(F, give))
         await say(n, "bot", out, place=place["id"], asks=round2)
@@ -1042,7 +1094,7 @@ async def negotiate_place(n, place, hotel_name):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "helmi", "via": prop}
                     elif await ask_person(n, place, target, offer=gives, send=ctr[1]):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "you", "via": prop}
-                        o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. In one or two short sentences: say {name} {vb('agrees','agree')} to the yes-or-no check, and give its answer: {ctr[1]} Say nothing else.",
+                        o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. In one or two short sentences: say {name} {vb('agrees','agree')} to the yes-or-no check, and give the answer in full words, exactly: {ctr[1]} Say nothing else.",
                                         f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden())
                         await say(n, "helmi", o, place=place["id"], checked=[target], check=ctr[1], basis={target: "offer"})
                         n.setdefault("checks", {}).setdefault(place["id"], {})[target] = ctr[1]
@@ -1094,7 +1146,7 @@ async def negotiate_place(n, place, hotel_name):
     promise = (" " + cap(jn(TRUST[t] for t in C["trust"])) + ".") if C["trust"] else ""
     ctx5 = (f"Confirm what you will do for {name}. This message may be up to 4 sentences and 80 words. "
             + (f"For each detail you received, say in a few words what you will use it for: {uses}. " if give else "Say you will go ahead with only the basic booking. ")
-            + (f"For the yes-or-no check you received, say you only needed the answer: {'; '.join(chk.values())}. " if chk else "")
+            + (f"For the yes-or-no check you received, say you only needed the answer, which was yes: {'; '.join(v.replace('Yes or no only: ', '').split('.')[0] for v in chk.values())}. " if chk else "")
             + f"Say you keep these details {keepw} and then delete them.{promise} "
             + (f"For what Helmi kept, say briefly how you will manage without it: " + "; ".join(f"{lab(k)}: {alt(k)}" for k in kept_alt[:3]) + ". " if kept_alt else "")
             + (f"Also say that {name} {vb('gets','get')} {lost}." if lost else "") + extra)
@@ -1214,7 +1266,7 @@ def story_fallback(n, places, results):
     stops = []
     for pl in places:
         r = results[pl["id"]]
-        ms = [m for m in moment_facts(pl, r["shared"]) if not m["trade_off"]][:2]
+        ms = [m for m in moment_facts(pl, list(r["shared"]) + list((r.get("checks") or {}).keys())) if not m["trade_off"]][:2]
         lead = (f"Before the trip, you bought travel insurance from {pl['name']}." if pl["type"] == "insurer" else
                 f"Before the trip, you planned everything in {pl['name']}." if pl["type"] == "trip planner app" else
                 f"Then came {pl['name']}.")
@@ -1238,7 +1290,7 @@ async def write_story(n, places, results):
                       "kept_from_them": [{"detail": lab(k), "why": {"rule": "your rule said never", "you": "you said no when Helmi asked", "noconn": "you had not connected Helmi to where it is kept, so you sorted it out yourself",
                                                                    "timeout": "you did not answer in time, so Helmi kept it"}[r.get("why", {}).get(k, "you")]} for k in r["kept"]],
                       "offer": r.get("offer"), "because_something_was_kept": r.get("lost"),
-                      "what_happened": moment_facts(pl, r["shared"])})
+                      "what_happened": moment_facts(pl, list(r["shared"]) + list((r.get("checks") or {}).keys()))})
     plural = p.get("plural", False)
     system = ("You write the narration for a short replay film of a trip. The listener is the traveller. Write in the second person ('you'), in the past tense, "
               "as one flowing story that is pleasant to hear read aloud: plain English, short clear sentences, no lists, no headings, no emoji, no quotation marks. "
@@ -1659,7 +1711,7 @@ async def api_bizstory(req: Request):
              "helmi_kept": [{"detail": lab(k), "kind": F[k]["kind"], "why": {"rule": "the traveller's rule says never", "you": "the traveller said no", "noconn": "the traveller had not connected Helmi to it",
                                                                          "timeout": "the traveller did not answer in time"}[r.get("why", {}).get(k, "you")]} for k in r["kept"]],
              "offer": r.get("offer"), "because_something_was_kept": r.get("lost"),
-             "what_your_staff_could_do": moment_facts(pl, r["shared"])}
+             "what_your_staff_could_do": moment_facts(pl, list(r["shared"]) + list((r.get("checks") or {}).keys()))}
     system = ("You write the narration for a short replay film shown to a business at a demo stand. The listener is the business's team: call them 'you' and their bot by name. "
               "Past tense, plain English, short clear sentences that read well aloud, no lists, no headings, no emoji, no quotation marks. Use ONLY the facts given; never invent anything. "
               "Helmi is the traveller's personal AI assistant, which talked to your bot and followed the traveller's rules.")
@@ -1682,7 +1734,7 @@ async def api_bizstory(req: Request):
         return {"intro": cl(j.get("intro")) or f"This is how {pl['name']} did with {p['short']}'s Helmi.", "parts": parts, "outro": cl(j.get("outro"))}
     out, m = await write_long("helmi", system, user, 900, check, budget=3500)
     if not out:
-        ms = moment_facts(pl, r["shared"])
+        ms = moment_facts(pl, list(r["shared"]) + list((r.get("checks") or {}).keys()))
         good = [x["what_happened"] for x in ms if x["because_shared"] and not x["trade_off"]][:2]
         bad = [x["what_happened"] for x in ms if not x["because_shared"] and not x["trade_off"]][:1]
         out = {"intro": f"This is how {pl['name']} did with {p['short']}'s Helmi.",
@@ -1849,6 +1901,28 @@ async def api_records(req: Request):
                     headers={"Content-Disposition": f'attachment; filename="helmi-fair-{stamp}.csv"'})
 
 
+async def api_resend(req: Request):
+    """Send every row the server still has to the sheet again. The sheet script skips rows it already holds, so nothing is doubled."""
+    b = await req.json()
+    if not keyok(b):
+        return JSONResponse({"ok": False, "error": "Wrong stand key"}, status_code=403)
+    if not RECORD_WEBHOOK:
+        return JSONResponse({"ok": False, "error": "No sheet is set up (RECORD_WEBHOOK)."})
+    n = {"Trips": len(SUMMARY["Trips"]), "Businesses": len(SUMMARY["Businesses"]), "Details": len(RECORDS)}
+    if SUMMARY["Trips"]:
+        sheet_send({"sheet": "Trips", "cols": TRIP_COLS, "key": "trip", "rows": list(SUMMARY["Trips"])})
+    if SUMMARY["Businesses"]:
+        sheet_send({"sheet": "Businesses", "cols": BIZ_COLS, "key": "id", "rows": list(SUMMARY["Businesses"])})
+    rows = [r for r in RECORDS if r.get("id")]
+    for i in range(0, len(rows), 400):
+        sheet_send({"sheet": "Details", "cols": RECORD_COLS, "key": "id", "rows": rows[i:i + 400]})
+    return JSONResponse({"ok": True, "queued": n})
+
+
+async def api_sheet(req: Request):
+    return JSONResponse({"set": bool(RECORD_WEBHOOK), **SHEET})
+
+
 async def api_reset(req: Request):
     b = await req.json()
     if not keyok(b):
@@ -1950,6 +2024,7 @@ app = Starlette(middleware=[Middleware(GZipMiddleware, minimum_size=2000), Middl
     Route("/trip", page("trip_live.html")),
     Route("/stand", page("stand.html")),
     Route("/intro", page("intro.html")),
+    Route("/report", page("report.html")),
     Route("/events", events),
     Route("/api/state", api_state),
     Route("/api/ping", api_state),
@@ -1969,6 +2044,8 @@ app = Starlette(middleware=[Middleware(GZipMiddleware, minimum_size=2000), Middl
     Route("/api/policy", api_policy, methods=["POST"]),
     Route("/api/reset", api_reset, methods=["POST"]),
     Route("/api/records", api_records),
+    Route("/api/records/resend", api_resend, methods=["POST"]),
+    Route("/api/sheet", api_sheet),
     Route("/api/diag", api_diag),
     Mount("/static", StaticFiles(directory=STATIC)),
 ])

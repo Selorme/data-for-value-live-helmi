@@ -204,6 +204,9 @@ details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10p
 .sw{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--line);cursor:pointer} .sw span{display:flex;flex-direction:column} .sw small{color:var(--muted);font-size:13px}
 .sw input{width:22px;height:22px;flex:none;accent-color:var(--helmi)}
 .locked{color:var(--never);font-size:13px;font-weight:600}
+.vid{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}
+.vid video{max-width:100%;max-height:calc(100dvh - 90px);border-radius:14px;background:#000}
+.vid .btn{max-width:420px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
@@ -212,11 +215,13 @@ details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10p
 <main>
   <div class="top"><div class="av" aria-hidden="true">H</div><div><p class="k">Helmi live</p><p class="small muted">A data-for-value demo</p></div><span class="conn" id="conn"><i></i><span>Connecting</span></span></div>
 
+  <div class="vid" id="vid" hidden role="dialog" aria-modal="true" aria-label="How Helmi Live works"><video id="vidv" controls playsinline preload="none" src="/static/walkthrough.mp4"></video><button class="btn" id="vidx" type="button">Close the video</button></div>
   <section id="s-pick">
     <div class="card">
       <h1>Send your Helmi on a trip</h1>
-      <p>Every place on the trip has a bot that wants details before you arrive. You set rules for your Helmi. Then Helmi negotiates with each place in turn, and your phone buzzes when it needs you.</p>
+      <p>Helmi gets in touch with every place on your trip and arranges your visit with that place’s bot. You set the rules for your Helmi, and your phone buzzes when it needs you.</p>
       <p class="small muted">Everyone here is invented. No real personal data is used.</p>
+      <button class="btn alt" id="howto" type="button">▶ Watch how it works (2 min)</button>
     </div>
     <p class="k">Who are you today?</p>
     <div class="grid2" id="people"></div>
@@ -322,6 +327,9 @@ function trip(){
   $('t-places').innerHTML=REQ.map(p=>`<label class="place"><input type="checkbox" data-pl="${p.id}" ${chosen.includes(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small>${esc(p.why)}</small><span class="tagt">${esc(p.type)} · bot: ${esc(p.bot||'')} · asks for ${p.keys.length} detail${p.keys.length===1?'':'s'}</span></span></label>`).join('');
 }
 $('t-places').addEventListener('change',e=>{const k=e.target.dataset.pl;if(!k)return;chosen=REQ.map(p=>p.id).filter(id=>document.querySelector(`[data-pl="${id}"]`).checked);$('t-next').disabled=!chosen.length});
+$('howto').onclick=()=>{$('vid').hidden=false;const v=$('vidv');try{v.currentTime=0;v.play()}catch(e){};$('vidx').focus()};
+$('vidx').onclick=()=>{const v=$('vidv');v.pause();$('vid').hidden=true;$('howto').focus()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('vid').hidden)$('vidx').click()});
 $('t-next').onclick=async()=>{await loadVault();suInit();setup();show('s-setup')};
 /* ---------------------------------------------------------------- set Helmi up: which data it may read, and what it does when you don't answer in time */
 let SU=null;

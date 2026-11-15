@@ -142,20 +142,38 @@ The server keeps an anonymous record of what visitors decide; a visitor is a ran
 
 To change the script later and keep the same URL: *Deploy → Manage deployments → ✏️ (edit) → Version: New version → Deploy*.
 
+The stand shows whether rows are reaching the sheet ("Google Sheet: 34 rows sent"). If something went wrong, it shows the problem, and *Send everything to the Google Sheet again* re-sends what the server still holds. The script skips rows the sheet already has, so nothing is doubled.
+
+**The fair report:** open `/report` (add `?key=...` if `STAND_KEY` is set), or use the link on the stand. It turns the record into charts and talking points for the project report: sharing by kind of place and kind of detail, why details were shared or kept, the presets and "When Helmi isn't sure" choices, answers to the phone, offers and counter-offers, business setups, and what people asked Helmi or wrote to businesses. If the server has restarted, add the record file from the stand or the sheet's Details tab (saved as CSV) with *Add a record file*. *Print or save as PDF* makes a PDF.
+
 ```javascript
 function doPost(e) {
   const lock = LockService.getScriptLock();
-  lock.waitLock(25000);  // two deliveries at once must not overwrite each other
+  lock.waitLock(30000);  // deliveries arriving together must not overwrite each other
   try {
     const d = JSON.parse(e.postData.contents);
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const sh = ss.getSheetByName(d.sheet) || ss.insertSheet(d.sheet);
-    if (sh.getLastRow() === 0) { sh.appendRow(d.cols); sh.setFrozenRows(1); }
-    const rows = (d.rows || [d.row]).map(r => d.cols.map(c => r[c] === undefined ? "" : r[c]));
-    if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, d.cols.length).setValues(rows);
+    let head = sh.getLastRow() ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String) : [];
+    const extra = d.cols.filter(c => head.indexOf(c) < 0);
+    if (extra.length) {  // new columns go on the right; existing ones stay where they are
+      sh.getRange(1, head.length + 1, 1, extra.length).setValues([extra]);
+      head = head.concat(extra);
+      sh.setFrozenRows(1);
+    }
+    let rows = d.rows || [d.row];
+    if (d.key && sh.getLastRow() > 1) {  // skip rows the sheet already has
+      const col = head.indexOf(d.key) + 1;
+      const have = new Set(sh.getRange(2, col, sh.getLastRow() - 1, 1).getValues().map(r => String(r[0])));
+      rows = rows.filter(r => !have.has(String(r[d.key])));
+    }
+    const vals = rows.map(r => head.map(c => r[c] === undefined || r[c] === null ? "" : r[c]));
+    if (vals.length) sh.getRange(sh.getLastRow() + 1, 1, vals.length, head.length).setValues(vals);
+    return ContentService.createTextOutput(JSON.stringify({ ok: true, added: vals.length }));
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err) }));
   } finally {
     lock.releaseLock();
   }
-  return ContentService.createTextOutput("ok");
 }
 ```
