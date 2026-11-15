@@ -67,7 +67,7 @@ section .wrap{display:flex;flex-direction:column;gap:28px}
 @media (max-width:860px){.hero .wrap{grid-template-columns:1fr}}
 .hero-cta{display:flex;gap:10px;flex-wrap:wrap}
 .qrbox{background:#fff;border-radius:16px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;color:#16212C;justify-self:center;max-width:100%}
-.qrbox #qr img,.qrbox #qr canvas{width:220px;height:220px;max-width:100%}
+.qrbox #qr img,.qrbox #qr canvas,.qrbox #qr2 img,.qrbox #qr2 canvas{width:220px;height:220px;max-width:100%}
 .qrbox p{font:600 .85rem var(--f-mono);text-align:center;word-break:break-all}
 
 /* need vs record */
@@ -307,7 +307,7 @@ body.present{font-size:19px}
   <div class="head"><p class="eyebrow">10 · Try it</p><h2>Send your Helmi on a trip</h2>
     <p class="lede">Scan the code, pick an invented traveller, set what your Helmi may share, and watch it negotiate on the big screen. About three minutes. Everyone in it is invented.</p></div>
   <div class="grid g2">
-    <div class="qrbox" style="justify-self:start"><div id="qr2" aria-label="QR code for the live demo"></div><p id="qrurl2"></p></div>
+    <div class="qrbox" style="justify-self:start;align-self:start"><div id="qr2" aria-label="QR code for the live demo"></div><p id="qrurl2"></p></div>
     <div class="card"><h3>Watch it first</h3><p class="muted">A two-minute walkthrough of a real trip at this stand, with a voice-over: setting Helmi up, the live AI conversations, a ping on the phone, and Helmi trading a yes-or-no check for the disability card.</p>
       <video id="vw" controls playsinline preload="none" style="width:100%;max-width:360px;max-height:70vh;border-radius:12px;background:#000;align-self:center" aria-label="Walkthrough of Helmi Live, 2 minutes, with voice-over"></video></div>
     <div class="card"><h3>More to explore</h3><p class="muted">Trip mode, the longer demo from our workshop: <a href="https://selorme.github.io/data-for-value-demo/trip.html#trip" target="_blank" rel="noopener">selorme.github.io/data-for-value-demo</a></p>

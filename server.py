@@ -992,11 +992,17 @@ async def negotiate_place(n, place, hotel_name):
                     hits += 1
             return hits * 2 >= len(new_give)
         lines.append(f"Refer to {name} in the third person; 'I' is only ever you, Helmi. Add nothing that is not in these instructions: no requests, questions, needs, plans or wishes of your own.")
+        said = " ".join(lines).lower() + " " + " ".join(F[k]["value"].lower() for k in new_give)
         def ok(txt):
+            m = re.search(r"\b(document\w*|paperwork|will provide|will send|will bring|when (?:asked|needed|requested)|if needed)\b", txt, re.I)
+            if m and m.group(0).lower() not in said:
+                return False  # a promise nobody asked Helmi to make
             neg = re.compile(r"\b(not|won't|will not|never|nothing|no further|no more|not be)\b[^.]*\b(share|shared|sharing|provide|disclos)|\bstays? with\b|\bkept\b|\bkeep(s|ing)?\b", re.I)
             for sent in re.split(r"(?<=[.!?;])\s+", txt):
                 if neg.search(sent):
                     low_s = sent.lower()
+                    if new_give and re.search(r"\b(these|those|this|the above|all of (?:this|these|it)|the (?:details|information))\b", low_s):
+                        return False  # a vague "these won't be shared" right after sharing things
                     for k in new_give:
                         words = [w for w in re.findall(r"[a-zA-Z\u00c0-\u017f]{6,}", F[k]["value"].lower())][:6]
                         if any(w in low_s for w in words):
@@ -1095,7 +1101,7 @@ async def negotiate_place(n, place, hotel_name):
                     elif await ask_person(n, place, target, offer=gives, send=ctr[1]):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "you", "via": prop}
                         o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. In one or two short sentences: say {name} {vb('agrees','agree')} to the yes-or-no check, and give the answer in full words, exactly: {ctr[1]} Say nothing else.",
-                                        f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden())
+                                        f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden(), require=r"\bvalid\b")
                         await say(n, "helmi", o, place=place["id"], checked=[target], check=ctr[1], basis={target: "offer"})
                         n.setdefault("checks", {}).setdefault(place["id"], {})[target] = ctr[1]
                     else:
