@@ -330,10 +330,10 @@ OFFERS = {
         "paste": ("Paste only the bookings", "No inbox access needed.", "the option to paste in only the bookings"),
     },
     "cars": {
-        "adapt": ("Hand controls and a wheelchair hoist fitted", "Quoted with the car, no medical papers needed.", "hand controls and a wheelchair hoist fitted before delivery"),
-        "seat": ("A swivel seat", "Makes getting in and out easier.", "a swivel seat that makes getting in and out easier"),
         "trade": ("A trade-in valuation", "From the registration number only.", "a trade-in valuation from the registration number only"),
         "home": ("A test drive at home", "The car is brought to the door.", "a test drive brought to the door"),
+        "adapt": ("Hand controls and a wheelchair hoist fitted", "Quoted with the car, no medical papers needed.", "hand controls and a wheelchair hoist fitted before delivery, priced in a quote with the car"),
+        "seat": ("A swivel seat", "Makes getting in and out easier.", "a swivel seat that makes getting in and out easier"),
     },
     "kidsclub": {
         "plan": ("An allergy plan form the parents fill in", "No health records needed.", "an allergy plan form that parents fill in"),
@@ -1243,7 +1243,7 @@ async def negotiate_place(n, place, hotel_name):
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, which offered {rule['offer']} {cond(target)}. "
                                 f"Do not share it, and do not say whether {name} {vb('has','have')} it. Propose something smaller instead and ask if that would earn the offer: {prop}. Do not include any details yet.",
                                 f"{name} would rather not share {ttop}. Would {prop} work instead?", forbidden(),
-                                require=lambda t: not re.search(r"\b[Ww]e (?:prefer|would|'d|need|are)\b|\bI(?:'m| am) not ready\b", t.replace("\u2019", "'")))
+                                require=lambda t: not re.search(r"\b[Ww]e (?:prefer|would|'d|need|are)\b|\bI(?:'m| am) not (?:ready|willing|comfortable)\b", t.replace("\u2019", "'")))
                 await say(n, "helmi", o, place=place["id"], counter=True)
                 if ctr[2]:
                     out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {ttop}: {prop}. Say that this would work for you, and that once the answer comes back yes, {P['sub']} {vb('gets','get')} {gives}. "
@@ -1342,7 +1342,8 @@ async def negotiate_place(n, place, hotel_name):
                 return None  # the business offers; it doesn't hand Helmi jobs
             known = " ".join(prepared).lower()
             for pat, need in ((r"assistance animal|guide dog|service dog", r"dog|animal"), (r"screen.?reader|braille|large.?print|audio (guide|label)", r"blind|sight|vision|screen|read"),
-                              (r"hearing loop|caption|sign language|interpreter", r"hear|deaf|sign|loop|caption"), (r"hoist|step.?free|wheelchair|ramp", r"wheel|chair|step|stairs|rollator|pushchair|walk")):
+                              (r"hearing loop|caption|sign language|interpreter", r"hear|deaf|sign|loop|caption"), (r"hoist|step.?free|wheelchair|ramp", r"wheel|chair|step|stairs|rollator|pushchair|walk"),
+                              (r"swivel|hand control", r"wheel|chair|rollator|walk|get in|getting in|get out|hand control"), (r"trade.?in", r"trad")):
                 if re.search(pat, t, re.I) and not re.search(need, known):
                     return None  # an access feature nobody asked for
             return {"t": t}
@@ -1851,7 +1852,8 @@ async def _answer_say(n, pl, text):
              + (f"Yes-or-no checks you received: {'; '.join(chk.values())}. " if chk else "")
              + (f"Things the customer kept private, which you must not ask for again: {'; '.join(kept)}. " if kept else "")
              + (("Your stock, with asking prices: " + "; ".join(f"{c['name']}: {eur(c['price'])}, " + ", ".join(TAGWORD[t] for t in sorted(c["tags"])) for c in CARS) + ". "
-                 "You can take at most 4% off a car's asking price. " + (f"The car held for this customer: {n['deal'][pl['id']]['text']} " if (n.get('deal') or {}).get(pl['id']) else ""))
+                 "You can take at most 4% off a car's asking price. Adaptations (hand controls, a hoist, a swivel seat) cost extra and are priced in a written quote: "
+                 "you do not know their price, so never say they are free or give a price; say a member of staff will send the quote. " + (f"The car held for this customer: {n['deal'][pl['id']]['text']} " if (n.get('deal') or {}).get(pl['id']) else ""))
                 if pl["id"] == "cars" else ""))
     system = (f"You are {nm}, the bot of {pl['name']}, a {pl['type']}. Your manner: {manner}. The customer {p['name']} is now writing to you directly, not through Helmi. "
               "Answer them as 'you' in 1 to 3 short sentences, plain English, no lists, no markdown, no emoji. Do not greet or introduce yourself again. "
@@ -2218,6 +2220,7 @@ def setup():
         CONFIG[b] = {"asks": list(m["cats"]), "offers": list(offers_for(b))[:3], "trust": [], "keep": "stay", "review": False, "push": bool(r)}  # offers on by default, so the bots have something to tailor
     CONFIG["hotel"].update(asks=["trip", "need", "diet", "card", "passport", "dob"], offers=["stepfree"], trust=["delete"], review=True)
     CONFIG["ins"].update(keep="y1")
+    CONFIG["cars"].update(offers=["trade", "home", "adapt", "seat"])
 
 
 setup()
