@@ -308,6 +308,8 @@ body.present{font-size:19px}
     <p class="lede">Scan the code, pick an invented traveller, set what your Helmi may share, and watch it negotiate on the big screen. About three minutes. Everyone in it is invented.</p></div>
   <div class="grid g2">
     <div class="qrbox" style="justify-self:start"><div id="qr2" aria-label="QR code for the live demo"></div><p id="qrurl2"></p></div>
+    <div class="card"><h3>Watch it first</h3><p class="muted">A two-minute walkthrough of a real trip at this stand, with a voice-over: setting Helmi up, the live AI conversations, a ping on the phone, and Helmi trading a yes-or-no check for the disability card.</p>
+      <video id="vw" controls playsinline preload="none" style="width:100%;max-width:360px;max-height:70vh;border-radius:12px;background:#000;align-self:center" aria-label="Walkthrough of Helmi Live, 2 minutes, with voice-over"></video></div>
     <div class="card"><h3>More to explore</h3><p class="muted">Trip mode, the longer demo from our workshop: <a href="https://selorme.github.io/data-for-value-demo/trip.html#trip" target="_blank" rel="noopener">selorme.github.io/data-for-value-demo</a></p>
       <p class="muted">The whole project journey, with films and workshop charts: <a href="https://selorme.github.io/data-for-value-demo/journey/" target="_blank" rel="noopener">selorme.github.io/data-for-value-demo/journey</a></p>
       <p class="small muted">Ruth, Dora, Towhidul and Rui · Tampere University · Demola Data for Value challenge, 2026</p></div>
@@ -326,6 +328,8 @@ try{[['qr',220],['qr2',220]].forEach(([id,s])=>new QRCode($(id),{text:LIVE,width
 /* the film: on Render it is served from /static, as a published page it sits next to the page */
 const FB=(location.hostname.endsWith('onrender.com')||location.hostname==='localhost'||location.hostname==='127.0.0.1')?'/static/films/':'films/';
 $('vf').poster=FB+'elina.jpg';$('vf').src=FB+'elina.mp4';
+/* the walkthrough: on Render from /static, as a published page next to the page */
+{const WB=FB.replace('films/','');$('vw').poster=WB+'walkthrough.jpg';$('vw').src=WB+'walkthrough.mp4';}
 document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const v=$('vf');v.currentTime=+b.dataset.t;v.play().catch(()=>{});document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
 $('vf').addEventListener('timeupdate',()=>{const w=$('vf').currentTime>=121;document.querySelectorAll('[data-t]').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.t==='121')===w))});
 
