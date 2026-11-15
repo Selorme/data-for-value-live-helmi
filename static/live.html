@@ -405,7 +405,7 @@ function scene(id){const pl=placeOf(id),th=TH[id],ty=th.type,nm=th.name,h=+((/(\
     'taxi':'You need a taxi from the station.','hotel':'You arrive at your hotel.','restaurant':h<16?'At lunchtime, you go out to eat.':'In the evening, you go out for dinner.',
     'venue':/concert|music/i.test(nm)?'In the evening, you go to the concert.':/circus/i.test(nm)?'You take the family to the circus.':/arena/i.test(nm)?'You go to an event at the arena.':'You go to the show.',
     'work event':'You pick up your badge at the work event.','pharmacy':'You stop at a pharmacy.','grocery delivery':'You order groceries to your room.','spa':'You book a visit to the spa.',
-    'museum':'You visit the museum.','tour':'You join a walking tour.','childcare':'You book a babysitter for the evening.','school':'You visit a school.','coworking space':'You work from a coworking space for the day.','course':'You start your course.'};
+    'museum':'You visit the museum.','tour':'You join a walking tour.','childcare':'You book a babysitter for the evening.','school':'You visit a school.','coworking space':'You work from a coworking space for the day.','car dealership':'Back home, you go to look at a car.','course':'You start your course.'};
   return S[ty]||`Next stop: ${nm}.`}
 function whenOf(id){return (placeOf(id).when||'').replace(', arrival',', on arrival')}
 function note(text,place){NOTES.push({type:'note',text,place:place||null})}
@@ -448,7 +448,10 @@ function on(t,d){
     PEND=PEND.filter(x=>x!==key);render();return}
   if(t==='late_done'&&th){const key=d.place+'|'+d.k,it=PINGS[key];if(it){it.state=d.ok?'lateyes':'no';note(d.ok?`You said yes later, so I sent your ${low(it.label)} to ${th.name}.`:`You said no, so I kept your ${low(it.label)}.`,d.place)}PEND=PEND.filter(x=>x!==key);render();return}
   if(t==='place_done'&&th){th.status='done';th.res=d;
-    note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`,d.place);render();return}
+    note(`Done with ${th.name}: ${d.shared.length} shared, ${d.kept.length} kept.${d.lost?' Because something was kept: '+d.lost+'.':''}`,d.place);
+    if(d.deal){note(`I found a car for you at ${th.name}: ${d.deal.text} I haven't agreed to anything. Go in to see it and sign, or talk to them yourself in Messages.`,d.place);
+      if(TAB!=='helmi'&&!REPLAY)toast(`Helmi found a car at ${th.name}. Tap to see the offer.`,()=>{TAB='helmi';render(true)})}
+    render();return}
   if(t==='done'){finished=true;writing=false;results=d.results;STORY=d.story||null;tripBadge=TAB!=='trip';note('Your trip is over. Your trip story and the replay are in Trip.');
     if(TAB!=='trip'&&!REPLAY)toast('Trip finished. Tap to see your trip story and the replay.',()=>{TAB='trip';tripBadge=false;render(true)});render(TAB==='trip');return}
 }

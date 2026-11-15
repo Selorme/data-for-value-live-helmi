@@ -329,6 +329,12 @@ OFFERS = {
         "device": ("Plans made on the phone, nothing uploaded", "Chats and photos stay put.", "plans made on the phone, with nothing uploaded"),
         "paste": ("Paste only the bookings", "No inbox access needed.", "the option to paste in only the bookings"),
     },
+    "cars": {
+        "adapt": ("Hand controls and a wheelchair hoist fitted", "Quoted with the car, no medical papers needed.", "hand controls and a wheelchair hoist fitted before delivery"),
+        "seat": ("A swivel seat", "Makes getting in and out easier.", "a swivel seat that makes getting in and out easier"),
+        "trade": ("A trade-in valuation", "From the registration number only.", "a trade-in valuation from the registration number only"),
+        "home": ("A test drive at home", "The car is brought to the door.", "a test drive brought to the door"),
+    },
     "kidsclub": {
         "plan": ("An allergy plan form the parents fill in", "No health records needed.", "an allergy plan form that parents fill in"),
         "photos": ("A no-photos policy", "Nothing to agree to.", "a policy of taking no photos of children"),
@@ -367,6 +373,8 @@ PURPOSE = {"trip": "to have everything ready for the arrival", "need": "to prepa
 
 def purpose(c, place=None):
     """Why a business uses a kind of detail. Only places with a kitchen talk about the kitchen."""
+    if place and place.get("id") == "cars" and c in CAR_PURPOSE:
+        return CAR_PURPOSE[c]
     if c == "diet" and place:
         t = place.get("type", "") + " " + place.get("id", "")
         if re.search(r"restaurant|bistro|hotel|cafe|event|conference|venue|theatre|workplace", t, re.I):
@@ -377,6 +385,34 @@ def purpose(c, place=None):
             return "to keep any food and snacks safe"
         return "to know about any allergies or diet needs"
     return PURPOSE[c]
+
+
+# The car dealership's stock: what its bot knows and quotes from. Tags say what each car can do; prices are the asking prices.
+CARS = [
+    {"id": "touran", "name": "2021 Volkswagen Touran (7 seats, petrol, automatic)", "price": 24500, "tags": {"auto", "isofix3", "bigboot"}},
+    {"id": "kodiaq", "name": "2021 Škoda Kodiaq (7 seats, petrol, automatic)", "price": 26900, "tags": {"auto", "isofix3", "bigboot", "high"}},
+    {"id": "sorento", "name": "2022 Kia Sorento plug-in hybrid (7 seats, automatic)", "price": 38900, "tags": {"auto", "isofix3", "bigboot", "high", "hybrid"}},
+    {"id": "niro", "name": "2020 Kia Niro hybrid (automatic)", "price": 19900, "tags": {"auto", "hybrid", "high", "hand"}},
+    {"id": "yaris", "name": "2021 Toyota Yaris Cross hybrid (automatic)", "price": 21500, "tags": {"auto", "hybrid", "high", "hand"}},
+    {"id": "corolla", "name": "2022 Toyota Corolla Touring Sports hybrid (automatic)", "price": 23900, "tags": {"auto", "hybrid", "bigboot", "hand"}},
+    {"id": "jazz", "name": "2019 Honda Jazz hybrid (automatic, high seats)", "price": 15900, "tags": {"auto", "hybrid", "high"}},
+    {"id": "golf", "name": "2018 Volkswagen Golf (petrol, manual)", "price": 13900, "tags": set()},
+]
+TAGWORD = {"auto": "automatic", "isofix3": "three child-seat points", "bigboot": "a big boot", "high": "a high seat", "hybrid": "hybrid", "hand": "can take hand controls"}
+eur = lambda x: f"€{x:,}"
+
+
+def car_matches(spec, with_budget):
+    """The cars that have everything the buyer needs (and fit the budget, if Helmi shared it), cheapest first."""
+    need = set(spec.get("need", []))
+    out = [c for c in CARS if need <= c["tags"] and (not with_budget or c["price"] <= spec.get("max", 10 ** 9))]
+    return sorted(out, key=lambda c: (not set(spec.get("prefer", [])) <= c["tags"], c["price"]))
+
+
+CAR_ASKQ = {"need": "what kind of car is wanted, the budget, and any access needs or adaptations we should know about",
+            "spend": "{pos} bank history, so we can offer a loan", "location": "{pos} location history, for our safe-driver discount"}
+CAR_PURPOSE = {"need": "to find the cars that fit", "spend": "to offer a loan", "location": "for the safe-driver discount",
+               "card": "to help with any tax relief"}
 
 
 def bot_why(place, keys, F):
@@ -458,6 +494,8 @@ PUSH = {
     "taxi": {"keys": ["loc.hist"], "alt": "the driver uses the pickup address from the booking"},
     "tour": {"keys": ["activity"], "alt": "the guide asks about pace on the day"},
     "work": {"keys": ["study.grades"], "alt": "the organiser goes by the registration form"},
+    "cars": {"keys": ["bank.all", "loc.hist"], "offer": "loan interest of 2.9% instead of 5.9%", "lose": "the standard loan rate of 5.9%",
+             "by": {"loc.hist": {"offer": "€400 off the price for joining the safe-driver programme", "lose": "no safe-driver discount"}}},
 }
 # When a business offers something for a detail the traveller kept, Helmi first proposes something smaller.
 # (place, key): what Helmi proposes, what is sent if the traveller agrees (None: nothing new is sent), whether the business accepts, and what it gives then.
@@ -478,6 +516,9 @@ COUNTER = {
                                   "a ready-made plan for this trip"),
     ("planner", "photos.all"): ("only the booking confirmations for this trip, instead of the photos", "Booking confirmations for this trip only. No photos.", True,
                                 "a ready-made plan for this trip"),
+    ("cars", "bank.all"): ("a yes-or-no loan check of whether {n} can afford the monthly payment, with no bank history",
+                           "Yes or no only: the loan check passed. No bank history.", True, "loan interest of 2.9%"),
+    ("cars", "loc.hist"): ("the test drive on the day, instead of three months of location history", None, False, None),
     ("spa", "health.diag"): ("the needs {n} wants the therapist to know, which are already shared, instead of diagnoses", None, True, None),
     ("spa", "activity"): ("the needs {n} wants the therapist to know, which are already shared, instead of activity data", None, True, None),
 }
@@ -692,6 +733,7 @@ BOTS = {  # each business's bot has a name and a manner
     "school": ("Opsu", "polite and a little formal"),
     "course": ("Kurssi", "encouraging and clear"),
     "kidsclub": ("Pippa", "playful but very careful about safety"),
+    "cars": ("Kaisa", "upbeat, proud of the cars on the lot, enjoys making a fair deal"),
 }
 
 
@@ -716,7 +758,8 @@ def unknown(F, given):
 ARRANGE = {"ins": "travel insurance", "rail": "a seat on the journey", "hotel": "a room", "bistro": "a table for dinner", "venue": "tickets for the show",
            "taxi": "a ride", "pharmacy": "a medicine pickup", "tour": "a place on the tour", "spa": "a treatment", "work": "a place at the event",
            "grocery": "a grocery delivery", "museum": "tickets for a visit", "planner": "a plan for the trip", "cowork": "a desk", "babysit": "a babysitter",
-           "school": "a visit to the school", "course": "a place on the course", "kidsclub": "places at the kids' club"}
+           "school": "a visit to the school", "course": "a place on the course", "kidsclub": "places at the kids' club",
+           "cars": "help finding a car to buy"}
 
 
 # What a business asks EVERY customer, by the kinds of detail set on the stand. Nothing here assumes anything about this customer:
@@ -911,10 +954,12 @@ async def negotiate_place(n, place, hotel_name):
 
     # 1. Helmi gets in touch first, to arrange the visit; the business answers with what it needs
     wants = ARRANGE.get(place["id"], "a visit").format(pos=P["pos"])
+    iscar = place["id"] == "cars"
+    goal = f"{name} {vb('is','are')} thinking of buying a car and would like help finding the right one" if iscar else f"{name} would like {wants} for {P['pos']} upcoming trip"
     out = await write("helmi", helmi_sys(p, True), f"You are getting in touch with {place['name']}, a {place['type']}, for the first time. Greet its bot, say you are Helmi, "
-                      f"{poss} assistant, and that {name} would like {wants} for {P['pos']} upcoming trip. Ask what they need to arrange it. "
+                      f"{poss} assistant, and that {goal}. Ask what they need to {'know to find it' if iscar else 'arrange it'}. " +
                       "Do not share any personal details, dates or needs yet.",
-                      f"Hello, I'm Helmi, {poss} assistant. {name} would like {wants} for {P['pos']} upcoming trip. What do you need to arrange it?", forbidden_all(F),
+                      f"Hello, I'm Helmi, {poss} assistant. {cap(goal)}. What do you need to {'know to find it' if iscar else 'arrange it'}?", forbidden_all(F),
                       require=lambda t: not re.search(r"\b(will provide|I'll provide|as required|as needed|will send|will share|I'll share)\b", t.replace("\u2019", "'"), re.I))
     await say(n, "helmi", out, place=place["id"], opens=True)
     blab = lambda k: low1(bot_label(F[k]["label"]))
@@ -922,7 +967,8 @@ async def negotiate_place(n, place, hotel_name):
     shares = vb("shares", "share")
     cond = lambda k: (f"if {name} {vb('has','have')} an EU Disability Card and {shares} it" if cat(k, F[k]) == "card" else f"if {name} {shares} {topic(k)}")
     first_cats = [c for c in CATS if c in C["asks"] and not (c == "card" or (c == "health" and place["type"] != "insurer"))]
-    qs = jn(dict.fromkeys(ASKQ[c].format(pos=P["pos"], sub=P["sub"]) for c in first_cats)) or "the basic booking details"
+    AQ = {**ASKQ, **(CAR_ASKQ if iscar else {})}
+    qs = jn(dict.fromkeys(AQ[c].format(pos=P["pos"], sub=P["sub"]) for c in first_cats)) or "the basic booking details"
     why = ("to price the travel insurance policy" if place["type"] == "insurer" else "to build the travel plan automatically" if place["type"] == "trip planner app"
            else "; ".join(list(dict.fromkeys(purpose(c, place) for c in CATS if c in C["asks"] and c != "card" and (c != "health" or place["type"] == "insurer")))[:3]))  # the business's own reasons, the same for everyone
     ctx = (f"Helmi has just asked you to arrange {wants} for {name}. Reply: say you'd be glad to, then ask the questions you ask every customer, and say briefly why: {qs}. Your general reason: {why}. "
@@ -1109,6 +1155,61 @@ async def negotiate_place(n, place, hotel_name):
                 if k in L:
                     L.remove(k)
 
+    # 3b. the car dealership: its bot checks its stock against what Helmi shared, and Helmi haggles over the price
+    deal = None
+    if iscar and place.get("car"):
+        spec = place["car"]
+        has_wants, has_budget = "car.wants" in give, "car.budget" in give
+        if has_wants:
+            fits = car_matches(spec, has_budget)
+            dearer = [c for c in car_matches(spec, False) if c not in fits][:1] if has_budget else []
+            listing = "; ".join(f"{c['name']} at {eur(c['price'])}" for c in fits[:3])
+            if fits:
+                miss = [TAGWORD[t] for t in spec.get("prefer", []) if not any(t in c["tags"] for c in fits)]
+                ctx = (f"From your stock, these cars have everything {name} {vb('needs','need')}" + (" and fit the budget" if has_budget else "") + f": {listing}. "
+                       "Tell Helmi about them, with the asking prices exactly as given. "
+                       + (f"Say honestly that none of these is {jn(miss)}. " if miss else "")
+                       + (f"Also mention, in a few words, that the {dearer[0]['name']} at {eur(dearer[0]['price'])} is over the budget. " if dearer else "")
+                       + "Do not mention any other cars or prices.")
+                fb = (f"Good news: we have {listing}." + (f" None of them is {jn(miss)}." if miss else "")
+                      + (f" The {dearer[0]['name']} at {eur(dearer[0]['price'])} is over the budget." if dearer else ""))
+                nums = [eur(c["price"]) for c in fits[:3]]
+                out = await write("bot", bot_sys(place, p), ctx, fb, unknown(F, give),
+                                  require=lambda t: all(x.replace(",", "") in t.replace(",", "").replace(" ", "") or x in t for x in nums))
+                await say(n, "bot", out, place=place["id"], cars=[c["id"] for c in fits[:3]])
+                pick = fits[0]
+                askp = int(round(pick["price"] * 0.92 / 100) * 100)
+                final = int(round(pick["price"] * 0.96 / 100) * 100)
+                extra_car = "winter tyres included"
+                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say the {pick['name']} looks like the best fit for {name}, "
+                                f"and ask whether they would take {eur(askp)} for it. Do not agree to buy: {name} decides. Share no other details.",
+                                f"The {pick['name']} looks like the best fit for {name}. Would you take {eur(askp)} for it?", forbidden(),
+                                require=lambda t: eur(askp).replace(",", "") in t.replace(",", ""))
+                await say(n, "helmi", o, place=place["id"])
+                o = await write("bot", bot_sys(place, p), f"Helmi asked whether you would take {eur(askp)} for the {pick['name']} (asking price {eur(pick['price'])}). "
+                                f"You can't go that low, but make a counter-offer: {eur(final)}, with {extra_car}. Say you can hold the car for {name} for three days, "
+                                "with no commitment, until they come in to see it and sign.",
+                                f"{eur(askp)} is a little too low for us, but we can do {eur(final)} with {extra_car}. We can hold the car for {name} for three days, no commitment.",
+                                unknown(F, give), require=lambda t: eur(final).replace(",", "") in t.replace(",", ""))
+                await say(n, "bot", o, place=place["id"])
+                deal = {"car": pick["name"], "asking": pick["price"], "price": final, "extra": extra_car, "held": "three days",
+                        "text": f"{pick['name']} for {eur(final)} (asking {eur(pick['price'])}), {extra_car}. Held for {name} for three days, with no commitment."}
+                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them and say you will pass the offer of {eur(final)} with {extra_car} to {name}, "
+                                f"who will decide and come in to see the car and sign, or get in touch directly. Do not accept the deal yourself.",
+                                f"Thank you. I'll pass the offer of {eur(final)} with {extra_car} to {name}, who will decide and come in to sign, or get in touch directly.", forbidden())
+                await say(n, "helmi", o, place=place["id"])
+            else:
+                o = await write("bot", bot_sys(place, p), f"Sadly nothing in your stock has everything {name} {vb('needs','need')}" + (" within the budget" if has_budget else "") +
+                                ". Say so honestly and offer to let Helmi know when a suitable car comes in.",
+                                f"I'm sorry, we have nothing in stock right now that fits. I can let you know when a suitable car comes in.", unknown(F, give))
+                await say(n, "bot", o, place=place["id"])
+        else:
+            o = await write("bot", bot_sys(place, p), f"Helmi did not say what kind of car {name} {vb('wants','want')}, so you can't match a car from your stock. "
+                            f"Say so politely and invite {name} to come and look at the cars in person.",
+                            f"Without knowing what kind of car {name} {vb('wants','want')}, I can't pick one out. {name} {vb('is','are')} welcome to come and look in person.", unknown(F, give))
+            await say(n, "bot", o, place=place["id"])
+    n.setdefault("deal", {})[place["id"]] = deal
+
     # 4. the business pushes back once on something it didn't get
     base = PUSH.get(place["id"], {})
     target = next((k for k in base.get("keys", []) if k in keep and k not in locked), None)  # nothing to offer for data Helmi can't reach
@@ -1155,7 +1256,8 @@ async def negotiate_place(n, place, hotel_name):
                     elif await ask_person(n, place, target, offer=gives, send=ctr[1]):
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "you", "via": prop}
                         o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. In one or two short sentences: say {name} {vb('agrees','agree')} to the yes-or-no check, and give the answer in full words, exactly: {ctr[1]} Say nothing else.",
-                                        f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden(), require=r"\bvalid\b")
+                                        f"{name} {vb('agrees','agree')}. {ctr[1]}", forbidden(),
+                                        require=r"\b" + ("valid" if "valid" in ctr[1] else re.findall(r"[A-Za-z]{4,}", ctr[1].replace("Yes or no only:", ""))[0]) + r"\b")
                         await say(n, "helmi", o, place=place["id"], checked=[target], check=ctr[1], basis={target: "offer"})
                         n.setdefault("checks", {}).setdefault(place["id"], {})[target] = ctr[1]
                     else:
@@ -1193,6 +1295,15 @@ async def negotiate_place(n, place, hotel_name):
                               f"That's fine. Instead, {rule['alt']}.", unknown(F, give))
             await say(n, "bot", out, place=place["id"])
 
+    # what the data bought at the car dealership: a cheaper loan for the bank history (or the yes-or-no loan check), €400 off for the driving data
+    if deal:
+        took = offer_fact.get("offer", "") if offer_fact and offer_fact.get("took") else ""
+        if "bank.all" in give or "loan" in took:
+            deal["text"] += " Loan interest 2.9% instead of 5.9%" + (" (with the yes-or-no loan check)." if "bank.all" not in give else ".")
+        if "loc.hist" in give or "€400" in took:
+            deal["price"] -= 400
+            deal["text"] += f" €400 off for the safe-driver programme: {eur(deal['price'])}."
+
     # 5. the business confirms: what it does with each detail and for how long (its own settings), and how it manages without what was kept
     prepared = [F[k]["value"] for k in give if F[k]["kind"] == "need"][:4]
     extra = (" A member of staff double-checks the arrangements." if C["review"] and prepared else "")
@@ -1209,9 +1320,11 @@ async def negotiate_place(n, place, hotel_name):
             + (f"For the yes-or-no check you received, say you only needed the answer, which was yes: {'; '.join(v.replace('Yes or no only: ', '').split('.')[0] for v in chk.values())}. " if chk else "")
             + f"Say you keep these details {keepw} and then delete them.{promise} "
             + (f"For what Helmi kept, say briefly how you will manage without it: " + "; ".join(f"{lab(k)}: {alt(k)}" for k in kept_alt[:3]) + ". " if kept_alt else "")
-            + (f"Also say that {name} {vb('gets','get')} {lost}." if lost else "") + extra)
+            + (f"Also say that {name} {vb('gets','get')} {lost}." if lost else "") + extra
+            + (f" Also say the {deal['car']} is held for {name} for three days at {eur(deal['price'])}" + (", with loan interest of 2.9%" if "2.9%" in deal["text"] else "") + "." if deal else ""))
     fb5 = (f"Thank you. " + (f"Here's what we use: {uses}. " if give else "We'll go ahead with the basic booking. ") + f"We keep it {keepw}, then delete it.{promise}"
-           + (" Without the rest: " + "; ".join(alt(k) for k in kept_alt[:3]) + "." if kept_alt else "") + (f" Note: {lost}." if lost else "") + extra)
+           + (" Without the rest: " + "; ".join(alt(k) for k in kept_alt[:3]) + "." if kept_alt else "") + (f" Note: {lost}." if lost else "") + extra
+           + (f" The {deal['car']} is held for {name} for three days at {eur(deal['price'])}." if deal else ""))
     out = await write("bot", bot_sys(place, p), ctx5, fb5, unknown(F, give))
     await say(n, "bot", out, place=place["id"], uses=True)
 
@@ -1261,6 +1374,9 @@ async def negotiate_place(n, place, hotel_name):
     pw = n.get("why", {}).get(place["id"], {})
     why = {k: (pw[k] if pw.get(k) in ("noconn", "rule", "you", "timeout") else "noconn" if k in locked else "rule" if pol.get(k) == "never" and mode == "auto" else "timeout" if (place["id"], k) in to else "you") for k in keep}
     res = {"shared": give, "kept": keep, "lost": lost, "why": why, "offer": offer_fact, "checks": n.get("checks", {}).get(place["id"], {}), "basis": {k: basis.get(k, "you") for k in give}}
+    if deal:
+        res["deal"] = deal
+        record("deal", n, business=place["name"], detail=deal["car"], decision="held", text=deal["text"])
     n["prog"][place["id"]]["status"] = "done"
     n.setdefault("res", {})[place["id"]] = dict(res, asked=keys, config={k: (list(v) if isinstance(v, list) else v) for k, v in C.items()})
     push({"t": "place_done", "nid": n["nid"], "place": place["id"], "pname": place["name"], **res}, n["vid"])
@@ -1733,7 +1849,10 @@ async def _answer_say(n, pl, text):
              + (f"Your promises: {jn(promises(C))}. " if promises(C) else "")
              + (f"When: {pl['when']}. " if pl.get("when") else "")
              + (f"Yes-or-no checks you received: {'; '.join(chk.values())}. " if chk else "")
-             + (f"Things the customer kept private, which you must not ask for again: {'; '.join(kept)}. " if kept else ""))
+             + (f"Things the customer kept private, which you must not ask for again: {'; '.join(kept)}. " if kept else "")
+             + (("Your stock, with asking prices: " + "; ".join(f"{c['name']}: {eur(c['price'])}, " + ", ".join(TAGWORD[t] for t in sorted(c["tags"])) for c in CARS) + ". "
+                 "You can take at most 4% off a car's asking price. " + (f"The car held for this customer: {n['deal'][pl['id']]['text']} " if (n.get('deal') or {}).get(pl['id']) else ""))
+                if pl["id"] == "cars" else ""))
     system = (f"You are {nm}, the bot of {pl['name']}, a {pl['type']}. Your manner: {manner}. The customer {p['name']} is now writing to you directly, not through Helmi. "
               "Answer them as 'you' in 1 to 3 short sentences, plain English, no lists, no markdown, no emoji. Do not greet or introduce yourself again. "
               "Be genuinely helpful: answer their question from the facts below, suggest what fits them, and say plainly when something is not offered. "
@@ -2079,7 +2198,7 @@ def setup():
     for p in DATA["people"]:
         trip_order(p)
     order = ["rail", "hotel", "bistro", "venue", "ins", "kidsclub", "taxi", "pharmacy", "spa", "grocery", "museum", "tour", "work", "planner",
-             "cowork", "babysit", "school", "course"]
+             "cowork", "babysit", "school", "course", "cars"]
     for p in DATA["people"]:
         for pl in p["places"]:
             m = META.setdefault(pl["id"], {"type": pl["type"], "bot": bot_name(pl), "cats": [], "names": [], "push": None})
