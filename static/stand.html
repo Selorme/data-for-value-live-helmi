@@ -46,7 +46,8 @@ p{margin:0}
 .chat{display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .head h2{font-size:1.7rem}
-.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tabs select{font:600 14px var(--body);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;max-width:260px}
 .tabs button{font:600 13px var(--body);border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
 .tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .msg{display:flex;gap:10px;align-items:flex-end;max-width:78%}
@@ -220,7 +221,7 @@ function connect(){
 const SEEN=new Set();let RESTORING=false;
 function key(t,d){return d.nid+'|'+t+'|'+(d.at||'')}
 function take(t,d,quiet){const k=key(t,d);if(SEEN.has(k))return;SEEN.add(k);if(!quiet)keep(t,d);ev(t,d)}
-function keep(t,d){try{const L=JSON.parse(localStorage.getItem('stand-log')||'{}');(L[d.nid]=L[d.nid]||[]).push([t,d]);const ids=Object.keys(L);while(ids.length>10)delete L[ids.shift()];localStorage.setItem('stand-log',JSON.stringify(L))}catch(e){}}
+function keep(t,d){try{const L=JSON.parse(localStorage.getItem('stand-log')||'{}');(L[d.nid]=L[d.nid]||[]).push([t,d]);const ids=Object.keys(L);while(ids.length>40)delete L[ids.shift()];localStorage.setItem('stand-log',JSON.stringify(L))}catch(e){}}
 async function restore(){RESTORING=true;let local={};
   try{const b=(await (await fetch('/api/state',{cache:'no-store'})).json()).boot;if(b&&localStorage.getItem('stand-boot')!==b){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);if(window.__boot){location.reload();return}}if(b)window.__boot=b;}catch(e){}  // the server restarted: start the stand afreshtry{local=JSON.parse(localStorage.getItem('stand-log')||'{}')}catch(e){}
   Object.values(local).forEach(L=>L.forEach(([t,d])=>take(t,d,true)));
@@ -241,8 +242,10 @@ function ev(t,d){
   if(RESTORING)return;
   if(d.nid===view)draw();else drawTabs();
 }
-function drawTabs(){const act=order.filter(id=>!NEG[id].done),ids=[...new Set([...act,...order.slice(-4)])];
-  $('tabs').innerHTML=ids.length>1?ids.map(id=>`<button aria-pressed="${id===view}" data-n="${id}">${esc(P(NEG[id].person).short)}${NEG[id].done?'':' ●'}</button>`).join(''):''}
+function drawTabs(){/* every trip in a dropdown, newest first, so none drop off the list */
+  const hm=a=>a?new Date(a*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+  const ids=order.slice().reverse(),live=ids.filter(id=>!NEG[id].done).length;
+  $('tabs').innerHTML=ids.length>1?`<label class="small" for="tripsel">Trip (${ids.length}${live?`, ${live} live`:''})</label><select id="tripsel">${ids.map(id=>{const n=NEG[id];return `<option value="${id}" ${id===view?'selected':''}>${esc(P(n.person).short)} · ${hm(n.at)}${n.done?'':' · live now'}</option>`}).join('')}</select>`:''}
 function draw(){
   drawTabs();const n=NEG[view];if(!n)return;const p=P(n.person);
   $('title').textContent=`${n.name} · ${n.who}`;
@@ -267,7 +270,7 @@ $('chat').addEventListener('click',async e=>{const z=e.target.closest('[data-biz
     return}
   const b=e.target.closest('[data-replay]');if(!b)return;const n=NEG[b.dataset.replay];if(n&&n.results&&window.LiveFilm)LiveFilm.trip(P(n.person),n.results,{PN:n.pn,BN:n.bn,PTY:n.pty,OFF:n.off,STORY:n.story})});
 $('biztabs').onclick=e=>{const b=e.target.closest('[data-b]');if(!b||b.disabled)return;NEG[view].sel=b.dataset.b;draw()};
-$('tabs').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;view=b.dataset.n;draw()};
+$('tabs').onchange=e=>{if(e.target.id!=='tripsel')return;view=e.target.value;draw()};
 function bars(el,obj,names){const rows=Object.entries(obj||{}).filter(([,v])=>v.asked).sort((a,b)=>b[1].asked-a[1].asked);
   $(el).innerHTML=rows.length?rows.map(([k,v])=>`<div class="bar"><span>${esc(names[k]||k)}</span><div class="track" role="img" aria-label="${v.shared} shared, ${v.kept} kept"><i class="s" style="width:${v.shared/v.asked*100}%"></i><i class="n" style="width:${v.kept/v.asked*100}%"></i></div><span class="pct">${Math.round(v.shared/v.asked*100)}%</span></div>`).join(''):'<p class="small muted">Fills in as travellers negotiate.</p>'}
 function stats(s){if(!s)return;

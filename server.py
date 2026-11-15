@@ -347,6 +347,11 @@ TRUST = {
     "delete": "details are deleted when the visit is over", "nopartners": "details are never passed on, not even to a sister business",
     "contact": "a named person answers data questions", "audit": "the booking system is audited every year by an outside firm",
 }
+def promises(C):
+    """What a business may promise. 'Deleted when the visit is over' is left out when it keeps details longer (the stand warns about that clash)."""
+    return [TRUST[t] for t in C.get("trust", []) if t in TRUST and not (t == "delete" and C.get("keep") != "stay")]
+
+
 KEEP = {"stay": "until the visit is over", "d30": "for 30 days", "y1": "for one year"}
 CONFIG = {}  # business id -> {"asks", "offers", "trust", "keep", "review", "push"}, filled in once the data is loaded
 META = {}    # business id -> {"type", "bot", "cats", "names", "push"}
@@ -505,7 +510,7 @@ def push(ev, vid=None):
         sl = STANDLOG.setdefault(ev["nid"], [])
         if len(sl) < 1000:
             sl.append(ev)
-        while len(STANDLOG) > 30:
+        while len(STANDLOG) > 60:
             STANDLOG.pop(next(iter(STANDLOG)))
     for c in list(CLIENTS.values()):
         if c["role"] == "stand" or (vid and c["vid"] == vid):
@@ -560,7 +565,11 @@ def clean(t):
     t = re.sub(r"[*_#`>]+", "", t).strip().strip('"').strip()
     t = re.sub(r"\s+", " ", t)
     w = t.split(" ")
-    return " ".join(w[:85]).rstrip(",;") + ("…" if len(w) > 85 else "")
+    if len(w) <= 110:
+        return t
+    cut = " ".join(w[:110])
+    end = max(cut.rfind(". "), cut.rfind("! "), cut.rfind("? "))
+    return cut[:end + 1] if end > len(cut) // 2 else cut.rstrip(",;") + "…"  # end at a full sentence where possible
 
 
 async def write(role, system, user, fallback, forbidden=(), require=None):
@@ -793,7 +802,7 @@ async def late_share(n, pid, k):
 async def ask_person(n, place, k, offer=None, send=None):
     p, F = n["p"], n["p"]["fields"]
     fut = asyncio.get_running_loop().create_future()
-    key = (n["nid"], place["id"], k)
+    key = (n["nid"], place["id"], k + ("|o" if offer else ""))  # an offer about a detail is a separate question from the detail itself
     WAIT[key] = fut
     STATS["stepins"] += 1
     if offer:
@@ -900,7 +909,7 @@ async def negotiate_place(n, place, hotel_name):
     first_cats = [c for c in CATS if c in C["asks"] and not (c == "card" or (c == "health" and place["type"] != "insurer"))]
     qs = jn(dict.fromkeys(ASKQ[c].format(pos=P["pos"], sub=P["sub"]) for c in first_cats)) or "the basic booking details"
     why = ("to price the travel insurance policy" if place["type"] == "insurer" else "to build the travel plan automatically" if place["type"] == "trip planner app"
-           else "; ".join(list(dict.fromkeys(PURPOSE[c] for c in CATS if c in C["asks"]))[:3]))  # the business's own reasons, the same for everyone
+           else "; ".join(list(dict.fromkeys(PURPOSE[c] for c in CATS if c in C["asks"] and c != "card" and (c != "health" or place["type"] == "insurer")))[:3]))  # the business's own reasons, the same for everyone
     ctx = (f"Helmi has just asked you to arrange {wants} for {name}. Reply: say you'd be glad to, then ask the questions you ask every customer, and say briefly why: {qs}. Your general reason: {why}. "
            "You know nothing about this customer: do not assume or hint that they have any need, disability, health condition, diet, family or children. "
            "Ask in neutral words, as you would ask anyone, and do not mention any personal details or numbers.")
@@ -911,9 +920,9 @@ async def negotiate_place(n, place, hotel_name):
         O = offers_for(place["id"])
         ctx += f" Also mention that {place['name']} offers " + jn([O[o][2] for o in C["offers"] if o in O][:2]) + "."
         fb += " We offer " + jn([O[o][2] for o in C["offers"] if o in O][:2]) + "."
-    if C["trust"]:
-        ctx += " Also promise that " + jn(TRUST[t] for t in C["trust"]) + "."
-        fb += " " + cap(jn(TRUST[t] for t in C["trust"])) + "."
+    if promises(C):
+        ctx += " Also promise that " + jn(promises(C)) + "."
+        fb += " " + cap(jn(promises(C))) + "."
     if place["id"] == "bistro" and hotel_name:
         ctx += f" First ask whether you may simply reuse what {name} already shared with {hotel_name}, which has the same owner as you."
         fb = f"Hello Helmi, {bot_name(place)} here from {place['name']}. Happy to arrange that. We share an owner with {hotel_name}: could we reuse what {name} shared there? Otherwise, we ask every customer for {qs}."
@@ -994,9 +1003,25 @@ async def negotiate_place(n, place, hotel_name):
         lines.append(f"Refer to {name} in the third person; 'I' is only ever you, Helmi. Add nothing that is not in these instructions: no requests, questions, needs, plans or wishes of your own.")
         said = " ".join(lines).lower() + " " + " ".join(F[k]["value"].lower() for k in new_give)
         def ok(txt):
-            m = re.search(r"\b(document\w*|paperwork|will provide|will send|will bring|when (?:asked|needed|requested)|if needed)\b", txt, re.I)
+            if re.search(r"in any form|keeping the facts|in your own words|NOT be shared|\bSay clearly\b|your instructions|reason or alternative", txt):
+                return False  # it repeated the instructions instead of writing a message
+            m = re.search(r"\b(document\w*|paperwork|will provide|will send|will bring|will handle|further steps|when (?:asked|needed|requested)|if (?:needed|requested|asked)|as needed)\b", txt, re.I)
             if m and m.group(0).lower() not in said:
                 return False  # a promise nobody asked Helmi to make
+            ok_next = {"helmi", "checking", "sharing", "confirming", "letting", "writing", "noting", "passing", "sending", "informing", "here", "glad", "happy",
+                       "sorry", "afraid", "not", "no", "noted", "provided", "conveyed", "passed", "sent", "shared", "asked", "discussed", "checked", "also",
+                       "unable", "able", "going", "back", "get", "let", "answer", "contact", "follow", "pass", "send", "share", "confirm", "check", "tell",
+                       "keep", "be", "now", "just", "only", "still", "afraid", "assisting", "helping", "writing", "replying", "responding", "the", "her",
+                       "his", "their", "your", "aware", "understand", "appreciate", "must", "can", "cannot", "can't", "won't", "will", "would", "need",
+                       "have", "am", "do", "don't", "hope", "look", "understood", "received", "got", "already"}
+            plain = txt.replace("\u2019", "'")
+            for mm in re.finditer(r"\bI(?:'m| am| have|'ve)\s+([a-zA-Z']+)", plain):
+                if mm.group(1).lower() not in ok_next:
+                    return False  # "I am vegetarian": Helmi speaking as the traveller
+            if re.search(r"\b[Ww]e (?:need|would like|'d like|are travel|have (?:a|an|two|three|four))\b|\bour (?:children|kids|son|daughter|family)\b", plain):
+                return False  # speaking as the travellers ("we need four seats")
+            if re.search(r"\bI(?: am|'m) (?:a|an)\b", plain) and not re.search(r"\bI(?: am|'m) (?:a|an) (?:assistant|AI|digital)", plain):
+                return False
             neg = re.compile(r"\b(not|won't|will not|never|nothing|no further|no more|not be)\b[^.]*\b(share|shared|sharing|provide|disclos)|\bstays? with\b|\bkept\b|\bkeep(s|ing)?\b", re.I)
             for sent in re.split(r"(?<=[.!?;])\s+", txt):
                 if neg.search(sent):
@@ -1093,8 +1118,10 @@ async def negotiate_place(n, place, hotel_name):
                                 f"{name} would rather not share {topic(target)}. Would {prop} work instead?", forbidden())
                 await say(n, "helmi", o, place=place["id"], counter=True)
                 if ctr[2]:
-                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {topic(target)}: {prop}. Accept it warmly and say that then {P['sub']} {vb('gets','get')} {gives}.",
-                                      f"Yes, that works for us. Then {name} {vb('gets','get')} {gives}.", unknown(F, give))
+                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {topic(target)}: {prop}. Say that this would work for you, and that once the answer comes back yes, {P['sub']} {vb('gets','get')} {gives}. "
+                                      "You have not received the answer yet: do not confirm eligibility or say the benefit is granted.",
+                                      f"Yes, that works for us. Once the answer comes back yes, {name} {vb('gets','get')} {gives}.", unknown(F, give),
+                                      require=lambda t: not re.search(r"\b(is|are) (indeed |already )?eligible\b|\bconfirm(ed)? that (she|he|they|\w+) (is|are) eligible\b|\bwill indeed receive\b", t, re.I))
                     await say(n, "bot", out, place=place["id"])
                     if ctr[1] is None:  # nothing new leaves the vault, so Helmi can take the deal itself
                         offer_fact = {"detail": lab(target), "offer": gives, "took": True, "by": "helmi", "via": prop}
@@ -1149,7 +1176,7 @@ async def negotiate_place(n, place, hotel_name):
     chk = n.get("checks", {}).get(place["id"], {})
     kept_alt = [k for k in keep if (k != target or not offer_fact) and not private(k, F[k])]
     keepw = KEEP[C["keep"]]
-    promise = (" " + cap(jn(TRUST[t] for t in C["trust"])) + ".") if C["trust"] else ""
+    promise = (" " + cap(jn(promises(C))) + ".") if promises(C) else ""
     ctx5 = (f"Confirm what you will do for {name}. This message may be up to 4 sentences and 80 words. "
             + (f"For each detail you received, say in a few words what you will use it for: {uses}. " if give else "Say you will go ahead with only the basic booking. ")
             + (f"For the yes-or-no check you received, say you only needed the answer, which was yes: {'; '.join(v.replace('Yes or no only: ', '').split('.')[0] for v in chk.values())}. " if chk else "")
@@ -1174,7 +1201,8 @@ async def negotiate_place(n, place, hotel_name):
             return {"t": t}
         got, m = await write_long("bot", bot_sys(place, p) + " Write at most 2 sentences.",
                                   f"What you know about {name}: {'; '.join(prepared)}. What {place['name']} offers: {'; '.join(mine)}. "
-                                  f"Pick at most two offers that clearly fit what you know, and suggest them to Helmi for {name}, saying in a few words how each helps. "
+                                  f"Pick at most two offers that one of these details directly calls for, and suggest them to Helmi for {name}, saying in a few words how each helps. "
+                                  "Never suggest an accessibility feature (screen readers, step-free access, captions, hearing loops and the like) unless a detail above asks for it, and never guess at needs. "
                                   "Do not repeat anything already confirmed. If none clearly fit, reply with only the word NONE.", 200, tcheck, budget=900)
         if got and got["t"]:
             await say(n, "bot", (got["t"], m, False), place=place["id"], tailored=True)
@@ -1667,7 +1695,7 @@ async def _answer_say(n, pl, text):
     facts = (f"What {pl['name']} offers every customer: {'; '.join(O[o][2] for o in C.get('offers', []) if o in O) or 'nothing special listed'}. "
              f"What it does not offer: {'; '.join(v[2] for o, v in O.items() if o not in C.get('offers', [])) or 'nothing to note'}. "
              f"You keep customers' details {KEEP.get(C.get('keep'), 'until the visit is over')}, then delete them. "
-             + (f"Your promises: {jn(TRUST[t] for t in C.get('trust', []) if t in TRUST)}. " if C.get("trust") else "")
+             + (f"Your promises: {jn(promises(C))}. " if promises(C) else "")
              + (f"When: {pl['when']}. " if pl.get("when") else "")
              + (f"Yes-or-no checks you received: {'; '.join(chk.values())}. " if chk else "")
              + (f"Things the customer kept private, which you must not ask for again: {'; '.join(kept)}. " if kept else ""))
@@ -1814,7 +1842,14 @@ async def safe(coro):
 
 
 async def update_place(n, pid, shares, how):
-    """After a place is done: the visitor changed their answer, stopped sharing, or shared again. Helmi tells the bot; the bot answers."""
+    """After a place is done: the visitor changed their answer, stopped sharing, or shared again. Helmi tells the bot; the bot answers.
+    One update at a time per trip, so two late answers for the same place don't cross."""
+    lock = n.setdefault("ulock", asyncio.Lock())
+    async with lock:
+        await _update_place(n, pid, shares, how)
+
+
+async def _update_place(n, pid, shares, how):
     p, F = n["p"], n["p"]["fields"]
     pl = next(x for x in p["places"] if x["id"] == pid)
     g = n["prog"][pid]
@@ -1842,7 +1877,15 @@ async def update_place(n, pid, shares, how):
             lines.append(f"{name} has taken back these details. Ask the bot to delete them: {jn(lab(k) for k in removed)}.")
             fb.append(f"{name} has taken back {P_pos(p)} {jn(lab(k) for k in removed)}. Please delete it.")
     keep_out = [k for k in F if k not in now]
-    out = await write("helmi", helmi_sys(p), f"Your message to {pl['name']}'s bot. " + " ".join(lines), " ".join(fb), unknown(F, now))
+    def has_added(txt):
+        if re.search(r"\b(can't|cannot|can not|unable to|won't) share\b", txt, re.I):
+            return False
+        for k in added:
+            words = [w for w in re.findall(r"[a-zA-Z\u00c0-\u017f0-9]{4,}", F[k]["value"].lower())][:6]
+            if words and not any(w in txt.lower() for w in words):
+                return False
+        return True
+    out = await write("helmi", helmi_sys(p), f"Your message to {pl['name']}'s bot. " + " ".join(lines), " ".join(fb), unknown(F, now), require=has_added if added else None)
     await say(n, "helmi", out, place=pid, shared=added, kept=removed, basis={k: n.get("basis", {}).get(pid, {}).get(k, "you") for k in added})
     known = "; ".join(F[k]["value"] for k in now if F[k]["kind"] == "need")[:300]
     ack = await write("bot", bot_sys(pl, p), (f"Helmi says {name} stopped sharing and asks you to delete their details. Confirm briefly that you have deleted them." if how == "stop" else
@@ -1872,7 +1915,9 @@ async def api_policy(req: Request):
 
 async def api_answer(req: Request):
     b = await req.json()
-    fut = WAIT.get((b.get("nid"), b.get("place"), b.get("k")))
+    fut = None if b.get("late") else WAIT.get((b.get("nid"), b.get("place"), str(b.get("k")) + ("|o" if b.get("offer") else "")))
+    if fut is None and not b.get("late") and not b.get("offer"):
+        fut = WAIT.get((b.get("nid"), b.get("place"), b.get("k")))  # trip mode's own pages
     if fut and not fut.done():
         fut.set_result([str(x) for x in b["shares"]] if isinstance(b.get("shares"), list) else bool(b.get("ok")))
         return JSONResponse({"ok": True})

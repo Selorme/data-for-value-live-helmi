@@ -137,7 +137,7 @@ function draw(){
   if(insT.size)tp.push(`${insNone} of ${insT.size} shared nothing with the insurer.`);
   if(checks.length)tp.push(`${new Set(checks.map(r=>r.trip)).size} trip${new Set(checks.map(r=>r.trip)).size===1?'':'s'} got a companion benefit with a yes-or-no check instead of showing the disability card.`);
   if(pings.length)tp.push(`When the phone buzzed, people said yes ${pct(pings.filter(r=>r.decision==='yes').length,pings.length)}% of the time${pings.filter(r=>r.how==='no answer in time').length?`, and let ${pings.filter(r=>r.how==='no answer in time').length} questions time out`:''}.`);
-  const top=byCat.filter(x=>x[0]!=='Other');if(top.length>1)tp.push(`Most shared: ${top[0][0].toLowerCase()} (${top[0][1]}%). Least shared: ${top[top.length-1][0].toLowerCase()} (${top[top.length-1][1]}%).`);
+  const top=byCat.filter(x=>x[0]!=='Other');if(top.length>1){const lo=top[top.length-1],nc=checks.filter(r=>CATN[cat(K(r))]===lo[0]).length;tp.push(`Most shared: ${top[0][0].toLowerCase()} (${top[0][1]}%). Least shared: ${lo[0].toLowerCase()} (${lo[1]}%)${nc?`, though ${nc} time${nc===1?'':'s'} a yes-or-no check answered for it`:''}.`)}
   if(changes.length)tp.push(`${changes.length} rule${changes.length===1?' was':'s were'} changed during trips, ${changes.filter(r=>r.how==='asked Helmi').length} of them by asking Helmi.`);
   const pr=presets[0];if(pr)tp.push(`Most common starting point: ${pr[0]} (${pct(pr[1],n)}% of trips).`);
   /* businesses */

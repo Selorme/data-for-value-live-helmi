@@ -452,8 +452,8 @@ function on(t,d){
   if(t==='done'){finished=true;writing=false;results=d.results;STORY=d.story||null;tripBadge=TAB!=='trip';note('Your trip is over. Your trip story and the replay are in Trip.');
     if(TAB!=='trip'&&!REPLAY)toast('Trip finished. Tap to see your trip story and the replay.',()=>{TAB='trip';tripBadge=false;render(true)});render(TAB==='trip');return}
 }
-function answer(key,ok){const it=PINGS[key];if(!it||(it.state!=='open'&&it.state!=='late'))return;it.state='sent';PEND=PEND.filter(x=>x!==key);render();
-  fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:it.place,k:it.dk,ok})}).catch(()=>{})}
+function answer(key,ok){const it=PINGS[key];if(!it||(it.state!=='open'&&it.state!=='late'))return;const late=it.state==='late';it.state='sent';PEND=PEND.filter(x=>x!==key);render();
+  fetch('/api/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nid,place:it.place,k:it.dk,ok,offer:!!it.offer,late})}).catch(()=>{})}
 function ask(q,voice){q=String(q||'').trim();if(!q)return;const qid=Math.random().toString(36).slice(2,9);ASKS[qid]={q,a:null};NOTES.push({type:'qa',qid});if(voice)lastVoice=qid;render();
   fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,qid,text:q})}).then(r=>{if(!r.ok){ASKS[qid].a='I can’t reach the stand right now. Try again in a moment.';render()}}).catch(()=>{ASKS[qid].a='I can’t reach the stand right now.';render()})}
 function sayTo(place,text){text=String(text||'').trim();if(!text)return;
