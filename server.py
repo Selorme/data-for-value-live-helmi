@@ -367,8 +367,15 @@ PURPOSE = {"trip": "to have everything ready for the arrival", "need": "to prepa
 
 def purpose(c, place=None):
     """Why a business uses a kind of detail. Only places with a kitchen talk about the kitchen."""
-    if c == "diet" and place and not re.search(r"restaurant|bistro|hotel|cafe|event|conference|venue|theatre|workplace", place.get("type", "") + " " + place.get("id", ""), re.I):
-        return "to keep any food and snacks safe"
+    if c == "diet" and place:
+        t = place.get("type", "") + " " + place.get("id", "")
+        if re.search(r"restaurant|bistro|hotel|cafe|event|conference|venue|theatre|workplace", t, re.I):
+            return PURPOSE[c]
+        if re.search(r"pharmac", t, re.I):
+            return "to check medicines against any allergies"
+        if re.search(r"childcare|school|kids|babysit|grocery", t, re.I):
+            return "to keep any food and snacks safe"
+        return "to know about any allergies or diet needs"
     return PURPOSE[c]
 
 
@@ -907,7 +914,8 @@ async def negotiate_place(n, place, hotel_name):
     out = await write("helmi", helmi_sys(p, True), f"You are getting in touch with {place['name']}, a {place['type']}, for the first time. Greet its bot, say you are Helmi, "
                       f"{poss} assistant, and that {name} would like {wants} for {P['pos']} upcoming trip. Ask what they need to arrange it. "
                       "Do not share any personal details, dates or needs yet.",
-                      f"Hello, I'm Helmi, {poss} assistant. {name} would like {wants} for {P['pos']} upcoming trip. What do you need to arrange it?", forbidden_all(F))
+                      f"Hello, I'm Helmi, {poss} assistant. {name} would like {wants} for {P['pos']} upcoming trip. What do you need to arrange it?", forbidden_all(F),
+                      require=lambda t: not re.search(r"\b(will provide|I'll provide|as required|as needed|will send|will share|I'll share)\b", t.replace("\u2019", "'"), re.I))
     await say(n, "helmi", out, place=place["id"], opens=True)
     blab = lambda k: low1(bot_label(F[k]["label"]))
     topic = lambda k: (TOPIC.get("dob" if k == "id.kids_dob" else "photos" if k == "photos.kids" else cat(k, F[k]), "other details") if private(k, F[k]) else f"{P['pos']} {blab(k)}")
@@ -990,11 +998,11 @@ async def negotiate_place(n, place, hotel_name):
             if pub:
                 lines.append("Say clearly that these will NOT be shared, and do not offer them in any form: " +
                              "; ".join(f"{lab(k)} (reason or alternative: {alt(k)})" for k in pub) + ".")
-                fl = lambda k: re.sub(r",\s*(\d+) months", r" from the last \1 months", lab(k))
+                fl = lambda k: re.sub(r"^your ", P["pos"] + " ", re.sub(r",\s*(\d+) (months|years)", r" from the last \1 \2", lab(k)))
                 fbp.append(f"{name} won't be sharing {jn(fl(k) for k in pub)}. " + " ".join(cap(x.rstrip('.')) + "." for x in dict.fromkeys(alt(k) for k in pub)))
             if prv:
                 more = "more " if give else ""
-                lines.append(f"Also say there is nothing {more}to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind, and add no promises about documents or anything else.")
+                lines.append(f"Also say there is nothing {more}to share on {jn(prv)}. Do not say or hint whether {name} {vb('has','have')} anything of the kind, and add no promises or offers of any kind.")
                 fbp.append(f"There's nothing {more}to share on {jn(prv)}.")
         if not lines:
             return
@@ -1027,21 +1035,21 @@ async def negotiate_place(n, place, hotel_name):
             for mm in re.finditer(r"\bI(?:'m| am| have|'ve)\s+([a-zA-Z']+)", plain):
                 if mm.group(1).lower() not in ok_next:
                     return False  # "I am vegetarian": Helmi speaking as the traveller
-            if re.search(r"\b[Ww]e (?:need|would like|'d like|are travel\w*|are going|are staying|have (?:a|an|two|three|four))\b|\bour (?:children|kids|son|daughter|family|baby|dates|trip|room|stay|flight)\b", plain):
+            if re.search(r"\b[Ww]e (?:need|would like|'d like|prefer|would prefer|'d prefer|are travel\w*|are going|are staying|(?:will|'ll) (?:travel\w*|bring|arrive|stay|need|be travel\w*)|have (?:a|an|two|three|four))\b|\bour (?:children|kids|son|daughter|family|baby|dates|trip|room|stay|flight)\b", plain):
                 return False  # speaking as the travellers ("we need four seats")
             if re.search(r"\bI(?: am|'m) (?:a|an)\b", plain) and not re.search(r"\bI(?: am|'m) (?:a|an) (?:assistant|AI|digital)", plain):
                 return False
-            neg = re.compile(r"\b(not|won't|will not|never|nothing|no further|no more|not be)\b[^.]*\b(share|shared|sharing|provide|disclos)|\bstays? with\b|\bkept\b|\bkeep(s|ing)?\b", re.I)
+            neg = re.compile(r"\b(not|won't|will not|never|nothing|no further|no more|not be)\b[^.]*\b(share|shared|sharing|provide|disclos)|\bstays? with\b|\bkept\b|\bconfidential\b|\bkeep(s|ing)?\b", re.I)
             for sent in re.split(r"(?<=[.!?;])\s+", txt):
                 if neg.search(sent):
                     low_s = sent.lower()
-                    if new_give and re.search(r"\b(these|those|this|the above|all of (?:this|these|it)|the (?:details|information))\b", low_s):
+                    if new_give and re.search(r"\b(?:these|those|this|the)(?: \w+)? (?:details?|information|data|items?|things)\b|\b(?:these|those|all of this|all of it|the above)\s+(?:will|won't|are not|aren't|is not|isn't|stays?|remains?)\b", low_s):
                         return False  # a vague "these won't be shared" right after sharing things
                     for k in new_give:
                         words = [w for w in re.findall(r"[a-zA-Z\u00c0-\u017f]{6,}", F[k]["value"].lower())][:6]
                         if any(w in low_s for w in words):
                             return False  # it says it keeps something it is actually sharing
-            if re.search(r"\b(I need|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip)\b", txt, re.I):
+            if re.search(r"\b(I need|I will need|I'll need|I require|I will require|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip)\b", txt, re.I):
                 return False
             return mentions_shared(txt)
         out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden(), require=ok)
@@ -1112,18 +1120,20 @@ async def negotiate_place(n, place, hotel_name):
     lost = None
     offer_fact = None
     if target:
+        # "health information" reads wrong when Helmi already shared a diagnosis: name the exact detail then
+        ttop = lab(target) if any(cat(k, F[k]) == cat(target, F[target]) for k in give) else topic(target)
         if "offer" in rule:
             out = await write("bot", bot_sys(place, p),
-                              f"Helmi shared nothing on {topic(target)}. Without assuming {name} {vb('has','have')} it, make one friendly offer: {cond(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. "
+                              f"Helmi shared nothing on {ttop}. Without assuming {name} {vb('has','have')} it, make one friendly offer: {cond(target)}, {P['sub']} {vb('gets','get')} {rule['offer']}. "
                               f"Without it, {P['sub']} {vb('gets','get')} {rule['lose']}. Ask once.",
                               f"Understood. {cap(cond(target))}, {P['sub']} {vb('gets','get')} {rule['offer']}. Without it, {rule['lose']}. Would {P['sub']} like to reconsider?",
                               unknown(F, give))
             await say(n, "bot", out, place=place["id"])
             if pol.get(target) == "never":
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "rule", "without": rule["lose"]}
-                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them, but say {poss} rule is never to share {topic(target)}, "
+                o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them, but say {poss} rule is never to share {ttop}, "
                                 f"so the answer stays no, whatever the offer. Do not offer it in any form.",
-                                f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {topic(target)}, whatever the offer.", forbidden())
+                                f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {ttop}, whatever the offer.", forbidden())
                 await say(n, "helmi", o, place=place["id"], kept=[target], rule=True)
                 lost = rule["lose"]
             elif (ctr := COUNTER.get((place["id"], target))):
@@ -1131,10 +1141,11 @@ async def negotiate_place(n, place, hotel_name):
                 gives = ctr[3] or rule["offer"]
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, which offered {rule['offer']} {cond(target)}. "
                                 f"Do not share it, and do not say whether {name} {vb('has','have')} it. Propose something smaller instead and ask if that would earn the offer: {prop}. Do not include any details yet.",
-                                f"{name} would rather not share {topic(target)}. Would {prop} work instead?", forbidden())
+                                f"{name} would rather not share {ttop}. Would {prop} work instead?", forbidden(),
+                                require=lambda t: not re.search(r"\b[Ww]e (?:prefer|would|'d|need|are)\b|\bI(?:'m| am) not ready\b", t.replace("\u2019", "'")))
                 await say(n, "helmi", o, place=place["id"], counter=True)
                 if ctr[2]:
-                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {topic(target)}: {prop}. Say that this would work for you, and that once the answer comes back yes, {P['sub']} {vb('gets','get')} {gives}. "
+                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {ttop}: {prop}. Say that this would work for you, and that once the answer comes back yes, {P['sub']} {vb('gets','get')} {gives}. "
                                       "You have not received the answer yet: do not confirm eligibility or say the benefit is granted.",
                                       f"Yes, that works for us. Once the answer comes back yes, {name} {vb('gets','get')} {gives}.", unknown(F, give),
                                       require=lambda t: not re.search(r"\b(is|are) (indeed |already )?eligible\b|\bconfirm(ed)? that (she|he|they|\w+) (is|are) eligible\b|\bwill indeed receive\b", t, re.I))
@@ -1154,9 +1165,9 @@ async def negotiate_place(n, place, hotel_name):
                         await say(n, "helmi", o, place=place["id"], kept=[target])
                         lost = rule["lose"]
                 else:
-                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {topic(target)}: {prop}. Politely decline: the offer of {rule['offer']} needs {topic(target)} itself. "
+                    out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {ttop}: {prop}. Politely decline: the offer of {rule['offer']} needs {ttop} itself. "
                                       f"Say that without it {P['sub']} {vb('gets','get')} {rule['lose']}, and that everything else still goes ahead.",
-                                      f"I'm sorry, {rule['offer']} needs {topic(target)} itself. Without it, {name} {vb('gets','get')} {rule['lose']}. Everything else goes ahead as planned.", unknown(F, give))
+                                      f"I'm sorry, {rule['offer']} needs {ttop} itself. Without it, {name} {vb('gets','get')} {rule['lose']}. Everything else goes ahead as planned.", unknown(F, give))
                     await say(n, "bot", out, place=place["id"])
                     offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "business", "without": rule["lose"], "via": prop}
                     o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say that's fine: {name} {vb('takes','take')} {rule['lose']}. "
@@ -1173,12 +1184,12 @@ async def negotiate_place(n, place, hotel_name):
             else:
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "you", "without": rule["lose"]}
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Say {name} considered the offer and still {vb('says','say')} no to sharing "
-                                f"{topic(target)}. Do not offer it in any form.", f"{name} thought about it and still {vb('says', 'say')} no.", forbidden())
+                                f"{ttop}. Do not offer it in any form.", f"{name} thought about it and still {vb('says', 'say')} no.", forbidden())
                 await say(n, "helmi", o, place=place["id"], kept=[target])
                 lost = rule["lose"]
         else:
             offer_fact = {"detail": lab(target), "instead": rule["alt"]}
-            out = await write("bot", bot_sys(place, p), f"Helmi shared nothing on {topic(target)}. Without assuming anything about {name}, accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
+            out = await write("bot", bot_sys(place, p), f"Helmi shared nothing on {ttop}. Without assuming anything about {name}, accept this politely and say what you will do instead: {rule['alt']}. Do not ask again.",
                               f"That's fine. Instead, {rule['alt']}.", unknown(F, give))
             await say(n, "bot", out, place=place["id"])
 
@@ -1216,6 +1227,11 @@ async def negotiate_place(n, place, hotel_name):
                 return None
             if re.search(r"\b(please (confirm|arrange|let|provide|share|ensure|have|ask|make sure|fill|complete)|could you|can you|would you|let us know)\b", t, re.I):
                 return None  # the business offers; it doesn't hand Helmi jobs
+            known = " ".join(prepared).lower()
+            for pat, need in ((r"assistance animal|guide dog|service dog", r"dog|animal"), (r"screen.?reader|braille|large.?print|audio (guide|label)", r"blind|sight|vision|screen|read"),
+                              (r"hearing loop|caption|sign language|interpreter", r"hear|deaf|sign|loop|caption"), (r"hoist|step.?free|wheelchair|ramp", r"wheel|chair|step|stairs|rollator|pushchair|walk")):
+                if re.search(pat, t, re.I) and not re.search(need, known):
+                    return None  # an access feature nobody asked for
             return {"t": t}
         got, m = await write_long("bot", bot_sys(place, p) + " Write at most 2 sentences.",
                                   f"What you know about {name}: {'; '.join(prepared)}. What {place['name']} offers: {'; '.join(mine)}. "

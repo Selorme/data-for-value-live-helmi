@@ -311,7 +311,7 @@ function connect(){
   es.onerror=()=>{lost=true;$('conn').className='conn';$('conn').lastChild.textContent='Reconnecting'};
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')catchUp()});
   es.addEventListener('config',()=>{if(!cur)return;if(!$('s-rules').hidden)loadReq().then(rules);else if(!$('s-trip').hidden)loadReq().then(trip)});
-  ['start','place','msg','stepin','stepin_done','stepin_timeout','late_done','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{const d=JSON.parse(e.data);if(d.nid===nid)feed(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
+  ['start','place','msg','stepin','stepin_done','stepin_timeout','late_done','place_done','done','queue','error','ask','ask_reply','writing'].forEach(t=>es.addEventListener(t,e=>{if(!e.data)return;const d=JSON.parse(e.data);if(d.nid===nid)feed(t,d);else(EARLY[d.nid]=EARLY[d.nid]||[]).push([t,d])}));
 }
 /* every event of a trip is numbered: skip what we already have, and fetch anything missed while the phone was offline or asleep */
 let SEQ=-1;
