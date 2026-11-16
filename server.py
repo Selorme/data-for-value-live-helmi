@@ -1364,12 +1364,16 @@ async def negotiate_place(n, place, hotel_name):
                               (r"swivel|hand control", r"wheel|chair|rollator|walk|get in|getting in|get out|hand control"), (r"trade.?in", r"trad")):
                 if re.search(pat, t, re.I) and not re.search(need, known):
                     return None  # an access feature nobody asked for
+            listed = " ".join(c[1] for c in BIZDATA.get(place["id"], {}).get("catalogue", [])) + " " + " ".join(eur(c["price"]) for c in CARS) + (" " + eur(deal["price"]) + " " + eur(deal.get("asking", 0)) if deal else "")
+            if any(x.rstrip(".,") not in listed for x in re.findall(r"€\s?[\d][\d,.]*", t)):
+                return None  # a price that isn't in the catalogue
             return {"t": t}
         got, m = await write_long("bot", bot_sys(place, p) + " Write at most 2 sentences.",
-                                  f"What you know about {name}: {'; '.join(prepared)}. What {place['name']} offers: {'; '.join(mine)}. "
-                                  f"Pick at most two offers that one of these details directly calls for, and suggest them to Helmi for {name}, saying in a few words how each helps. "
+                                  f"What you know about {name}: {'; '.join(prepared)}. What {place['name']} offers: {'; '.join(mine)}"
+                                  + (f"; and from your catalogue: {'; '.join(f'{c[0]} ({c[1]})' for c in BIZDATA.get(place['id'], {}).get('catalogue', []))}" if BIZDATA.get(place["id"], {}).get("catalogue") else "") + ". "
+                                  f"Pick at most two offers or catalogue items that one of these details directly calls for, and suggest them to Helmi for {name}, saying in a few words how each helps, with the price exactly as listed if it has one. "
                                   "Never suggest an accessibility feature (screen readers, step-free access, captions, hearing loops and the like) unless a detail above asks for it, and never guess at needs. "
-                                  f"Suggest only offers from that list, as things {place['name']} will do (for example 'We can…' or 'I suggest…'). You are the one offering, so never ask Helmi to confirm, arrange or provide anything. "
+                                  f"Suggest only offers or catalogue items from those lists, as things {place['name']} will do (for example 'We can…' or 'I suggest…'). You are the one offering, so never ask Helmi to confirm, arrange or provide anything. "
                                   "Do not repeat anything already confirmed. If none clearly fit, reply with only the word NONE.", 200, tcheck, budget=900)
         if got and got["t"]:
             await say(n, "bot", (got["t"], m, False), place=place["id"], tailored=True)
@@ -1877,7 +1881,7 @@ async def _answer_say(n, pl, text):
     system = (f"You are {nm}, the bot of {pl['name']}, a {pl['type']}. Your manner: {manner}. The customer {p['name']} is now writing to you directly, not through Helmi. "
               "Answer them as 'you' in 1 to 3 short sentences, plain English, no lists, no markdown, no emoji. Do not greet or introduce yourself again. "
               "Be genuinely helpful: answer their question from the facts below, suggest what fits them, and say plainly when something is not offered. "
-              f"Facts about {pl['name']}: {facts}"
+              f"Facts about {pl['name']}: {facts} " + catalogue_line(pl) + " "
               f"What you know about the customer, because their assistant Helmi shared it: {known}. You also know whatever they tell you in this chat. "
               "Never guess or invent personal details, prices or policies beyond these facts. If you cannot answer, say a member of staff will follow up.")
     convo = "\n".join(f"{'Customer' if w == 'me' else nm}: {t}" for w, t in hist[-6:])
