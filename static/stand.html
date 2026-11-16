@@ -117,7 +117,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
       <select id="bizpick" class="pick"></select>
       <p class="small muted" id="b-names"></p>
       <label class="opt"><input type="checkbox" id="follow" checked><span>Follow the live trip<small>Shows each business’s settings while its bot is talking.</small></span></label>
-      <label class="opt"><input type="checkbox" id="loop" checked><span>Recorded demo when idle<small>When nobody is playing, the screen replays a recorded negotiation. It uses no AI, is not counted and is not saved. It stops when a visitor starts a trip.</small></span></label>
+      <label class="opt"><input type="checkbox" id="loop"><span>Recorded demo when idle<small>Off by default. When ticked and nobody is playing, this screen replays a recorded negotiation. It uses no AI, is not counted and is not saved. It stops when a visitor starts a trip.</small></span></label>
       <p class="status" id="cfgstat">Changes apply to the next trip.</p></div>
     <div class="card set"><h3 id="h-asks">1. What the bot asks for</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
     <div class="card set"><h3>2. What you offer, so people don’t have to explain</h3><div id="offers"></div>
@@ -178,7 +178,7 @@ async function playDemo(){
     DEMOT=setTimeout(step,delayFor(e))};
   step()}
 function draw2(){if(view&&NEG[view])draw();else{drawTabs();$('chat').innerHTML=''}}
-function loopInit(){if(DEMOMODE){document.body.classList.add('demomode');playDemo();return}const c=$('loop');let v=null;try{v=localStorage.getItem('stand-loop')}catch(e){}if(/[?&]loop=0/.test(location.search))v='0';c.checked=v!=='0';
+function loopInit(){if(DEMOMODE){document.body.classList.add('demomode');playDemo();return}const c=$('loop');let v=null;try{v=localStorage.getItem('stand-loop')}catch(e){}if(/[?&]loop=0/.test(location.search))v='0';c.checked=v==='1'||/[?&]loop=1/.test(location.search);
   c.onchange=()=>{try{localStorage.setItem('stand-loop',c.checked?'1':'0')}catch(e){}idleN=0;if(!c.checked){purgeDemo();draw2()}};
   setInterval(async()=>{if(!c.checked)return;
     try{if(DEMOID&&DEMOT)return;const st=await (await fetch('/api/ping',{cache:'no-store'})).json();
