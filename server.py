@@ -1361,7 +1361,7 @@ async def negotiate_place(n, place, hotel_name):
             known = " ".join(prepared).lower()
             for pat, need in ((r"assistance animal|guide dog|service dog", r"dog|animal"), (r"screen.?reader|braille|large.?print|audio (guide|label)", r"blind|sight|vision|screen|read"),
                               (r"hearing loop|caption|sign language|interpreter", r"hear|deaf|sign|loop|caption"), (r"hoist|step.?free|wheelchair|ramp", r"wheel|chair|step|stairs|rollator|pushchair|walk"),
-                              (r"swivel|hand control", r"wheel|chair|rollator|walk|get in|getting in|get out|hand control"), (r"trade.?in", r"trad")):
+                              (r"swivel|hand control", r"wheel|chair|rollator|walk|get in|getting in|get out|hand control"), (r"trade.?in", r"trad"), (r"fire alarm|pillow shaker|door.?light", r"deaf|hear|alarm|knock")):
                 if re.search(pat, t, re.I) and not re.search(need, known):
                     return None  # an access feature nobody asked for
             listed = " ".join(c[1] for c in BIZDATA.get(place["id"], {}).get("catalogue", [])) + " " + " ".join(eur(c["price"]) for c in CARS) + (" " + eur(deal["price"]) + " " + eur(deal.get("asking", 0)) if deal else "")
