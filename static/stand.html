@@ -23,6 +23,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body);padding:18px max(18px,env(safe-area-inset-right)) 18px max(18px,env(safe-area-inset-left))}
+.demomode .app{grid-template-columns:minmax(0,1fr)}.demomode .app>.col:not([aria-label='Live negotiation']){display:none}
 .app{height:100%;display:grid;grid-template-columns:380px minmax(0,1fr) 360px;gap:18px}
 @media (max-width:1100px){.app{grid-template-columns:1fr;height:auto}}
 h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
@@ -116,6 +117,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
       <select id="bizpick" class="pick"></select>
       <p class="small muted" id="b-names"></p>
       <label class="opt"><input type="checkbox" id="follow" checked><span>Follow the live trip<small>Shows each business’s settings while its bot is talking.</small></span></label>
+      <label class="opt"><input type="checkbox" id="loop" checked><span>Recorded demo when idle<small>When nobody is playing, the screen replays a recorded negotiation. It uses no AI, is not counted and is not saved. It stops when a visitor starts a trip.</small></span></label>
       <p class="status" id="cfgstat">Changes apply to the next trip.</p></div>
     <div class="card set"><h3 id="h-asks">1. What the bot asks for</h3><div id="asks"></div><p class="hint" id="askhint" hidden></p></div>
     <div class="card set"><h3>2. What you offer, so people don’t have to explain</h3><div id="offers"></div>
@@ -161,6 +163,29 @@ const KEY=new URLSearchParams(location.search).get('key')||'';
 async function sheetStatus(){try{const s=await (await fetch('/api/sheet',{cache:'no-store'})).json();const el=document.getElementById('sheetst'),b=document.getElementById('resend');if(!el)return;
   if(!s.set){el.textContent='Google Sheet: not set up, so download the record before you close this page.';b.hidden=true;return}
   el.textContent=`Google Sheet: ${s.sent} rows sent${s.waiting?`, ${s.waiting} waiting`:''}${s.failed?`, ${s.failed} failed`:''}${s.last_ok?` · last at ${s.last_ok}`:''}${s.last_error&&s.failed?` · problem: ${s.last_error}`:''}`;b.hidden=false}catch(e){}}
+/* recorded demo: when nobody is playing the stand replays a recorded negotiation (static/demo.json). No AI calls, never counted, never saved. */
+const DEMOMODE=/[?&]demo=1/.test(location.search);
+let DEMO=null,DEMOT=0,DEMOID=null,idleN=0,DEMOGEN=0;
+const isDemo=id=>String(id).startsWith('demo-');
+function purgeDemo(){DEMOGEN++;clearTimeout(DEMOT);DEMOID=null;order.filter(isDemo).forEach(id=>{delete NEG[id]});for(let i=order.length-1;i>=0;i--)if(isDemo(order[i]))order.splice(i,1);
+  if(!view||!NEG[view]){view=order.length?order[order.length-1]:null}}
+function delayFor(e){return e.t==='msg'?2600+Math.min(2600,(e.text||'').length*18):e.t==='stepin'?1600:e.t==='stepin_done'?2400:e.t==='place'?1800:e.t==='place_done'?2600:900}
+async function playDemo(){
+  if(!DEMO){try{DEMO=(await (await fetch('/static/demo.json')).json()).events}catch(e){return}}
+  purgeDemo();const gen=DEMOGEN,id='demo-'+Date.now().toString(36);DEMOID=id;let i=0;
+  const step=()=>{if(gen!==DEMOGEN)return;const e=DEMO[i++];if(!e)return;ev(e.t,{...e,nid:id,demo:true});
+    if(i>=DEMO.length){DEMOT=setTimeout(()=>{if(gen!==DEMOGEN)return;if(DEMOMODE)playDemo();else{purgeDemo();draw2()}},DEMOMODE?8000:25000);return}
+    DEMOT=setTimeout(step,delayFor(e))};
+  step()}
+function draw2(){if(view&&NEG[view])draw();else{drawTabs();$('chat').innerHTML=''}}
+function loopInit(){if(DEMOMODE){document.body.classList.add('demomode');playDemo();return}const c=$('loop');let v=null;try{v=localStorage.getItem('stand-loop')}catch(e){}if(/[?&]loop=0/.test(location.search))v='0';c.checked=v!=='0';
+  c.onchange=()=>{try{localStorage.setItem('stand-loop',c.checked?'1':'0')}catch(e){}idleN=0;if(!c.checked){purgeDemo();draw2()}};
+  setInterval(async()=>{if(!c.checked)return;
+    try{if(DEMOID&&DEMOT)return;const st=await (await fetch('/api/ping',{cache:'no-store'})).json();
+      const real=order.some(id=>!isDemo(id)&&NEG[id]&&!NEG[id].done);
+      if((st.active||[]).length||st.queue||real){idleN=0;return}
+      if(++idleN<5)return;idleN=0;playDemo()
+    }catch(e){}},5000)}
 addEventListener('DOMContentLoaded',()=>{sheetStatus();setInterval(sheetStatus,15000);document.getElementById('resend').onclick=async e=>{e.target.disabled=true;const r=await (await fetch('/api/records/resend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY})})).json().catch(()=>({ok:false}));
   document.getElementById('sheetst').textContent=r.ok?`Sending ${r.queued.Trips} trips, ${r.queued.Businesses} business setups and ${r.queued.Details} detail rows. Rows the sheet already has are skipped.`:('Could not send: '+(r.error||'no connection'));setTimeout(()=>{e.target.disabled=false;sheetStatus()},4000)}});
 addEventListener('DOMContentLoaded',()=>{const rl=document.getElementById('reportlink');if(rl&&KEY)rl.href='/report?key='+encodeURIComponent(KEY)});
@@ -178,7 +203,7 @@ async function boot(){
   const st=await (await fetch('/api/state',{cache:'no-store'})).json();CFG=st.config;META=st.meta;AI=st.ai;M=st.models;CATS=st.cats;picker();renderCfg();stats(st.stats);
   const url=location.origin+'/';$('url').textContent=url.replace(/^https?:\/\//,'');
   try{new QRCode($('qr'),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}catch(e){$('qr').textContent='QR unavailable offline'}
-  await restore();connect();setInterval(async()=>{try{const b=(await (await fetch('/api/ping',{cache:'no-store'})).json()).boot;if(b&&window.__boot&&b!==window.__boot){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);location.reload()}}catch(e){}},30000);  // keeps the free server awake, and starts afresh if it restarted
+  loopInit();await restore();connect();setInterval(async()=>{try{const b=(await (await fetch('/api/ping',{cache:'no-store'})).json()).boot;if(b&&window.__boot&&b!==window.__boot){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);location.reload()}}catch(e){}},30000);  // keeps the free server awake, and starts afresh if it restarted
 }
 function picker(){
   const ids=Object.keys(META).sort((a,b)=>META[a].order-META[b].order),core=['rail','hotel','bistro','venue','ins'];
@@ -230,7 +255,7 @@ document.addEventListener('change',e=>{const t=e.target,H=CFG[BIZ];if(!H)return;
   hint();clearTimeout(saveT);const b=BIZ;saveT=setTimeout(()=>save(b),300)});
 async function save(b){try{const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,biz:b,settings:CFG[b]})});const j=await r.json();
   $('cfgstat').textContent=j.ok?`Saved for ${META[b].bot}. Applies to the next trip.`:(j.error||'Not saved')}catch(e){$('cfgstat').textContent='Not saved: no connection'}}
-function connect(){
+function connect(){if(DEMOMODE)return;
   const es=new EventSource('/events?role=stand');
   es.onopen=()=>{$('livek').textContent=AI?'Live · two AI models':'Live · scripted messages'};
   es.onerror=()=>{$('livek').textContent='Reconnecting…'};
@@ -244,13 +269,14 @@ const SEEN=new Set();let RESTORING=false;
 function key(t,d){return d.nid+'|'+t+'|'+(d.at||'')}
 function take(t,d,quiet){const k=key(t,d);if(SEEN.has(k))return;SEEN.add(k);if(!quiet)keep(t,d);ev(t,d)}
 function keep(t,d){try{const L=JSON.parse(localStorage.getItem('stand-log')||'{}');(L[d.nid]=L[d.nid]||[]).push([t,d]);const ids=Object.keys(L);while(ids.length>40)delete L[ids.shift()];localStorage.setItem('stand-log',JSON.stringify(L))}catch(e){}}
-async function restore(){RESTORING=true;let local={};
+async function restore(){if(DEMOMODE)return;RESTORING=true;let local={};
   try{const b=(await (await fetch('/api/state',{cache:'no-store'})).json()).boot;if(b&&localStorage.getItem('stand-boot')!==b){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);if(window.__boot){location.reload();return}}if(b)window.__boot=b;}catch(e){}  // the server restarted: start the stand afreshtry{local=JSON.parse(localStorage.getItem('stand-log')||'{}')}catch(e){}
   Object.values(local).forEach(L=>L.forEach(([t,d])=>take(t,d,true)));
   try{const j=await (await fetch('/api/standlog',{cache:'no-store'})).json();(j.trips||[]).forEach(tr=>tr.events.forEach(d=>take(d.t,d)))}catch(e){}
   RESTORING=false;drawFiles();try{stats((await (await fetch('/api/state',{cache:'no-store'})).json()).stats)}catch(e){}if(view&&NEG[view])draw();else drawTabs()}
 function ev(t,d){
-  if(t==='start'){NEG[d.nid]={...d,items:[],done:false,off:{n:0,yes:0},offk:{},pty:Object.fromEntries(d.places.map(([id,n,ty])=>[id,ty])),pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
+  if(t==='start'&&!d.demo){purgeDemo()}
+  if(t==='start'){NEG[d.nid]={...d,demo:!!d.demo,items:[],done:false,off:{n:0,yes:0},offk:{},pty:Object.fromEntries(d.places.map(([id,n,ty])=>[id,ty])),pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
   const n=NEG[d.nid];if(!n)return;const p=P(n.person);
   if(t==='place'){n.i++;n.cur=d.pname;n.curid=d.place;n.st=n.st||{};n.st[d.place]='active';if(!n.sel||$('follow').checked||n.st[n.sel]==='done')n.sel=d.place;if(!RESTORING&&d.nid===view&&$('follow').checked&&META[d.place]&&BIZ!==d.place){BIZ=d.place;picker();renderCfg();$('cfgstat').textContent=`Now showing ${META[d.place].bot}: the trip is at ${d.pname}.`}}
   if(t==='msg')n.items.push({k:'msg',...d});
@@ -258,19 +284,19 @@ function ev(t,d){
   if(t==='stepin')n.items.push({k:'wait',place:d.place,key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
   if(t==='stepin_done'&&d.ok&&n.offk[d.place+d.k])n.off.yes++;
   if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?(d.ok?`No answer in time. ${p.short}’s setup said to go ahead, so Helmi shared it.`:d.uns==='wait'?`No answer in time. Helmi keeps it for now and will ask ${p.short} again.`:'No answer in time. Helmi keeps it.'):d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
-  if(t==='place_done'){n.st[d.place]='done';(n.res=n.res||{})[d.place]=d;if(d.place===BIZ&&!RESTORING)drawFiles();n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
-  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;n.story=d.story;stats(d.stats)}
+  if(t==='place_done'){n.st[d.place]='done';if(!n.demo){(n.res=n.res||{})[d.place]=d;if(d.place===BIZ&&!RESTORING)drawFiles()}n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
+  if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});if(!n.demo)n.items.push({k:'replay',place:'*'});n.results=d.results;n.story=d.story;if(!n.demo)stats(d.stats)}
   if(t==='error'){n.done=true;n.items.push({k:'sys',place:'*',text:d.text})}
   if(RESTORING)return;
   if(d.nid===view)draw();else drawTabs();
 }
 function drawTabs(){/* every trip in a dropdown, newest first, so none drop off the list */
   const hm=a=>a?new Date(a*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
-  const ids=order.slice().reverse(),live=ids.filter(id=>!NEG[id].done).length;
-  $('tabs').innerHTML=ids.length>1?`<label class="small" for="tripsel">Trip (${ids.length}${live?`, ${live} live`:''})</label><select id="tripsel">${ids.map(id=>{const n=NEG[id];return `<option value="${id}" ${id===view?'selected':''}>${esc(P(n.person).short)} · ${hm(n.at)}${n.done?'':' · live now'}</option>`}).join('')}</select>`:''}
+  const ids=order.slice().reverse(),live=ids.filter(id=>!NEG[id].done&&!NEG[id].demo).length;
+  $('tabs').innerHTML=ids.length>1?`<label class="small" for="tripsel">Trip (${ids.length}${live?`, ${live} live`:''})</label><select id="tripsel">${ids.map(id=>{const n=NEG[id];return `<option value="${id}" ${id===view?'selected':''}>${esc(P(n.person).short)} · ${n.demo?'recorded demo':hm(n.at)}${n.done||n.demo?'':' · live now'}</option>`}).join('')}</select>`:''}
 function draw(){
   drawTabs();const n=NEG[view];if(!n)return;const p=P(n.person);
-  $('title').textContent=`${n.name} · ${n.who}`;
+  $('title').textContent=`${n.name} · ${n.who}`+(n.demo?' · recorded demo':'');
   const st=n.st||{};$('biztabs').innerHTML=n.places.map(([id,nm,ty,bn])=>`<button data-b="${id}" aria-pressed="${id===n.sel}" class="${st[id]||'waiting'}" ${st[id]?'':'disabled'}><b>${esc(bn||'Bot')}</b> · ${esc(nm)}<span>${st[id]==='done'?'Done':st[id]==='active'?'Talking':'Waiting'}</span></button>`).join('');
   $('models').textContent=n.models?`Helmi: ${n.models.helmi} · Businesses’ bots: ${n.models.bot}`:'Scripted messages (no AI key set)';
   $('chat').innerHTML=n.items.filter(x=>x.place===n.sel||x.place==='*').map(x=>{

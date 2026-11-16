@@ -222,6 +222,7 @@ details.place-d .items{display:flex;flex-direction:column;gap:8px;margin-top:10p
       <p>Helmi gets in touch with every place on your trip and arranges your visit with that place’s bot. You set the rules for your Helmi, and your phone buzzes when it needs you.</p>
       <p class="small muted">Everyone here is invented. No real personal data is used.</p>
       <button class="btn alt" id="howto" type="button">▶ Watch how it works (2 min)</button>
+      <label class="place" style="margin-top:4px"><input type="checkbox" id="quick" checked><span><b>Quick start</b><small>Tap a traveller and the trip starts at once, with Balanced rules. Untick to choose the places and set Helmi up yourself.</small></span></label>
     </div>
     <p class="k">Who are you today?</p>
     <div class="grid2" id="people"></div>
@@ -297,7 +298,8 @@ async function boot(){
   const st=await (await fetch('/api/state',{cache:'no-store'})).json();AI=st.ai;M=st.models;
   try{if(st.boot&&localStorage.getItem('helmi-boot')!==st.boot){localStorage.removeItem('helmi-trip');localStorage.setItem('helmi-boot',st.boot)}}catch(e){}  // the server restarted: its trips are gone, so forget ours
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
-  $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(b)pick(b.dataset.p)};
+  $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;if($('quick').checked)quickStart(b.dataset.p);else pick(b.dataset.p)};
+async function quickStart(id){try{await pick(id);await loadVault();suInit();pre='balanced';rules();show('s-rules');$('go').click()}catch(e){show('s-pick')}}
   connect();
   try{history.replaceState({scr:'s-pick'},'')}catch(e){}
   loadVault();
