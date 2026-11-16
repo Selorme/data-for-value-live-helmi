@@ -1,0 +1,283 @@
+{
+  "_note": "Made-up demo data for the fair: what each business sells, and what it already holds about past customers. Not real businesses or real people.",
+  "rail": {
+    "catalogue": [
+      ["Standard ticket", "€39", "one way, seat reserved"],
+      ["Child ticket (under 12)", "€19", "infants under 2 travel free on a lap"],
+      ["Seat with extra floor space", "€39", "room for a wheelchair, guide dog or pushchair"],
+      ["Family area seats", "+€5", "near the play corner, on longer routes"],
+      ["Assistance booking", "free", "staff meet you at the entrance and help you to your seat; book 24 h ahead"],
+      ["Sleeper or lower berth", "+€59", "night routes only"]
+    ],
+    "holds": {"customers": "412,000 past passengers", "since": "2014", "records": [
+      ["Names, emails and phone numbers", "412,000", false],
+      ["Every journey taken, with dates and times", "3.1 million trips", false],
+      ["Dates of birth (from fare checks)", "268,000", true],
+      ["Assistance requests with notes on the need", "9,800", true],
+      ["Card payment tokens", "301,000", true]
+    ]}
+  },
+  "hotel": {
+    "catalogue": [
+      ["Standard double room", "€119 a night", "breakfast €18"],
+      ["Quiet high-floor room", "€129 a night", "away from the lift and street"],
+      ["Accessible room", "€119 a night", "roll-in shower with seat and grab rails, step-free, near the lift"],
+      ["Family room with cot", "€149 a night", "cot, fridge and kettle; infants under 3 stay free"],
+      ["Breakfast", "€18", "free for children under 3; allergy-safe options on request"],
+      ["Visual fire alarm and door-light kit", "free", "pillow shaker and flashing light"]
+    ],
+    "holds": {"customers": "58,000 past guests", "since": "2011", "records": [
+      ["Names, addresses and phone numbers", "58,000", false],
+      ["Passport numbers", "21,400", true],
+      ["Dates of birth", "37,900", true],
+      ["Stay history and room preferences", "96,000 stays", false],
+      ["Allergy and diet notes", "6,300", true],
+      ["Card details on file", "44,100", true]
+    ]}
+  },
+  "bistro": {
+    "catalogue": [
+      ["Lunch of the day", "€14.50", "soup, main and coffee"],
+      ["Vegetarian main (roasted root vegetables)", "€19", "free of nuts and milk"],
+      ["Salmon with dill potatoes", "€26", "contains milk and fish"],
+      ["Children's menu", "€9", "pasta or meatballs; milk-free on request"],
+      ["Chocolate cake", "€8", "contains milk, egg and wheat; may contain nuts"],
+      ["Bottle warming and high chair", "free", ""]
+    ],
+    "holds": {"customers": "23,000 loyalty members", "since": "2017", "records": [
+      ["Names and emails", "23,000", false],
+      ["Every bill, item by item", "181,000 visits", false],
+      ["Allergy notes from bookings", "2,900", true],
+      ["Birthdays (for the free dessert)", "15,200", true]
+    ]}
+  },
+  "venue": {
+    "catalogue": [
+      ["Standard seat", "€45", ""],
+      ["Wheelchair space with companion seat", "€45", "companion seat free, no proof needed"],
+      ["Aisle seat near an exit", "€49", ""],
+      ["Seat in the hearing-loop area", "€45", "rows 4 to 8"],
+      ["Relaxed performance ticket", "€35", "lights up, noise allowed, quiet room open"],
+      ["Photo package", "€15", "photos of the guest at the show"]
+    ],
+    "holds": {"customers": "131,000 past ticket buyers", "since": "2015", "records": [
+      ["Names, emails and phone numbers", "131,000", false],
+      ["Every show attended", "402,000 tickets", false],
+      ["Photos of guests from photo packages", "18,700", true],
+      ["Access needs noted on bookings", "4,100", true],
+      ["Disability card copies", "1,350", true]
+    ]}
+  },
+  "ins": {
+    "catalogue": [
+      ["Travel insurance, one clear price", "€29 a trip", "no health questions; medical costs, cancellation and luggage"],
+      ["Family add-on", "+€12", "children under 18 covered"],
+      ["Priced travel insurance", "from €21", "price set from health, activity and spending data"],
+      ["Winter sports add-on", "+€9", ""],
+      ["Policy in plain language or audio", "free", ""]
+    ],
+    "holds": {"customers": "96,000 policy holders", "since": "2009", "records": [
+      ["Names, addresses and ID numbers", "96,000", true],
+      ["Health questionnaires and diagnoses", "41,000", true],
+      ["Claims, with medical reports", "12,600", true],
+      ["Activity and step data from linked apps", "8,900", true],
+      ["Bank transaction histories (for pricing)", "6,200", true]
+    ]}
+  },
+  "taxi": {
+    "catalogue": [
+      ["City ride", "about €18", "booked in the app"],
+      ["Airport transfer", "€45 fixed price", ""],
+      ["Wheelchair-accessible car", "same price", "ramp; takes chairs up to 70 cm wide"],
+      ["Child seat", "free", "ask when booking"],
+      ["Driver who takes assistance animals", "same price", ""]
+    ],
+    "holds": {"customers": "77,000 app users", "since": "2018", "records": [
+      ["Names and phone numbers", "77,000", false],
+      ["Pickup and drop-off addresses for every ride", "1.4 million rides", true],
+      ["Live location while the app is open", "77,000", true],
+      ["Card details", "61,000", true]
+    ]}
+  },
+  "pharmacy": {
+    "catalogue": [
+      ["Prescription pickup", "price of the medicine", "ready in 2 hours"],
+      ["Large-print or audio labels", "free", ""],
+      ["Private consultation room", "free", "talk to a pharmacist in private"],
+      ["Travel first-aid kit", "€24", ""],
+      ["Allergy tablets (cetirizine, 30)", "€7.90", ""]
+    ],
+    "holds": {"customers": "34,000 customers", "since": "2012", "records": [
+      ["Names and personal ID numbers", "34,000", true],
+      ["Every prescription collected", "211,000", true],
+      ["Allergy and interaction notes", "5,400", true],
+      ["Loyalty purchases of non-prescription items", "88,000", false]
+    ]}
+  },
+  "tour": {
+    "catalogue": [
+      ["Old Town walking tour (2 h)", "€22", "daily at 10:00 and 14:00"],
+      ["Step-free route option", "same price", "avoids the castle steps"],
+      ["Private tour for a family", "€120", "up to 6 people"],
+      ["Pace chosen on the day", "free", "the guide asks at the start"]
+    ],
+    "holds": {"customers": "19,000 past guests", "since": "2016", "records": [
+      ["Names and emails", "19,000", false],
+      ["Fitness and activity data from linked watches", "2,300", true],
+      ["Reviews and photos", "7,800", false]
+    ]}
+  },
+  "spa": {
+    "catalogue": [
+      ["Day pass", "€35", "pools and saunas"],
+      ["Massage (50 min)", "€79", ""],
+      ["Pool hoist", "free", "book a time"],
+      ["Step-free changing room", "free", ""],
+      ["Quiet hours", "free", "weekdays 9 to 11"],
+      ["Fragrance-free treatment products", "free", "ask when booking"]
+    ],
+    "holds": {"customers": "27,000 past visitors", "since": "2013", "records": [
+      ["Names and phone numbers", "27,000", false],
+      ["Health questionnaires before treatments", "9,600", true],
+      ["Treatment history", "61,000", false],
+      ["Activity data from linked apps", "1,900", true]
+    ]}
+  },
+  "work": {
+    "catalogue": [
+      ["Two-day event pass", "€390", "talks, workshops and lunch"],
+      ["Live captions", "free", "on every main-stage talk"],
+      ["Sign language interpreter", "free", "book 2 weeks ahead"],
+      ["Lunch options", "free", "vegetarian, vegan, lactose-free, nut-free"],
+      ["Slides in accessible digital text", "free", "sent after each talk"]
+    ],
+    "holds": {"customers": "8,200 past attendees", "since": "2019", "records": [
+      ["Names, employers and job titles", "8,200", false],
+      ["Diet and access needs from registration", "1,700", true],
+      ["Badge scans: which talks each person attended", "52,000", false],
+      ["CVs and transcripts from speaker applications", "640", true]
+    ]}
+  },
+  "grocery": {
+    "catalogue": [
+      ["Grocery delivery", "€6.90", "free over €80"],
+      ["Two-hour delivery slot", "free", "text when the driver is near"],
+      ["Allergen list on every product", "free", ""],
+      ["Weekly discounts", "free", "personalised from bank and purchase data"]
+    ],
+    "holds": {"customers": "143,000 customers", "since": "2015", "records": [
+      ["Names, addresses and phone numbers", "143,000", false],
+      ["Every basket bought, item by item", "2.6 million orders", false],
+      ["Linked bank transaction histories", "11,400", true],
+      ["Diet filters (gluten-free, halal, allergies)", "19,800", true]
+    ]}
+  },
+  "museum": {
+    "catalogue": [
+      ["Adult ticket", "€18", ""],
+      ["Child ticket (7 to 17)", "€8", "under 7 free"],
+      ["Family ticket", "€42", "2 adults and up to 3 children, no age checks"],
+      ["Audio guide", "free", ""],
+      ["Tactile tour", "free", "weekends at 13:00"],
+      ["Companion entry", "free", "for someone helping a disabled visitor"]
+    ],
+    "holds": {"customers": "64,000 online ticket buyers", "since": "2014", "records": [
+      ["Names and emails", "64,000", false],
+      ["Children's dates of birth (from age checks)", "12,100", true],
+      ["Disability card copies", "920", true],
+      ["Visits and exhibitions seen", "150,000", false]
+    ]}
+  },
+  "planner": {
+    "catalogue": [
+      ["Automatic trip plan", "free", "built from the inbox and chats"],
+      ["Plan from pasted bookings", "free", "paste only the confirmations"],
+      ["Plan made by hand", "free", "takes a little longer"],
+      ["TripMate Plus", "€4.99 a month", "offline maps and alerts"]
+    ],
+    "holds": {"customers": "310,000 app users", "since": "2020", "records": [
+      ["Connected email inboxes", "84,000", true],
+      ["Chat histories from connected apps", "22,000", true],
+      ["Photo libraries (for location tagging)", "15,000", true],
+      ["Travel history", "1.1 million trips", false]
+    ]}
+  },
+  "cowork": {
+    "catalogue": [
+      ["Day pass, open desk", "€25", "coffee included"],
+      ["Quiet desk", "€29", "away from the café and phone booths, power socket"],
+      ["Second screen", "+€5", ""],
+      ["Meeting room", "€20 an hour", ""],
+      ["Email receipts", "free", "for expense claims"]
+    ],
+    "holds": {"customers": "6,400 members", "since": "2018", "records": [
+      ["Names, employers and phone numbers", "6,400", false],
+      ["Door-badge logs: when each member came and went", "210,000 entries", true],
+      ["Linked bank histories (for tailored offers)", "480", true]
+    ]}
+  },
+  "babysit": {
+    "catalogue": [
+      ["Babysitter at the hotel", "€18 an hour", "minimum 3 hours"],
+      ["Evening rate (after 21:00)", "€22 an hour", ""],
+      ["Sitter trained in infant first aid", "same price", ""],
+      ["Contact by text", "free", "updates to the parents"]
+    ],
+    "holds": {"customers": "4,900 families", "since": "2016", "records": [
+      ["Parents' names, phone numbers and hotels", "4,900", false],
+      ["Children's names, ages and photos", "7,300", true],
+      ["Allergy and health notes about children", "1,600", true],
+      ["Location history from the parents' app", "2,100", true]
+    ]}
+  },
+  "school": {
+    "catalogue": [
+      ["Visit for a parent or teacher", "free", "Tuesday and Thursday mornings"],
+      ["Step-free entrance", "free", "the yard gate on the side street"],
+      ["Contact by text", "free", ""]
+    ],
+    "holds": {"customers": "1,100 visitors and applicants", "since": "2018", "records": [
+      ["Names and phone numbers", "1,100", false],
+      ["University transcripts from teacher applications", "210", true],
+      ["Visitor log", "3,400 visits", false]
+    ]}
+  },
+  "course": {
+    "catalogue": [
+      ["Short course (5 days)", "€240", ""],
+      ["Hearing loop in the classroom", "free", ""],
+      ["Course times and key numbers in writing", "free", ""],
+      ["Step-free access", "free", "lift to every floor"]
+    ],
+    "holds": {"customers": "15,000 past students", "since": "2010", "records": [
+      ["Names, addresses and personal ID numbers", "15,000", true],
+      ["Transcripts and grades", "15,000", true],
+      ["Access needs from enrolment", "1,200", true]
+    ]}
+  },
+  "kidsclub": {
+    "catalogue": [
+      ["Kids club (ages 4 to 12)", "€15 a child for 3 hours", ""],
+      ["Allergy plan form", "free", "parents fill it in; no health records"],
+      ["Named staff member with first-aid training", "free", ""],
+      ["No-photos policy", "free", ""],
+      ["Photo package", "€12", "photos of the child at the club"]
+    ],
+    "holds": {"customers": "9,800 children", "since": "2015", "records": [
+      ["Children's names, ages and photos", "9,800", true],
+      ["Parents' names and phone numbers", "8,100", false],
+      ["Children's health and allergy records", "2,200", true],
+      ["Who may collect each child", "8,100", false]
+    ]}
+  },
+  "cars": {
+    "catalogue": [],
+    "holds": {"customers": "5,600 past buyers and test drivers", "since": "2012", "records": [
+      ["Names, addresses and personal ID numbers", "5,600", true],
+      ["Driving licence copies", "4,900", true],
+      ["Bank histories from loan applications", "2,300", true],
+      ["Driving data from the safe-driver programme", "1,100", true],
+      ["Trade-in cars and their history", "3,800", false]
+    ]}
+  }
+}

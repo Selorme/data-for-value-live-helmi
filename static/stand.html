@@ -41,6 +41,9 @@ p{margin:0}
 .opt span{display:flex;flex-direction:column}
 .opt small{color:var(--muted);font-size:12px}
 .sens{color:var(--kept);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.dl{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}.dl li{display:flex;justify-content:space-between;gap:10px;font-size:14px;border-bottom:1px solid var(--line,#e5e8ec);padding-bottom:6px}
+.dl li small{display:block;color:var(--muted,#5b6470);font-size:12px}.dl li b{white-space:nowrap;font-weight:600}
+.file{border:1px solid var(--line,#e5e8ec);border-radius:10px;padding:8px 10px;margin-top:8px;font-size:14px}.file p{margin:2px 0}.file .tg{display:inline-block;background:#eef5f1;border-radius:6px;padding:1px 6px;margin:2px 3px 0 0;font-size:12px}
 .hint{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:8px 10px;font-size:13px}
 .chat-card{flex:1;min-height:0}
 .chat{display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;padding-right:4px}
@@ -123,6 +126,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--helmi);outline-
       <label class="opt"><input type="checkbox" id="review"><span>A person double-checks the arrangements<small>A couple of staff minutes per customer. Catches mistakes before they arrive.</small></span></label></div>
     <div class="card set" id="pushcard"><h3>5. When someone says no</h3>
       <label class="opt"><input type="checkbox" id="push"><span id="pushtxt"></span></label></div>
+    <div class="card set" id="catcard"><h3 id="h-cat">What the business sells</h3><p class="small muted">Made-up demo data. The bot quotes only these items and prices.</p><ul class="dl" id="cat"></ul></div>
+    <div class="card set" id="holdcard"><h3 id="h-hold">What it already holds</h3><p class="small muted" id="holdsub"></p><ul class="dl" id="hold"></ul></div>
+    <div class="card set"><h3 id="h-files">Customer files from today</h3><p class="small muted">What this business now holds about each traveller who visited it, and for how long.</p><div id="files"><p class="small muted">Fills in as travellers visit.</p></div></div>
   </section>
 
   <section class="col" aria-label="Live negotiation">
@@ -191,8 +197,24 @@ function renderCfg(){
   $('review').checked=!!H.review;
   $('pushcard').hidden=!m.push;$('push').checked=!!H.push;
   $('pushtxt').innerHTML=m.push?`${esc(m.bot)} comes back once when something is kept<small>${esc(m.push)}.</small>`:'';
-  hint();
+  hint();drawBizData();drawFiles();
 }
+function drawBizData(){const m=META[BIZ],nm=m.names.length>1?`${m.bot}’s ${m.type}`:m.names[0];
+  $('h-cat').textContent=`6. What ${nm} sells`;$('cat').innerHTML=(m.catalogue||[]).map(([n,p,d])=>`<li><span>${esc(n)}${d?`<small>${esc(d)}</small>`:''}</span><b>${esc(p)}</b></li>`).join('')||'<li class="small muted">Nothing listed.</li>';
+  const H=m.holds;$('holdcard').hidden=!H;if(!H)return;
+  $('h-hold').textContent=`What ${nm} already holds`;$('holdsub').textContent=`Made-up demo data: ${H.customers}, collected since ${H.since}.`;
+  $('hold').innerHTML=H.records.map(([l,c,s])=>`<li><span>${esc(l)} ${s?'<span class="sens">Sensitive</span>':''}</span><b>${esc(c)}</b></li>`).join('')}
+function drawFiles(){const hm=a=>a?new Date(a*1000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'';
+  const kp=(KEEPS.find(k=>k[0]===(CFG[BIZ]||{}).keep)||KEEPS[0])[1].toLowerCase();
+  const F=order.slice().reverse().map(id=>NEG[id]).filter(n=>n&&n.res&&n.res[BIZ]);
+  $('h-files').textContent=`Customer files from today (${F.length})`;
+  $('files').innerHTML=F.length?F.map(n=>{const r=n.res[BIZ],p=P(n.person),lab=k=>((p.fields||{})[k]||{}).label||k;
+    return `<div class="file"><p><b>${esc(p.short)}</b> · ${esc(n.pn[BIZ]||'')} · ${hm(r.at)}</p>
+      <p>${r.shared.length?r.shared.map(k=>`<span class="tg">${esc(lab(k))}</span>`).join(''):'<span class="small muted">Nothing shared.</span>'}</p>
+      ${Object.keys(r.checks||{}).length?`<p class="small">Yes-or-no checks only: ${esc(Object.keys(r.checks).map(lab).join(', '))}</p>`:''}
+      ${r.kept.length?`<p class="small muted">Never received: ${esc(r.kept.map(lab).join(', '))}</p>`:''}
+      ${r.deal?`<p class="small">Car held: ${esc(r.deal.text)}</p>`:''}
+      <p class="small muted">Kept ${r.shared.length?esc(kp==='until the visit is over'?'until the visit is over, then deleted':'for '+kp):'—'}.</p></div>`}).join(''):'<p class="small muted">No traveller has visited yet.</p>'}
 function hint(){const H=CFG[BIZ],h=[];
   if(H.asks.includes('health'))h.push('Health records: only people with access needs or conditions have anything to tell you, so they carry the privacy cost. Ask for the need instead.');
   if(H.asks.includes('messages'))h.push('Chats and email: other people are in them, and almost nobody shares these.');
@@ -226,7 +248,7 @@ async function restore(){RESTORING=true;let local={};
   try{const b=(await (await fetch('/api/state',{cache:'no-store'})).json()).boot;if(b&&localStorage.getItem('stand-boot')!==b){localStorage.removeItem('stand-log');localStorage.setItem('stand-boot',b);if(window.__boot){location.reload();return}}if(b)window.__boot=b;}catch(e){}  // the server restarted: start the stand afreshtry{local=JSON.parse(localStorage.getItem('stand-log')||'{}')}catch(e){}
   Object.values(local).forEach(L=>L.forEach(([t,d])=>take(t,d,true)));
   try{const j=await (await fetch('/api/standlog',{cache:'no-store'})).json();(j.trips||[]).forEach(tr=>tr.events.forEach(d=>take(d.t,d)))}catch(e){}
-  RESTORING=false;try{stats((await (await fetch('/api/state',{cache:'no-store'})).json()).stats)}catch(e){}if(view&&NEG[view])draw();else drawTabs()}
+  RESTORING=false;drawFiles();try{stats((await (await fetch('/api/state',{cache:'no-store'})).json()).stats)}catch(e){}if(view&&NEG[view])draw();else drawTabs()}
 function ev(t,d){
   if(t==='start'){NEG[d.nid]={...d,items:[],done:false,off:{n:0,yes:0},offk:{},pty:Object.fromEntries(d.places.map(([id,n,ty])=>[id,ty])),pn:Object.fromEntries(d.places.map(([id,n])=>[id,n])),bn:Object.fromEntries(d.places.map(([id,n,ty,bn])=>[id,bn||'Bot'])),i:0};order.push(d.nid);if(!view||NEG[view].done)view=d.nid}
   const n=NEG[d.nid];if(!n)return;const p=P(n.person);
@@ -236,7 +258,7 @@ function ev(t,d){
   if(t==='stepin')n.items.push({k:'wait',place:d.place,key:d.place+d.k,offer:!!d.offer,text:d.offer?`${d.pname} offers ${d.offer}. Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`:`Waiting for ${d.name} to decide on ${d.label.split(': ').pop().toLowerCase()}…`});
   if(t==='stepin_done'&&d.ok&&n.offk[d.place+d.k])n.off.yes++;
   if(t==='stepin_done'||t==='stepin_timeout'){const w=n.items.find(x=>x.k==='wait'&&x.key===d.place+d.k&&!x.done);if(w){w.done=true;w.text=t==='stepin_timeout'?(d.ok?`No answer in time. ${p.short}’s setup said to go ahead, so Helmi shared it.`:d.uns==='wait'?`No answer in time. Helmi keeps it for now and will ask ${p.short} again.`:'No answer in time. Helmi keeps it.'):d.ok?(w.offer?'The offer worked: the traveller said yes.':'The traveller said yes.'):(w.offer?'The offer didn’t change the traveller’s mind.':'The traveller said no. Helmi keeps it.')}}
-  if(t==='place_done'){n.st[d.place]='done';n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
+  if(t==='place_done'){n.st[d.place]='done';(n.res=n.res||{})[d.place]=d;if(d.place===BIZ&&!RESTORING)drawFiles();n.items.push({k:'sys',place:d.place,text:`${d.pname}: ${d.shared.length} shared, ${d.kept.length} kept${d.lost?'. Because it was kept: '+d.lost:''}.`})}
   if(t==='done'){n.done=true;let s=0,k=0;Object.values(d.results).forEach(r=>{s+=r.shared.length;k+=r.kept.length});n.items.push({k:'sys',place:'*',text:`Trip finished. Shared ${s} of ${s+k} requested details.`});n.items.push({k:'replay',place:'*'});n.results=d.results;n.story=d.story;stats(d.stats)}
   if(t==='error'){n.done=true;n.items.push({k:'sys',place:'*',text:d.text})}
   if(RESTORING)return;

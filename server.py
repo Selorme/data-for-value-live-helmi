@@ -360,7 +360,12 @@ def promises(C):
 
 KEEP = {"stay": "until the visit is over", "d30": "for 30 days", "y1": "for one year"}
 CONFIG = {}  # business id -> {"asks", "offers", "trust", "keep", "review", "push"}, filled in once the data is loaded
-META = {}    # business id -> {"type", "bot", "cats", "names", "push"}
+META = {}    # business id -> {"type", "bot", "cats", "names", "push", "catalogue", "holds"}
+# Made-up demo data for each business: what it sells (its bot may only quote these items and prices) and what it already holds about past customers
+try:
+    BIZDATA = json.loads((STATIC / "business.json").read_text(encoding="utf-8"))
+except Exception:
+    BIZDATA = {}
 
 
 PURPOSE = {"trip": "to have everything ready for the arrival", "need": "to prepare what the customer needs for the visit",
@@ -797,7 +802,19 @@ def bot_sys(place, p, first=False):
             f"your customer {p['name']} ({p['pron']['sub']}/{p['pron']['obj']}). Write ONE chat message to Helmi: 2 or 3 sentences, at most 60 words, "
             "friendly and businesslike, plain English, no lists, no markdown, no emoji. Use only the facts given to you; never invent prices, numbers or policies. "
             f"You are writing to Helmi, not to {p['short']}: never address {p['short']} directly or as 'you'; refer to {p['pron']['obj']} as {p['short']} or {p['pron']['sub']}. "
-            "Vary how you begin; do not start with 'Wonderful', 'Hello' or 'Hi' after your first message.")
+            "Vary how you begin; do not start with 'Wonderful', 'Hello' or 'Hi' after your first message. " + catalogue_line(place))
+
+
+def catalogue_line(place):
+    """What the business sells, from its demo data: the only items and prices its bot may mention."""
+    if place["id"] == "cars":
+        return ""  # the dealership quotes from CARS in its own steps
+    cat_ = BIZDATA.get(place["id"], {}).get("catalogue") or []
+    if not cat_:
+        return ""
+    return ("What " + place["name"] + " offers, with prices: " + "; ".join(f"{n} ({p}{', ' + d if d else ''})" for n, p, d in cat_) +
+            ". These are the only products, services and prices you may mention; never invent others or change a price. "
+            "Mention a product only when it fits what you were asked to say. If asked about something not on this list, say a member of staff will check.")
 
 
 def helmi_sys(p, first=False):
@@ -1089,13 +1106,13 @@ async def negotiate_place(n, place, hotel_name):
             for sent in re.split(r"(?<=[.!?;])\s+", txt):
                 if neg.search(sent):
                     low_s = sent.lower()
-                    if new_give and re.search(r"\b(?:these|those|this|the)(?: \w+)? (?:details?|information|data|items?|things)\b|\b(?:these|those|all of this|all of it|the above)\s+(?:will|won't|are not|aren't|is not|isn't|stays?|remains?)\b", low_s):
+                    if (new_give or checking) and re.search(r"\b(?:these|those|this|the)(?: \w+)? (?:details?|information|data|items?|things)\b|\b(?:these|those|all of this|all of it|the above)\s+(?:will|won't|are not|aren't|is not|isn't|stays?|remains?)\b", low_s):
                         return False  # a vague "these won't be shared" right after sharing things
                     for k in new_give:
                         words = [w for w in re.findall(r"[a-zA-Z\u00c0-\u017f]{6,}", F[k]["value"].lower())][:6]
                         if any(w in low_s for w in words):
                             return False  # it says it keeps something it is actually sharing
-            if re.search(r"\b(I need|I will need|I'll need|I require|I will require|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip)\b", txt, re.I):
+            if re.search(r"\b(I need|I will need|I'll need|I require|I will require|I'd like|I would like|I'll use my|I will use my|I travel|I'm travelling|I am travelling)\b|\bmy (seat|room|loyalty|card|diet|table|booking|trip|bank|transactions|health|location|car|budget|wheelchair|passport|data|details)\b", txt, re.I):
                 return False
             return mentions_shared(txt)
         out = await write("helmi", helmi_sys(p, first), f"Your message to {place['name']}'s bot. " + " ".join(lines), " ".join(fbp), forbidden(), require=ok)
@@ -1234,7 +1251,8 @@ async def negotiate_place(n, place, hotel_name):
                 offer_fact = {"detail": lab(target), "offer": rule["offer"], "took": False, "by": "rule", "without": rule["lose"]}
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot. Thank them, but say {poss} rule is never to share {ttop}, "
                                 f"so the answer stays no, whatever the offer. Do not offer it in any form.",
-                                f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {ttop}, whatever the offer.", forbidden())
+                                f"Thank you, but {name}'{'' if pl else 's'} rule is never to share {ttop}, whatever the offer.", forbidden(),
+                                require=lambda t: not re.search(r"\b(we|my)\b", t, re.I))
                 await say(n, "helmi", o, place=place["id"], kept=[target], rule=True)
                 lost = rule["lose"]
             elif (ctr := COUNTER.get((place["id"], target))):
@@ -1243,7 +1261,7 @@ async def negotiate_place(n, place, hotel_name):
                 o = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, which offered {rule['offer']} {cond(target)}. "
                                 f"Do not share it, and do not say whether {name} {vb('has','have')} it. Propose something smaller instead and ask if that would earn the offer: {prop}. Do not include any details yet.",
                                 f"{name} would rather not share {ttop}. Would {prop} work instead?", forbidden(),
-                                require=lambda t: not re.search(r"\b[Ww]e (?:prefer|would|'d|need|are)\b|\bI(?:'m| am) not (?:ready|willing|comfortable)\b", t.replace("\u2019", "'")))
+                                require=lambda t: not re.search(r"\b[Ww]e (?:prefer|would|'d|need|are)\b|\bI(?:'m| am) not (?:ready|willing|comfortable)\b|\b[Mm]y\b|\bif I can\b|\bI can afford\b", t.replace("\u2019", "'")))
                 await say(n, "helmi", o, place=place["id"], counter=True)
                 if ctr[2]:
                     out = await write("bot", bot_sys(place, p), f"Helmi proposed this instead of sharing {ttop}: {prop}. Say that this would work for you, and that once the answer comes back yes, {P['sub']} {vb('gets','get')} {gives}. "
@@ -1359,7 +1377,8 @@ async def negotiate_place(n, place, hotel_name):
     # 6. Helmi says thank you
     bn = bot_name(place)
     out = await write("helmi", helmi_sys(p), f"Your message to {place['name']}'s bot, {bn}, which has just confirmed everything. Thank {bn} in one short, warm sentence "
-                      "and say goodbye. Do not repeat any details.", f"Thank you, {bn}. That's everything for now.", forbidden())
+                      "and say goodbye. Do not repeat any details.", f"Thank you, {bn}. That's everything for now.", forbidden(),
+                      require=lambda t: not re.search(r"\b(will (handle|take care|contact|be in touch|follow up|get back|come|pay)|the rest)\b", t, re.I))
     await say(n, "helmi", out, place=place["id"])
 
     for k in keys:
@@ -2217,6 +2236,9 @@ def setup():
         m["push"] = (f"Offers {r['offer']}" if "offer" in r else f"Suggests: {r['alt']}" if "alt" in r else None)
         m["order"] = order.index(b) if b in order else 99
         m["offers"] = [[k, v[0], v[1]] for k, v in offers_for(b).items()]
+        bd = BIZDATA.get(b, {})
+        m["catalogue"] = ([[c["name"], eur(c["price"]), ", ".join(TAGWORD[t] for t in sorted(c["tags"]))] for c in CARS] if b == "cars" else bd.get("catalogue", []))
+        m["holds"] = bd.get("holds")
         CONFIG[b] = {"asks": list(m["cats"]), "offers": list(offers_for(b))[:3], "trust": [], "keep": "stay", "review": False, "push": bool(r)}  # offers on by default, so the bots have something to tailor
     CONFIG["hotel"].update(asks=["trip", "need", "diet", "card", "passport", "dob"], offers=["stepfree"], trust=["delete"], review=True)
     CONFIG["ins"].update(keep="y1")
