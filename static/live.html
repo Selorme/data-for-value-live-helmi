@@ -299,7 +299,7 @@ async function boot(){
   try{if(st.boot&&localStorage.getItem('helmi-boot')!==st.boot){localStorage.removeItem('helmi-trip');localStorage.setItem('helmi-boot',st.boot)}}catch(e){}  // the server restarted: its trips are gone, so forget ours
   $('people').innerHTML=D.people.map(p=>`<button class="tile" data-p="${p.id}"><b>${esc(p.short)}</b><span>${esc(p.who)}</span></button>`).join('');
   $('people').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;if($('quick').checked)quickStart(b.dataset.p);else pick(b.dataset.p)};
-async function quickStart(id){try{await pick(id);await loadVault();suInit();pre='balanced';rules();show('s-rules');$('go').click()}catch(e){show('s-pick')}}
+async function quickStart(id){try{await pick(id);QSTART=true;await loadVault();suInit();pre='balanced';rules();show('s-rules');$('go').click()}catch(e){show('s-pick')}}
   connect();
   try{history.replaceState({scr:'s-pick'},'')}catch(e){}
   loadVault();
@@ -323,7 +323,8 @@ async function catchUp(){if(!nid||catching)return;catching=true;try{const r=awai
   if(r.ok&&r.nid===nid){const miss=r.events.filter(ev=>ev.seq>SEQ);REPLAY=true;miss.forEach(ev=>{SEQ=ev.seq;LOCALEV.push(ev);on(ev.t,ev)});saveLocal();REPLAY=false;if(miss.length)render()}}catch(e){REPLAY=false}finally{catching=false}
 }
 async function loadReq(){REQ=(await (await fetch('/api/requests?person='+cur.id)).json()).places}
-async function pick(id){cur=D.people.find(p=>p.id===id);pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id);trip();show('s-trip')}
+let QSTART=false,PICKT=0;
+async function pick(id){QSTART=false;PICKT=Date.now();cur=D.people.find(p=>p.id===id);pol={};pre='balanced';await loadReq();chosen=REQ.filter(p=>p.core).map(p=>p.id);trip();show('s-trip')}
 function trip(){
   $('t-who').textContent='You are '+cur.name+', '+cur.who;
   $('t-places').innerHTML=REQ.map(p=>`<label class="place"><input type="checkbox" data-pl="${p.id}" ${chosen.includes(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small>${esc(p.why)}</small><span class="tagt">${esc(p.type)} · bot: ${esc(p.bot||'')} · asks for ${p.keys.length} detail${p.keys.length===1?'':'s'}</span></span></label>`).join('');
@@ -371,9 +372,9 @@ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 $('go').onclick=async()=>{
   $('go').disabled=true;
   try{
-    const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol,preset:pre,setup:{uns:(SU||{}).uns||'no',conn:Object.keys((SU||{}).conn||{}).filter(k=>SU.conn[k])},locked:lockedKeys()})});
+    const r=await fetch('/api/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vid,person:cur.id,places:chosen,policy:pol,preset:pre,mode:QSTART?'quick':'custom',secs:Math.round((Date.now()-PICKT)/1000),edits:QSTART?0:Object.keys(pol).filter(k=>pol[k]!==preset(pre,k,F(k))).length,setup:{uns:(SU||{}).uns||'no',conn:Object.keys((SU||{}).conn||{}).filter(k=>SU.conn[k])},locked:lockedKeys()})});
     const j=await r.json();if(!j.ok){err(j.error||'Could not start.');return}
-    await loadVault();fresh(j.nid);show('s-app');enterApp();render();
+    await loadVault();fresh(j.nid);if(QSTART)TAB='msgs';show('s-app');enterApp();render();
     (EARLY[nid]||[]).forEach(([t,d])=>feed(t,d));EARLY={};
   }catch(e){err('No connection to the stand. Check the Wi-Fi and try again.')}
   finally{$('go').disabled=false}

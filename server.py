@@ -151,7 +151,8 @@ async def flush_details():
 
 TRIP_COLS = ["started", "ended", "status", "trip", "visitor", "traveller", "places", "preset", "when_not_sure", "not_connected", "rules_at_start",
              "always_share", "ask_me", "never_share", "phone_answers", "rule_changes", "asked_helmi", "messages_to_businesses",
-             "results_by_place", "shared_total", "kept_total", "offers", "yes_or_no_checks"]
+             "results_by_place", "shared_total", "kept_total", "offers", "yes_or_no_checks",
+             "setup_mode", "setup_seconds", "rules_changed_from_preset"]
 BIZ_COLS = ["id", "time", "business", "asks_for", "keeps_details", "offers_for_access", "promises", "staff_double_check", "makes_offers_for_kept_details"]
 SUMMARY = {"Trips": deque(maxlen=5000), "Businesses": deque(maxlen=5000)}
 SUMMED = set()
@@ -210,7 +211,8 @@ def trip_summary(n, status):
         "results_by_place": " || ".join(places),
         "shared_total": sum(r["decision"] == "shared" for r in res), "kept_total": sum(r["decision"] != "shared" for r in res),
         "offers": "; ".join(f"{r['business']}: {r['offer']} for {r['detail']}: {r['decision']}{' (' + r['text'] + ')' if r.get('text') else ''}" for r in k("offer")),
-        "yes_or_no_checks": "; ".join(f"{r['business']}: {r['text']}" for r in res if r["decision"] == "yes-or-no check only")})
+        "yes_or_no_checks": "; ".join(f"{r['business']}: {r['text']}" for r in res if r["decision"] == "yes-or-no check only"),
+        "setup_mode": n.get("mode", ""), "setup_seconds": n.get("setup_secs", ""), "rules_changed_from_preset": n.get("rule_edits", "")})
 
 
 BIZ_TIMERS = {}
@@ -1677,7 +1679,14 @@ async def api_start(req: Request):
              "uns": su.get("uns") if su.get("uns") in ("wait", "min", "no", "guess") else "no"}
     locked = [k for k in (b.get("locked") or []) if k in p["fields"]]  # details from places the traveller didn't connect Helmi to
     driven = bool(b.get("driven"))
+    mode = b.get("mode") if b.get("mode") in ("quick", "custom") else ""  # quick start, or the visitor set Helmi up themselves
+    def _num(x, hi):
+        try:
+            return max(0, min(hi, int(x)))
+        except (TypeError, ValueError):
+            return ""
     n = {"nid": uuid.uuid4().hex[:10], "vid": vid, "person": pid, "p": p, "places": places, "policy": pol, "setup": setup, "locked": locked, "driven": driven,
+         "mode": mode, "setup_secs": _num(b.get("secs"), 3600), "rule_edits": _num(b.get("edits"), 200),
          "fields": {k: [x for x in v if x in p["fields"]] for k, v in (b.get("fields") or {}).items() if isinstance(v, list)} if driven else {}}
     STATS["n"] += 1
     PENDING[vid] = n["nid"]
